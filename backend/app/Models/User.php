@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+use App\Models\Role;
+
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -27,8 +29,20 @@ class User extends Authenticatable
         'grupo_sanguineo',
         'factor_rh',
         'password',
-        'role',
+        'role_id',
     ];
+
+    /**
+     * Metodo para obtener el rol del usuario
+     * NOTA: permite agregar directametne el valor de  la relacion a la consulta
+     * @var array<string, string>
+     */
+    protected $with = ['role_id'];
+
+    public function role_id()
+    {
+        return $this->belongsTo(Role::class, 'role_id');
+    }
 
     /**
      * The attributes that should be hidden for serialization.

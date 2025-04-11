@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('role_id')->constrained('roles')->onDelete('cascade');
+            $table->foreignId('filial_id')->constrained('filials')->onDelete('cascade');
             $table->string('rut')->unique();
             $table->string('nombre');
             $table->string('email')->unique();
@@ -23,7 +25,6 @@ return new class extends Migration
             $table->string('factor_rh');
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->string('role')->default('user');
             $table->rememberToken();
             $table->timestamps();
         });
