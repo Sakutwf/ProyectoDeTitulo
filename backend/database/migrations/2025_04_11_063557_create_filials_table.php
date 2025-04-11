@@ -11,9 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('roles', function (Blueprint $table) {
+        /**
+         * los datos son:
+         * id
+         * ciudad
+         */
+        Schema::create('filials', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
+            $table->string('ciudad');
             $table->timestamps();
         });
     }
@@ -23,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('roles');
+        Schema::dropIfExists('filials');
     }
 };

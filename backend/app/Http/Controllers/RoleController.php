@@ -12,7 +12,7 @@ class RoleController extends Controller
      */
     public function index()
     {
-        //
+        return response()->json(Role::all(), 200);
     }
 
     /**
@@ -28,7 +28,14 @@ class RoleController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        try {
+            $role = new Role();
+            $role->name = $request->name;
+            $role->save();
+            return response()->json($role, 201);
+        } catch (\Exception $e) {
+            return response()->json($e->getMessage(), 400);
+        }
     }
 
     /**
@@ -50,16 +57,29 @@ class RoleController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Role $role)
+    public function update($id, Request $request)
     {
-        //
+        try {
+            $role = Role::findOrFail($id);
+            $role->name = $request->name;
+            $role->save();
+            return response()->json($role, 200);
+        } catch (\Exception $e) {
+            return response()->json($e->getMessage(), 400);
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Role $role)
+    public function destroy($id)
     {
-        //
+        try {
+            $role = Role::findOrFail($id);
+            $role->delete();
+            return response()->json(['message' => 'Role deleted successfully'], 200);
+        } catch (\Exception $e) {
+            return response()->json($e->getMessage(), 400);
+        }
     }
 }

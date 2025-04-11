@@ -11,9 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('roles', function (Blueprint $table) {
+        /**
+         * los datos son:
+         * id
+         * filial_id
+         * nombre
+         * monto_arriendo
+         */
+        Schema::create('boxes', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
+            $table->foreignId('filial_id')->constrained('filials')->onDelete('cascade');
+            $table->string('nombre');
+            $table->decimal('monto_arriendo', 10, 2);
             $table->timestamps();
         });
     }
@@ -23,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('roles');
+        Schema::dropIfExists('boxes');
     }
 };

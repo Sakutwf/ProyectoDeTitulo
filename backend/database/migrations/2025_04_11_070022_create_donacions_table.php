@@ -11,9 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('roles', function (Blueprint $table) {
+        /*
+        * los datos son:
+        * id
+        * nombre
+        * tipo
+        * cantidad
+        * fecha
+        */
+        Schema::create('donacions', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
+            $table->string('nombre');
+            $table->string('tipo');
+            $table->integer('cantidad');
+            $table->date('fecha');
             $table->timestamps();
         });
     }
@@ -23,6 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('roles');
+        Schema::dropIfExists('donacions');
     }
 };
