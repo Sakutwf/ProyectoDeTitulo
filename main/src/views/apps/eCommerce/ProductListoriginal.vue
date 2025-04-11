@@ -1,12 +1,40 @@
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
+import { useEcomStore } from '@/stores/apps/eCommerce';
+import UiParentCard from '@/components/shared/UiParentCard.vue';
+import type { Header, Item } from 'vue3-easy-data-table';
+import 'vue3-easy-data-table/dist/style.css';
+import { format } from 'date-fns';
+
+const store = useEcomStore();
+onMounted(() => {
+    store.fetchProducts();
+    console.log(items);
+});
+
+const getProducts = computed(() => {
+    return store.products;
+});
+
+const searchField = ref('name');
+const searchValue = ref('');
+
+const headers: Header[] = [
+    { text: '#', value: 'image' },
+    { text: 'Product name', value: 'name', sortable: true },
+    { text: 'Created', value: 'created', sortable: true },
+    { text: 'Price', value: 'offerPrice', sortable: true },
+    { text: 'sale-price', value: 'salePrice', sortable: true },
+    { text: 'status', value: 'isStock' },
+    { text: 'Action', value: 'operation' }
+];
+const items = ref(getProducts);
+const themeColor = ref('rgb(var(--v-theme-secondary))');
+
+const itemsSelected = ref<Item[]>([]);
+</script>
+
 <template>
-  <div class="hello">
-    <h1>{{ msg }}</h1>
-    <p>
-      For a guide and recipes on how to configure / customize this project,<br>
-      check out the
-      <a href="https://cli.vuejs.org" target="_blank" rel="noopener">vue-cli documentation</a>.
-    </p>
-    <h3>Installed CLI Plugins</h3>
     <v-row>
         <v-col cols="12" md="12">
             <UiParentCard title="Product List">
@@ -89,34 +117,4 @@
             </UiParentCard>
         </v-col>
     </v-row>
-
-
-  </div>
 </template>
-
-<script>
-export default {
-  name: 'HelloWorld',
-  props: {
-    msg: String
-  }
-}
-</script>
-
-<!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
-h3 {
-  margin: 40px 0 0;
-}
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-a {
-  color: #42b983;
-}
-</style>
