@@ -3,28 +3,17 @@
         <div class="sidebar-header">
             <div class="logo-container">
                 <img src="@/assets/LogoHorizontal.svg" alt="Cruz Roja Logo" class="logo">
-                <h3 class="sidebar-title">Cruz Roja</h3>
             </div>
         </div>
         <ul class="nav flex-column">
-            <li class="nav-item" :class="{ active: activeLink === 'dashboard' }">
-                <router-link to="/dashboard" class="nav-link" @click="setActive('dashboard')">
-                    <i class="fa-solid fa-tachometer-alt me-2"></i> Dashboard
-                </router-link>
-            </li>
-            <li class="nav-item" :class="{ active: activeLink === 'usuarios' }">
-                <router-link to="/" class="nav-link" @click="setActive('usuarios')">
-                    <i class="fa-solid fa-users me-2"></i> Usuarios
-                </router-link>
-            </li>
-            <li class="nav-item" :class="{ active: activeLink === 'beneficiarios' }">
-                <router-link to="/beneficiarios" class="nav-link" @click="setActive('beneficiarios')">
-                    <i class="fa-solid fa-hands-helping me-2"></i> Beneficiarios
+            <li class="nav-item" :class="{ active: activeLink === 'inicio' }">
+                <router-link to="/inicio" class="nav-link" @click="setActive('inicio')">
+                    <i class="fa-solid fa-tachometer-alt me-2"></i> Inicio
                 </router-link>
             </li>
             <li class="nav-item" :class="{ active: activeLink === 'voluntarios' }">
                 <router-link to="/voluntarios" class="nav-link" @click="setActive('voluntarios')">
-                    <i class="fa-solid fa-user-plus me-2"></i> Voluntarios
+                    <i class="fa-solid fa-users me-2"></i> Voluntarios
                 </router-link>
             </li>
             <li class="nav-item" :class="{ active: activeLink === 'actividades' }">
@@ -37,18 +26,13 @@
                     <i class="fa-solid fa-hand-holding-heart me-2"></i> Donaciones
                 </router-link>
             </li>
-            <li class="nav-item" :class="{ active: activeLink === 'capacitaciones' }">
-                <router-link to="/capacitaciones" class="nav-link" @click="setActive('capacitaciones')">
-                    <i class="fa-solid fa-book-medical me-2"></i> Capacitaciones
-                </router-link>
-            </li>
             <li class="nav-item" :class="{ active: activeLink === 'configuracion' }">
                 <router-link to="/configuracion" class="nav-link" @click="setActive('configuracion')">
                     <i class="fa-solid fa-cog me-2"></i> Configuración
                 </router-link>
             </li>
             <li class="nav-item mt-auto">
-                <a href="#" class="nav-link text-danger">
+                <a href="#" class="nav-link">
                     <i class="fa-solid fa-sign-out-alt me-2"></i> Cerrar Sesión
                 </a>
             </li>
@@ -72,8 +56,8 @@ export default {
     mounted() {
         // Detectar la ruta actual y activar el enlace correspondiente
         const path = this.$route.path;
-        if (path === '/') this.activeLink = 'usuarios';
-        else if (path.includes('dashboard')) this.activeLink = 'dashboard';
+        if (path === '/') this.activeLink = 'inicio';
+        else if (path.includes('inicio')) this.activeLink = 'inicio';
         else if (path.includes('beneficiarios')) this.activeLink = 'beneficiarios';
         else if (path.includes('voluntarios')) this.activeLink = 'voluntarios';
         else if (path.includes('actividades')) this.activeLink = 'actividades';
@@ -98,7 +82,7 @@ export default {
 }
 
 .sidebar-header {
-    padding: 1.5rem 1rem;
+    padding: 1.5rem 0.5rem; /* Reducido el padding lateral para dar más espacio al logo */
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     display: flex;
     justify-content: center;
@@ -107,12 +91,14 @@ export default {
 .logo-container {
     display: flex;
     align-items: center;
+    width: 100%; /* Hacer que el contenedor ocupe todo el ancho disponible */
+    justify-content: center;
 }
 
 .logo {
-    height: 40px;
-    margin-right: 10px;
-    filter: brightness(0) invert(1); /* Hace que el logo sea blanco si es necesario */
+    width: 90%; /* Establecer el ancho al 90% del contenedor para dejar un pequeño margen */
+    height: auto; /* Mantener proporciones */
+    max-height: 50px; /* Limitar altura máxima */
 }
 
 .sidebar-title {

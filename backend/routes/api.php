@@ -4,10 +4,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ActivoController;
 //Route::get('/user', function (Request $request) {
 //    return $request->user();
 //})->middleware('auth:sanctum');
 
 Route::apiResource('user', UserController::class);
+Route::apiResource('role', ActivoController::class);
 Route::apiResource('activo', ActivoController::class);
