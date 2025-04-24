@@ -7,90 +7,27 @@
       <a href="https://cli.vuejs.org" target="_blank" rel="noopener">vue-cli documentation</a>.
     </p>
     <h3>Installed CLI Plugins</h3>
-    <v-row>
-        <v-col cols="12" md="12">
-            <UiParentCard title="Product List">
-                <v-row justify="space-between" class="align-center mb-3">
-                    <v-col cols="12" md="3">
-                        <v-text-field
-                            type="text"
-                            variant="outlined"
-                            placeholder="Search Product"
-                            v-model="searchValue"
-                            density="compact"
-                            hide-details
-                            prepend-inner-icon="mdi-magnify"
-                        />
-                    </v-col>
-                    <v-col cols="12" md="3">
-                        <div class="d-flex gap-2 justify-end">
-                            <v-btn icon variant="text">
-                                <CopyIcon size="20" />
-                            </v-btn>
-                            <v-btn icon variant="text">
-                                <PrinterIcon size="20" />
-                            </v-btn>
-                            <v-btn icon variant="text">
-                                <FilterIcon size="20" />
-                            </v-btn>
-                        </div>
-                    </v-col>
-                </v-row>
-                <EasyDataTable
-                    :headers="headers"
-                    :items="items"
-                    table-class-name="customize-table"
-                    :theme-color="themeColor"
-                    :search-field="searchField"
-                    :search-value="searchValue"
-                    :rows-per-page="5"
-                    v-model:items-selected="itemsSelected"
-                >
-                    <template #item-image="{ image }">
-                        <div class="player-wrapper">
-                            <img alt="product" width="70" class="rounded-md" :src="image" />
-                        </div>
-                    </template>
-                    <template #item-name="{ name }">
-                        <div class="player-wrapper">
-                            <h5 class="text-h5">{{ name }}</h5>
-                        </div>
-                    </template>
-                    <template #item-created="{ date }">
-                        <div class="player-wrapper">
-                            {{ format(new Date(date), 'E, MMM d') }}
-                        </div>
-                    </template>
-                    <template #item-offerPrice="{ offerPrice }">
-                        <div class="player-wrapper">
-                            <h5 class="text-h5">${{ offerPrice }}</h5>
-                        </div>
-                    </template>
-                    <template #item-salePrice="{ salePrice }">
-                        <div class="player-wrapper">
-                            <h5 class="text-h5">${{ salePrice }}</h5>
-                        </div>
-                    </template>
-                    <template #item-isStock="{ isStock }">
-                        <div class="player-wrapper">
-                            <v-chip color="success" v-if="isStock" size="small"> In Stock </v-chip>
-                            <v-chip color="error" v-else size="small"> Out of Stock </v-chip>
-                        </div>
-                    </template>
-
-                    <template #item-operation="item">
-                        <div class="operation-wrapper">
-                            <v-btn icon variant="text">
-                                <DotsIcon size="18" />
-                            </v-btn>
-                        </div>
-                    </template>
-                </EasyDataTable>
-            </UiParentCard>
-        </v-col>
-    </v-row>
-
-
+    <ul>
+      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-babel" target="_blank" rel="noopener">babel</a></li>
+      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-router" target="_blank" rel="noopener">router</a></li>
+      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-vuex" target="_blank" rel="noopener">vuex</a></li>
+    </ul>
+    <h3>Essential Links</h3>
+    <ul>
+      <li><a href="https://vuejs.org" target="_blank" rel="noopener">Core Docs</a></li>
+      <li><a href="https://forum.vuejs.org" target="_blank" rel="noopener">Forum</a></li>
+      <li><a href="https://chat.vuejs.org" target="_blank" rel="noopener">Community Chat</a></li>
+      <li><a href="https://twitter.com/vuejs" target="_blank" rel="noopener">Twitter</a></li>
+      <li><a href="https://news.vuejs.org" target="_blank" rel="noopener">News</a></li>
+    </ul>
+    <h3>Ecosystem</h3>
+    <ul>
+      <li><a href="https://router.vuejs.org" target="_blank" rel="noopener">vue-router</a></li>
+      <li><a href="https://vuex.vuejs.org" target="_blank" rel="noopener">vuex</a></li>
+      <li><a href="https://github.com/vuejs/vue-devtools#vue-devtools" target="_blank" rel="noopener">vue-devtools</a></li>
+      <li><a href="https://vue-loader.vuejs.org" target="_blank" rel="noopener">vue-loader</a></li>
+      <li><a href="https://github.com/vuejs/awesome-vue" target="_blank" rel="noopener">awesome-vue</a></li>
+    </ul>
   </div>
 </template>
 

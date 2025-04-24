@@ -2,18 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Activo;
+use App\Models\test;
 use Illuminate\Http\Request;
 
-class ActivoController extends Controller
+class TestController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $activos = Activo::all();
-        return response()->json($activos);
+        //
     }
 
     /**
@@ -35,7 +34,7 @@ class ActivoController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Activo $activo)
+    public function show(test $test)
     {
         //
     }
@@ -43,7 +42,7 @@ class ActivoController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Activo $activo)
+    public function edit(test $test)
     {
         //
     }
@@ -51,7 +50,7 @@ class ActivoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Activo $activo)
+    public function update(Request $request, test $test)
     {
         //
     }
@@ -59,7 +58,7 @@ class ActivoController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Activo $activo)
+    public function destroy(test $test)
     {
         //
     }
