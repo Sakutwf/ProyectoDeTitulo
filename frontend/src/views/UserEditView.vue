@@ -12,52 +12,52 @@
                     <form @submit.prevent="guardar">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label for="nombre" class="form-label">Nombre</label>
+                                <label for="edit-nombre" class="form-label">Nombre</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
-                                    <input type="text" class="form-control" id="nombre" v-model="nombre" required>
+                                    <input type="text" class="form-control" id="edit-nombre" v-model="nombre" required>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="rut" class="form-label">RUT</label>
+                                <label for="edit-rut" class="form-label">RUT</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-id-card"></i></span>
-                                    <input type="text" class="form-control" id="rut" v-model="rut" required>
+                                    <input type="text" class="form-control" id="edit-rut" v-model="rut" required>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="correo" class="form-label">Correo Electrónico</label>
+                                <label for="edit-correo" class="form-label">Correo Electrónico</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-at"></i></span>
-                                    <input type="email" class="form-control" id="correo" v-model="correo" required>
+                                    <input type="email" class="form-control" id="edit-correo" v-model="correo" required>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="telefono" class="form-label">Teléfono</label>
+                                <label for="edit-telefono" class="form-label">Teléfono</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-phone"></i></span>
-                                    <input type="text" class="form-control" id="telefono" v-model="telefono">
+                                    <input type="text" class="form-control" id="edit-telefono" v-model="telefono">
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento</label>
+                                <label for="edit-fecha_nacimiento" class="form-label">Fecha de Nacimiento</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-calendar"></i></span>
-                                    <input type="date" class="form-control" id="fecha_nacimiento" v-model="fecha_nacimiento">
+                                    <input type="date" class="form-control" id="edit-fecha_nacimiento" v-model="fecha_nacimiento">
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="fecha_ingreso" class="form-label">Fecha de Ingreso</label>
+                                <label for="edit-fecha_ingreso" class="form-label">Fecha de Ingreso</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-calendar-check"></i></span>
-                                    <input type="date" class="form-control" id="fecha_ingreso" v-model="fecha_ingreso">
+                                    <input type="date" class="form-control" id="edit-fecha_ingreso" v-model="fecha_ingreso">
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <label for="grupo_sanguineo" class="form-label">Grupo Sanguíneo</label>
+                                <label for="edit-grupo_sanguineo" class="form-label">Grupo Sanguíneo</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-tint"></i></span>
-                                    <select class="form-select" id="grupo_sanguineo" v-model="grupo_sanguineo">
+                                    <select class="form-select" id="edit-grupo_sanguineo" v-model="grupo_sanguineo">
                                         <option value="A">A</option>
                                         <option value="B">B</option>
                                         <option value="AB">AB</option>
@@ -66,20 +66,20 @@
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <label for="factor_rh" class="form-label">Factor RH</label>
+                                <label for="edit-factor_rh" class="form-label">Factor RH</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-tint"></i></span>
-                                    <select class="form-select" id="factor_rh" v-model="factor_rh">
+                                    <select class="form-select" id="edit-factor_rh" v-model="factor_rh">
                                         <option value="+">+</option>
                                         <option value="-">-</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <label for="rol" class="form-label">Rol</label>
+                                <label for="edit-rol" class="form-label">Rol</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-user-tag"></i></span>
-                                    <select id="rol" v-model="rol" class="form-select" required>
+                                    <select id="edit-rol" v-model="rol" class="form-select" required>
                                         <option value="">Seleccione un rol</option>
                                         <option value="1">Administrador</option>
                                         <option value="2">Voluntario</option>
@@ -87,10 +87,10 @@
                                 </div>
                             </div>
                             <div class="col-md-12">
-                                <label for="password" class="form-label">Contraseña</label>
+                                <label for="edit-password" class="form-label">Contraseña</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-key"></i></span>
-                                    <input type="password" class="form-control" id="password" v-model="password" 
+                                    <input type="password" class="form-control" id="edit-password" v-model="password" 
                                            placeholder="Contraseña (Deja el campo en blanco si no deseas modificarla)">
                                 </div>
                             </div>
@@ -117,8 +117,9 @@ export default {
     name: 'UserEditView',
     props: {
         userId: {
-            type: [Number, String],
-            required: true
+            type: [Number, String, null],
+            required: false,
+            default: null
         }
     },
     data() {

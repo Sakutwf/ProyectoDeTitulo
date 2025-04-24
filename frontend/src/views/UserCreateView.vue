@@ -12,52 +12,52 @@
                     <form @submit.prevent="guardar">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label for="nombre" class="form-label">Nombre</label>
+                                <label for="create-nombre" class="form-label">Nombre</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
-                                    <input type="text" class="form-control" id="nombre" v-model="nombre" required placeholder="Nombre completo">
+                                    <input type="text" class="form-control" id="create-nombre" v-model="nombre" required placeholder="Nombre completo">
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="rut" class="form-label">RUT</label>
+                                <label for="create-rut" class="form-label">RUT</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-id-card"></i></span>
-                                    <input type="text" class="form-control" id="rut" v-model="rut" required placeholder="Ej: 12345678-9">
+                                    <input type="text" class="form-control" id="create-rut" v-model="rut" required placeholder="Ej: 12345678-9">
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="correo" class="form-label">Correo Electrónico</label>
+                                <label for="create-correo" class="form-label">Correo Electrónico</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-at"></i></span>
-                                    <input type="email" class="form-control" id="correo" v-model="correo" required placeholder="correo@ejemplo.com">
+                                    <input type="email" class="form-control" id="create-correo" v-model="correo" required placeholder="correo@ejemplo.com">
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="telefono" class="form-label">Teléfono</label>
+                                <label for="create-telefono" class="form-label">Teléfono</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-phone"></i></span>
-                                    <input type="text" class="form-control" id="telefono" v-model="telefono" placeholder="Número de teléfono">
+                                    <input type="text" class="form-control" id="create-telefono" v-model="telefono" placeholder="Número de teléfono">
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento</label>
+                                <label for="create-fecha_nacimiento" class="form-label">Fecha de Nacimiento</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-calendar"></i></span>
-                                    <input type="date" class="form-control" id="fecha_nacimiento" v-model="fecha_nacimiento">
+                                    <input type="date" class="form-control" id="create-fecha_nacimiento" v-model="fecha_nacimiento">
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="fecha_ingreso" class="form-label">Fecha de Ingreso</label>
+                                <label for="create-fecha_ingreso" class="form-label">Fecha de Ingreso</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-calendar-check"></i></span>
-                                    <input type="date" class="form-control" id="fecha_ingreso" v-model="fecha_ingreso">
+                                    <input type="date" class="form-control" id="create-fecha_ingreso" v-model="fecha_ingreso">
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <label for="grupo_sanguineo" class="form-label">Grupo Sanguíneo</label>
+                                <label for="create-grupo_sanguineo" class="form-label">Grupo Sanguíneo</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-tint"></i></span>
-                                    <select class="form-select" id="grupo_sanguineo" v-model="grupo_sanguineo">
+                                    <select class="form-select" id="create-grupo_sanguineo" v-model="grupo_sanguineo">
                                         <option value="A">A</option>
                                         <option value="B">B</option>
                                         <option value="AB">AB</option>
@@ -66,30 +66,30 @@
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <label for="factor_rh" class="form-label">Factor RH</label>
+                                <label for="create-factor_rh" class="form-label">Factor RH</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-tint"></i></span>
-                                    <select class="form-select" id="factor_rh" v-model="factor_rh">
+                                    <select class="form-select" id="create-factor_rh" v-model="factor_rh">
                                         <option value="+">+</option>
                                         <option value="-">-</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <label for="rol" class="form-label">Rol</label>
+                                <label for="create-rol" class="form-label">Rol</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-user-tag"></i></span>
-                                    <select id="rol" v-model="rol" class="form-select" required>
+                                    <select id="create-rol" v-model="rol" class="form-select" required>
                                         <option value="">Seleccione un rol</option>
                                         <option v-for="role in roles" :key="role.id" :value="role.id">{{ role.name }}</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="col-md-12">
-                                <label for="password" class="form-label">Contraseña</label>
+                                <label for="create-password" class="form-label">Contraseña</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-key"></i></span>
-                                    <input type="password" class="form-control" id="password" v-model="password" required placeholder="Contraseña">
+                                    <input type="password" class="form-control" id="create-password" v-model="password" required placeholder="Contraseña">
                                 </div>
                             </div>
                         </div>
