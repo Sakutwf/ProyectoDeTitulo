@@ -80,6 +80,7 @@
         </div>
     </div>
 </template>
+
 <script>
 import axios from 'axios';
 import {show_alerta } from '../funciones';
@@ -99,9 +100,14 @@ export default{
             url:'http://localhost:8000/api/user'
         }
     },
+    mounted() {
+        // Inicializar fecha de ingreso con la fecha actual
+        this.fecha_ingreso = new Date().toISOString().split('T')[0];
+    },
     methods:{
         async guardar(event){
             event.preventDefault();
+            
             if(this.nombre.trim() === ''){
                 show_alerta('Escribe el nombre', 'warning', 'nombre');
             }
@@ -133,27 +139,29 @@ export default{
                 show_alerta('Escribe la contraseña', 'warning', 'password');
             }
             else{
-                var parametros= {
-                    nombre: this.nombre,
-                    rut: this.rut,
-                    role_id: this.rol,
-                    filial_id: 1,
-                    telefono: this.telefono,
-                    email: this.correo,
-                    fecha_nacimiento: this.fecha_nacimiento,
-                    grupo_sanguineo: this.grupo_sanguineo,
-                    factor_rh: this.factor_rh,
-                    fecha_ingreso: this.fecha_ingreso,
-                    password: this.password
-                }
+                try {
+                    var parametros = {
+                        nombre: this.nombre,
+                        rut: this.rut,
+                        role_id: this.rol,
+                        filial_id: 1,
+                        telefono: this.telefono,
+                        email: this.correo,
+                        fecha_nacimiento: this.fecha_nacimiento,
+                        grupo_sanguineo: this.grupo_sanguineo,
+                        factor_rh: this.factor_rh,
+                        fecha_ingreso: this.fecha_ingreso,
+                        password: this.password
+                    }
+                    
                     const respuesta = await axios.post(this.url, parametros);
                     const status = respuesta.status;
-                    const mensaje = respuesta.mensaje || 'Operación exitosa';
+                    const mensaje = respuesta.data?.mensaje || 'Usuario creado exitosamente';
 
-                    if (status === 201) {
+                    if (status === 201 || status === 200) {
                         show_alerta(mensaje, 'success');
                         setTimeout(() => {
-                            window.location.href = '/';
+                            window.location.href = '/voluntarios';
                         }, 1000);
                     } else {
                         const errores = respuesta.data?.errors || {};
@@ -161,15 +169,34 @@ export default{
                         Object.keys(errores).forEach(key => {
                             listado += errores[key][0] + '. ';
                         });
-                        show_alerta(listado, 'error');
+                        show_alerta(listado || 'Error al crear usuario', 'error');
                     }
-
-                console.log(status);
-                console.log(respuesta.status);
-                
+                } catch (error) {
+                    console.error("Error completo:", error);
+                    
+                    if (error.response) {
+                        console.error("Datos de respuesta:", error.response.data);
+                        const errores = error.response.data?.errors || {};
+                        let listado = '';
+                        Object.keys(errores).forEach(key => {
+                            listado += errores[key][0] + '. ';
+                        });
+                        show_alerta(listado || `Error: ${error.response.status} - ${error.response.statusText}`, 'error');
+                    } else {
+                        show_alerta('Error al conectar con el servidor', 'error');
+                    }
+                }
             }
-    
         }
     }
 }
 </script>
+
+<style scoped>
+.text-danger {
+    font-size: 0.8rem;
+    display: block;
+    margin-top: 5px;
+    text-align: left;
+}
+</style>

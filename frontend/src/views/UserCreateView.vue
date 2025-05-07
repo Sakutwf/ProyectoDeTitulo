@@ -15,28 +15,71 @@
                                 <label for="create-nombre" class="form-label">Nombre</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
-                                    <input type="text" class="form-control" id="create-nombre" v-model="nombre" required placeholder="Nombre completo">
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="create-nombre"
+                                        v-model="nombre"
+                                        required
+                                        placeholder="Nombre completo"
+                                        :class="{'is-invalid': nombre && !isNameValid}"
+                                    >
+                                </div>
+                                <div v-if="nombre && !isNameValid" class="invalid-feedback d-block">
+                                    El nombre solo debe contener letras y espacios.
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <label for="create-rut" class="form-label">RUT</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-id-card"></i></span>
-                                    <input type="text" class="form-control" id="create-rut" v-model="rut" required placeholder="Ej: 12345678-9">
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="create-rut"
+                                        v-model="rut"
+                                        required
+                                        placeholder="Ej: 12345678-9"
+                                        :class="{'is-invalid': rut && !isRutValid}"
+                                    >
+                                </div>
+                                <div v-if="rut && !isRutValid" class="invalid-feedback d-block">
+                                    RUT inválido.
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <label for="create-correo" class="form-label">Correo Electrónico</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-at"></i></span>
-                                    <input type="email" class="form-control" id="create-correo" v-model="correo" required placeholder="correo@ejemplo.com">
+                                    <input
+                                        type="email"
+                                        class="form-control"
+                                        id="create-correo"
+                                        v-model="correo"
+                                        required
+                                        placeholder="correo@ejemplo.com"
+                                        :class="{'is-invalid': correo && !isEmailValid}"
+                                    >
+                                </div>
+                                <div v-if="correo && !isEmailValid" class="invalid-feedback d-block">
+                                    Correo electrónico inválido.
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <label for="create-telefono" class="form-label">Teléfono</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-phone"></i></span>
-                                    <input type="text" class="form-control" id="create-telefono" v-model="telefono" placeholder="Número de teléfono">
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="create-telefono"
+                                        v-model="telefono"
+                                        placeholder="Número de teléfono"
+                                        :class="{'is-invalid': telefono && !isPhoneValid}"
+                                    >
+                                </div>
+                                <div v-if="telefono && !isPhoneValid" class="invalid-feedback d-block">
+                                    El teléfono solo debe contener números.
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -97,7 +140,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-danger" @click="guardar">
+                    <button type="button" class="btn btn-danger" @click="guardar" :disabled="!isFormValid">
                         <i class="fa-solid fa-save me-1"></i>Guardar Usuario
                     </button>
                 </div>
@@ -132,16 +175,52 @@ export default {
             fecha_nacimiento: '',
             grupo_sanguineo: 'O',
             factor_rh: '+',
-            fecha_ingreso: new Date().toISOString().split('T')[0],
+            fecha_ingreso: '',
             password: '',
             url: 'http://localhost:8000/api/user',
             modalInstance: null
         }
     },
+    computed: {
+        isNameValid() {
+        /// Validar que el nombre no esté vacío y contenga solo letras y espacios
+            return this.nombre.trim() !== '' && /^[a-zA-Z\s]+$/.test(this.nombre);
+        },
+        isRutValid() {
+            return this.validaRut(this.rut.trim());
+        },
+        isEmailValid() {
+            return this.correo.trim() !== '' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.correo);
+        },
+        isPhoneValid() {
+            return this.telefono.trim() !== '' && /^[0-9]+$/.test(this.telefono);
+        },
+        isFormValid(){
+            return this.isNameValid && this.isRutValid && this.isEmailValid && this.isPhoneValid;
+        }
+    },
+    
     mounted() {
         this.modalInstance = new Modal(document.getElementById('newUserModal'));
     },
     methods: {
+        validaRut(rutCompleto) {
+            rutCompleto = rutCompleto.replace("‐", "-");
+            if (!/^[0-9]+[-|‐]{1}[0-9kK]{1}$/.test(rutCompleto))
+                return false;
+            var tmp = rutCompleto.split('-');
+            var digv = tmp[1];
+            var rut = tmp[0];
+            if (digv == 'K') digv = 'k';
+
+            return (this.dv(rut) == digv);
+        },
+        dv(T) {
+            var M = 0, S = 1;
+            for (; T; T = Math.floor(T / 10))
+                S = (S + T % 10 * (9 - M++ % 6)) % 11;
+            return S ? S - 1 : 'k';
+        },
         show() {
             this.resetForm();
             this.modalInstance.show();
@@ -158,24 +237,29 @@ export default {
             this.fecha_nacimiento = '';
             this.grupo_sanguineo = 'O';
             this.factor_rh = '+';
-            this.fecha_ingreso = new Date().toISOString().split('T')[0];
+            this.fecha_ingreso = '';
             this.password = '';
         },
         async guardar() {
             if(this.nombre.trim() === ''){
                 show_alerta('Escribe el nombre', 'warning', 'nombre');
+                console.log('nombre', this.nombre);
             }
             else if(this.rut.trim() === ''){
                 show_alerta('Escribe el rut', 'warning', 'rut');
+                console.log('rut', this.rut);
             }
             else if(this.rol === ''){
                 show_alerta('Selecciona un rol', 'warning', 'rol');
+                console.log('rol', this.rol);
             }
             else if(this.telefono.trim() === ''){
                 show_alerta('Escribe el telefono', 'warning', 'telefono');
+                console.log('telefono', this.telefono);
             }
             else if(this.correo.trim() === ''){
                 show_alerta('Escribe el correo', 'warning', 'correo');
+                console.log('correo', this.correo);
             }
             else if(this.fecha_nacimiento.trim() === ''){
                 show_alerta('Escribe la fecha de nacimiento', 'warning', 'fecha_nacimiento');
@@ -207,7 +291,7 @@ export default {
                         fecha_ingreso: this.fecha_ingreso,
                         password: this.password
                     }
-                    
+                    console.log('parametros', parametros);
                     const respuesta = await axios.post(this.url, parametros);
                     const status = respuesta.status;
                     const mensaje = respuesta.mensaje || 'Operación exitosa';
@@ -240,7 +324,8 @@ export default {
                     }
                 }
             }
-        }
+        },
+        
     }
 }
 </script>
@@ -261,5 +346,9 @@ export default {
 
 .modal-body {
     padding: 20px 30px;
+}
+/* Feedback visual para campos inválidos */
+.is-invalid {
+    border-color: #dc3545 !important;
 }
 </style>

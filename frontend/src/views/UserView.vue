@@ -87,7 +87,6 @@
     <!-- Componente de creación de usuario -->
     <UserCreateView
         ref="userCreateModal"
-        :roles="roles"
         @user-created="getUsers"
     />
     
