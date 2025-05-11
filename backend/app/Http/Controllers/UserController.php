@@ -14,12 +14,26 @@ use Illuminate\Http\Request;
 class UserController extends Controller
 {
     /**
-     * Metodo para devolver todos los usuarios
+     * Metodo para devolver todos los usuarios paginados (8 por página)
+     * Permite búsqueda por nombre, email o rut usando el parámetro 'search'
      * @return response json
      */
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(User::all(), 200);
+        $query = User::query();
+
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('nombre', 'like', "%$search%")
+                  ->orWhere('email', 'like', "%$search%")
+                  ->orWhere('rut', 'like', "%$search%");
+            });
+        }
+
+        $users = $query->orderBy('id', 'asc')->paginate(8);
+
+        return response()->json($users, 200);
     }
 
     /**

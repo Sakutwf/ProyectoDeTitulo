@@ -3,6 +3,7 @@ import HomeView from '../views/HomeView.vue'
 import CreateView from '../views/CreateView.vue'
 import EditView from '../views/EditView.vue'
 import UserView from '../views/UserView.vue'
+import ActividadView from '../views/ActividadView.vue'
 
 const routes = [
   {
@@ -29,6 +30,11 @@ const routes = [
     path: '/voluntarios',
     name: 'voluntarios',
     component: UserView
+  },
+  {
+    path: '/actividades',
+    name: 'Actividades',
+    component: ActividadView
   }
 ]
 

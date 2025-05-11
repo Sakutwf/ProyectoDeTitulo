@@ -8,13 +8,19 @@ class Actividad extends Model
 {
     protected $fillable = [
         'id',
-        'nombre',
+        'evento_id',
+        'planilla',
         'tipo',
-        'fecha_inicio',
-        'fecha_termino',
-        'Descripcion',
-        'numero_beneficiarios',
+        'N_beneficiarios',
         'created_at',
         'updated_at'
     ];
+
+    public function evento()
+    {
+        return $this->belongsTo(Evento::class, 'evento_id');
+    }
+
+    // Ejemplo de consulta con eager loading:
+    // Actividad::with('evento')->get();
 }
