@@ -21,6 +21,11 @@
                     <i class="fa-solid fa-calendar-check me-2"></i> Actividades
                 </router-link>
             </li>
+            <li class="nav-item" :class="{ active: activeLink === 'eventos' }">
+                <router-link to="/eventos" class="nav-link" @click="setActive('eventos')">
+                    <i class="fa-solid fa-list me-2"></i> Eventos
+                </router-link>
+            </li>
             <li class="nav-item" :class="{ active: activeLink === 'donaciones' }">
                 <router-link to="/donaciones" class="nav-link" @click="setActive('donaciones')">
                     <i class="fa-solid fa-hand-holding-heart me-2"></i> Donaciones
@@ -61,6 +66,7 @@ export default {
         else if (path.includes('beneficiarios')) this.activeLink = 'beneficiarios';
         else if (path.includes('voluntarios')) this.activeLink = 'voluntarios';
         else if (path.includes('actividades')) this.activeLink = 'actividades';
+        else if (path.includes('eventos')) this.activeLink = 'eventos';
         else if (path.includes('donaciones')) this.activeLink = 'donaciones';
         else if (path.includes('capacitaciones')) this.activeLink = 'capacitaciones';
         else if (path.includes('configuracion')) this.activeLink = 'configuracion';

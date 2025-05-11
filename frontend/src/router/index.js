@@ -4,6 +4,7 @@ import CreateView from '../views/CreateView.vue'
 import EditView from '../views/EditView.vue'
 import UserView from '../views/UserView.vue'
 import ActividadView from '../views/ActividadView.vue'
+import EventoView from '@/views/EventoView.vue'
 
 const routes = [
   {
@@ -30,6 +31,11 @@ const routes = [
     path: '/voluntarios',
     name: 'voluntarios',
     component: UserView
+  },
+  {
+    path: '/eventos',
+    name: 'Eventos',
+    component: EventoView
   },
   {
     path: '/actividades',

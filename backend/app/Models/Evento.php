@@ -11,7 +11,7 @@ class Evento extends Model
         'nombre',
         'fecha_inicio',
         'fecha_termino',
-        'Descripcion',
+        'descripcion',
         'tipo',
         'created_at',
         'updated_at'

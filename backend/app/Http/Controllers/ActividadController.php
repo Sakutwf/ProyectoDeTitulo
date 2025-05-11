@@ -83,7 +83,7 @@ class ActividadController extends Controller
         $actividad->evento_id = $request->evento_id;
         $actividad->planilla = $request->planilla;
         $actividad->tipo = $request->tipo;
-        $actividad->n_beneficiarios = $request->n_beneficiarios;
+        $actividad->N_beneficiarios = $request->N_beneficiarios;
         $actividad->save();
         return response()->json($actividad, 200);
     }

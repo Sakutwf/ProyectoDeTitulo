@@ -8,11 +8,24 @@ use Illuminate\Http\Request;
 class EventoController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of the resource paginated (8 per page) and searchable.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Evento::all(), 200);
+        $query = Evento::query();
+
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('nombre', 'like', "%$search%")
+                  ->orWhere('tipo', 'like', "%$search%")
+                  ->orWhere('Descripcion', 'like', "%$search%");
+            });
+        }
+
+        $eventos = $query->orderBy('id', 'asc')->paginate(8);
+
+        return response()->json($eventos, 200);
     }
 
     /**
@@ -33,7 +46,7 @@ class EventoController extends Controller
             $evento->nombre = $request->nombre;
             $evento->fecha_inicio = $request->fecha_inicio;
             $evento->fecha_termino = $request->fecha_termino;
-            $evento->Descripcion = $request->Descripcion;
+            $evento->descripcion = $request->descripcion;
             $evento->tipo = $request->tipo;
             $evento->save();
             return response()->json($evento, 201);
@@ -59,7 +72,7 @@ class EventoController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+         * Update the specified resource in storage.
      */
     public function update($id, Request $request)
     {
@@ -67,7 +80,7 @@ class EventoController extends Controller
         $evento->nombre = $request->nombre;
         $evento->fecha_inicio = $request->fecha_inicio;
         $evento->fecha_termino = $request->fecha_termino;
-        $evento->Descripcion = $request->Descripcion;
+        $evento->descripcion = $request->descripcion;
         $evento->tipo = $request->tipo;
         $evento->save();
         return response()->json($evento, 200);
