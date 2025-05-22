@@ -18,12 +18,12 @@
             </li>
             <li class="nav-item" :class="{ active: activeLink === 'actividades' }">
                 <router-link to="/actividades" class="nav-link" @click="setActive('actividades')">
-                    <i class="fa-solid fa-calendar-check me-2"></i> Actividades
+                    <i class="fa-solid fa-list me-2"></i> Actividades
                 </router-link>
             </li>
             <li class="nav-item" :class="{ active: activeLink === 'eventos' }">
                 <router-link to="/eventos" class="nav-link" @click="setActive('eventos')">
-                    <i class="fa-solid fa-list me-2"></i> Eventos
+                    <i class="fa-solid fa-calendar-check me-2"></i> Eventos
                 </router-link>
             </li>
             <li class="nav-item" :class="{ active: activeLink === 'donaciones' }">

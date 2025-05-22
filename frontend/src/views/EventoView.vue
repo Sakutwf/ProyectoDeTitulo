@@ -85,6 +85,11 @@
       ref="eventoEditModal"
       @evento-updated="onEventoUpdated"
     />
+    <!-- Modal de creación de evento -->
+    <EventoCreateView
+      ref="eventoCreateModal"
+      @evento-created="onEventoCreated"
+    />
   </div>
 </template>
 
@@ -93,6 +98,7 @@ import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import SidebarMenu from '../components/SidebarMenu.vue'
 import EventoEditView from './EventoEditView.vue'
+import EventoCreateView from './EventoCreateView.vue'
 import Swal from 'sweetalert2'
 
 const eventos = ref([])
@@ -106,6 +112,20 @@ const selectedEventoId = ref(null)
 
 function formatDate(dateString) {
   if (!dateString) return '-'
+  // Si el string es del tipo ddmmaaaa (ej: 12062024)
+  if (/^\d{8}$/.test(dateString)) {
+    const day = parseInt(dateString.slice(0, 2), 10)
+    const month = parseInt(dateString.slice(2, 4), 10) - 1
+    const year = parseInt(dateString.slice(4, 8), 10)
+    const date = new Date(Date.UTC(year, month, day))
+    return date.toLocaleDateString()
+  }
+  // Si es formato ISO (YYYY-MM-DD o YYYY-MM-DDTHH:mm:ssZ)
+  if (/^\d{4}-\d{2}-\d{2}/.test(dateString)) {
+    // Solo toma la parte de la fecha
+    return dateString.slice(0, 10).split('-').reverse().join('-')
+  }
+  // Si no, usar el parseo normal
   const date = new Date(dateString)
   return date.toLocaleDateString()
 }
@@ -172,10 +192,15 @@ async function eliminarEvento(id) {
 }
 
 function abrirModalNuevoEvento() {
-  // Aquí irá la lógica para abrir el modal de creación de evento
+  eventoCreateModal.value.show()
+}
+
+function onEventoCreated() {
+  fetchEventos(meta.value.current_page)
 }
 
 const eventoEditModal = ref(null)
+const eventoCreateModal = ref(null)
 
 onMounted(() => fetchEventos())
 </script>

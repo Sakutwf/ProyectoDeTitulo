@@ -8,6 +8,9 @@
       <div class="content-header">
         <div class="d-flex justify-content-between align-items-center">
           <h3 class="m-0"><i class="fa-solid fa-list me-2"></i>Gestión de Actividades</h3>
+          <button class="btn btn-danger btn-sm" @click="abrirModalNuevaActividad">
+            <i class="fa-solid fa-calendar-plus me-1"></i> Nueva Actividad
+          </button>
         </div>
       </div>
       <div class="content">
@@ -95,6 +98,11 @@
       ref="actividadEditModal"
       @actividad-updated="onActividadUpdated"
     />
+    <!-- Modal de creación de actividad -->
+    <ActividadCreateView
+      ref="actividadCreateModal"
+      @actividad-created="onActividadCreated"
+    />
   </div>
 </template>
 
@@ -103,6 +111,7 @@ import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import SidebarMenu from '../components/SidebarMenu.vue'
 import ActividadEditView from './ActividadEditView.vue'
+import ActividadCreateView from './ActividadCreateView.vue'
 import Swal from 'sweetalert2'
 
 const actividades = ref([])
@@ -182,6 +191,16 @@ async function eliminarActividad(id) {
 }
 
 const actividadEditModal = ref(null)
+
+function abrirModalNuevaActividad() {
+  actividadCreateModal.value.show()
+}
+
+function onActividadCreated() {
+  fetchActividades(meta.value.current_page)
+}
+
+const actividadCreateModal = ref(null)
 
 onMounted(() => fetchActividades())
 </script>

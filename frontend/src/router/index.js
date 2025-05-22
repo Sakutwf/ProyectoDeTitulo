@@ -5,6 +5,7 @@ import EditView from '../views/EditView.vue'
 import UserView from '../views/UserView.vue'
 import ActividadView from '../views/ActividadView.vue'
 import EventoView from '@/views/EventoView.vue'
+import HistorialView from '../views/HistorialView.vue'
 
 const routes = [
   {
@@ -34,13 +35,18 @@ const routes = [
   },
   {
     path: '/eventos',
-    name: 'Eventos',
+    name: 'eventos',
     component: EventoView
   },
   {
     path: '/actividades',
-    name: 'Actividades',
+    name: 'actividades',
     component: ActividadView
+  },
+  {
+    path: '/historial/:id',
+    name: 'HistorialView',
+    component: HistorialView
   }
 ]
 

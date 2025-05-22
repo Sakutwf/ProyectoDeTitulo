@@ -29,6 +29,7 @@
                                         <th class="fw-semibold">Grupo sanguíneo</th>
                                         <th class="fw-semibold">Factor Rh</th>
                                         <th class="fw-semibold">Fecha de ingreso</th>
+                                        <th class="fw-semibold text-center">Historial</th>
                                         <th class="fw-semibold text-center">Acciones</th>
                                     </tr>
                                 </thead>
@@ -41,7 +42,15 @@
                                                     <span class="initials">{{ getInitials(user.nombre) }}</span>
                                                 </div>
                                                 <div class="ms-3">
-                                                    <h6 class="mb-0">{{ user.nombre }}</h6>
+                                                    <h6 class="mb-0">
+                                                        <router-link
+                                                            :to="{ name: 'HistorialView', params: { id: user.id } }"
+                                                            class="text-decoration-none text-dark"
+                                                            style="cursor:pointer;"
+                                                        >
+                                                            {{ user.nombre }}
+                                                        </router-link>
+                                                    </h6>
                                                     <span class="text-muted small">{{ user.email }}</span>
                                                 </div>
                                             </div>
@@ -55,6 +64,15 @@
                                         <td class="text-center">{{ user.grupo_sanguineo }}</td>
                                         <td class="text-center">{{ user.factor_rh }}</td>
                                         <td>{{ formatDate(user.fecha_ingreso) }}</td>
+                                        <td class="text-center">
+                                            <router-link
+                                                :to="{ name: 'HistorialView', params: { id: user.id } }"
+                                                class="btn btn-sm btn-danger"
+                                                style="color: #fff;"
+                                            >
+                                                Ver Historial
+                                            </router-link>
+                                        </td>
                                         <td>
                                             <div class="d-flex justify-content-center">
                                                 <button @click="editUser(user.id)" class="btn btn-sm btn-outline-primary me-2" title="Editar">
@@ -67,7 +85,7 @@
                                         </td>
                                     </tr>
                                     <tr v-if="!users || users.length === 0">
-                                        <td colspan="10" class="text-center py-3">No hay usuarios disponibles</td>
+                                        <td colspan="11" class="text-center py-3">No hay usuarios disponibles</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -214,9 +232,23 @@
                 return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
             },
             formatDate(dateString) {
-                if (!dateString) return '';
-                const date = new Date(dateString);
-                return date.toLocaleDateString();
+                if (!dateString) return '-'
+                // Si el string es del tipo ddmmaaaa (ej: 12062024)
+                if (/^\d{8}$/.test(dateString)) {
+                    const day = parseInt(dateString.slice(0, 2), 10)
+                    const month = parseInt(dateString.slice(2, 4), 10) - 1
+                    const year = parseInt(dateString.slice(4, 8), 10)
+                    const date = new Date(Date.UTC(year, month, day))
+                    return date.toLocaleDateString()
+                }
+                // Si es formato ISO (YYYY-MM-DD o YYYY-MM-DDTHH:mm:ssZ)
+                if (/^\d{4}-\d{2}-\d{2}/.test(dateString)) {
+                    // Solo toma la parte de la fecha
+                    return dateString.slice(0, 10).split('-').reverse().join('-')
+                }
+                // Si no, usar el parseo normal
+                const date = new Date(dateString)
+                return date.toLocaleDateString()
             },
             getRoleBadgeClass(role) {
                 const roleMap = {
