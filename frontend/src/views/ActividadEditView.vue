@@ -42,7 +42,13 @@
               <!-- Campos de Actividad -->
               <div class="col-md-6">
                 <label class="form-label">Planilla</label>
-                <input type="text" class="form-control" v-model="planilla">
+                <!-- Selector de usuarios para la planilla -->
+                <label class="form-label mt-2">Usuarios asignados a la Planilla</label>
+                <select class="form-select" multiple v-model="selectedUserIds">
+                  <option v-for="user in allUsers" :key="user.id" :value="user.id">
+                    {{ user.nombre }}
+                  </option>
+                </select>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Tipo Actividad</label>
@@ -82,7 +88,6 @@ export default {
   data() {
     return {
       id: null,
-      planilla: '',
       tipo: '',
       N_beneficiarios: 0,
       evento_id: null,
@@ -91,7 +96,9 @@ export default {
       evento_fecha_termino: '',
       evento_descripcion: '',
       evento_tipo: '',
-      modalInstance: null
+      modalInstance: null,
+      allUsers: [],
+      selectedUserIds: []
     }
   },
   watch: {
@@ -107,6 +114,12 @@ export default {
   },
   mounted() {
     this.modalInstance = new Modal(document.getElementById('editActividadModal'));
+    // Cargar todos los usuarios
+    axios.get('http://localhost:8000/api/users').then(res => {
+      this.allUsers = res.data;
+    }).catch(() => {
+      this.allUsers = [];
+    });
   },
   methods: {
     show() {
@@ -120,10 +133,11 @@ export default {
       try {
         const res = await axios.get(`http://localhost:8000/api/actividad/${this.id}`);
         // Cargar datos de actividad
-        this.planilla = res.data.planilla;
         this.tipo = res.data.tipo;
         this.N_beneficiarios = res.data.N_beneficiarios;
         this.evento_id = res.data.evento_id;
+        // Cargar usuarios asignados a la actividad
+        this.selectedUserIds = res.data.users ? res.data.users.map(u => u.id) : [];
         // Cargar datos de evento relacionado
         if (res.data.evento) {
           this.evento_nombre = res.data.evento.nombre;
@@ -150,7 +164,7 @@ export default {
         });
         // Actualizar actividad
         await axios.put(`http://localhost:8000/api/actividad/${this.id}`, {
-          planilla: this.planilla,
+          planilla: this.selectedUserIds, // planilla es la lista de IDs de usuarios
           tipo: this.tipo,
           N_beneficiarios: this.N_beneficiarios,
           evento_id: this.evento_id

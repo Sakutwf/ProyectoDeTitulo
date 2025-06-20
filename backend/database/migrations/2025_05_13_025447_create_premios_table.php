@@ -17,7 +17,6 @@ return new class extends Migration
             $table->enum('tipo', ['taller','curso','seminario','otro']);
             $table->string('nombre');
             $table->date('fecha');
-            $table->integer('porcentaje_asistencia')->nullable();
             $table->text('observaciones')->nullable();
             $table->timestamps();
         });

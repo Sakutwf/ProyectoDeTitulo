@@ -15,16 +15,14 @@ return new class extends Migration
          * los datos son:
          * id
          * evento_id
-         * planilla
          * tipo
          * N_beneficiarios
          */
         Schema::create('actividads', function (Blueprint $table) {
             $table->id();
             $table->foreignId('evento_id')->constrained('eventos')->onDelete('cascade');
-            $table->string('planilla');
             $table->string('tipo');
-            $table->integer('N_beneficiarios');
+            $table->integer('N_beneficiarios')->nullable();
             $table->timestamps();
         });
     }

@@ -11,7 +11,6 @@ class Titulo extends Model
         'tipo',
         'nombre',
         'fecha',
-        'porcentaje_asistencia',
         'observaciones'
     ];
 

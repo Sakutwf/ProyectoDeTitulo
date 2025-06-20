@@ -153,7 +153,7 @@
                 roles: [
                     { id: 1, name: 'Administrador' },
                     { id: 2, name: 'Voluntario' },
-                ]
+                ],
             }
         },
         mounted() {

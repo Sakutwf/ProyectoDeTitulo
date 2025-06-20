@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('actividades', function (Blueprint $table) {
+        Schema::create('histactividades', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->enum('tipo', ['taller','curso','seminario','otro']);
             $table->string('nombre');
             $table->date('fecha');
-            $table->integer('porcentaje_asistencia')->nullable();
+            $table->boolean('asistencia')->nullable();
             $table->text('observaciones')->nullable();
             $table->timestamps();
         });
@@ -28,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('actividades');
+        Schema::dropIfExists('histactividades');
     }
 };

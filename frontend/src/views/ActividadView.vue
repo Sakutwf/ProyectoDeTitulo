@@ -47,11 +47,27 @@
                     <td>
                       <span class="badge bg-cruz-roja">{{ actividad.evento?.tipo || '-' }}</span>
                     </td>
-                    <td>{{ actividad.planilla }}</td>
+                    <td>
+                      <template v-if="actividad.users && actividad.users.length > 0">
+                        <button class="btn btn-link p-0" @click="mostrarVoluntarios(actividad)" title="Ver voluntarios">
+                          <i class="fa-solid fa-users text-primary"></i>
+                        </button>
+                      </template>
+                      <template v-else>
+                        <span
+                          class="badge bg-cruz-roja"
+                          style="cursor:pointer"
+                          @click="abrirAgregarVoluntarios(actividad)"
+                          title="Agregar voluntarios"
+                        >
+                          Agregar voluntarios
+                        </span>
+                      </template>
+                    </td>
                     <td>
                       <span class="badge bg-secondary">{{ actividad.tipo }}</span>
                     </td>
-                    <td>{{ actividad.n_beneficiarios }}</td>
+                    <td>{{ actividad.N_beneficiarios }}</td>
                     <td>
                       <div class="d-flex justify-content-center">
                         <button @click="editActividad(actividad.id)" class="btn btn-sm btn-outline-primary me-2" title="Editar">
@@ -103,6 +119,49 @@
       ref="actividadCreateModal"
       @actividad-created="onActividadCreated"
     />
+    <!-- Modal para agregar voluntarios a la planilla -->
+    <div class="modal fade" id="agregarVoluntariosModal" tabindex="-1" aria-labelledby="agregarVoluntariosModalLabel" aria-hidden="true" ref="agregarVoluntariosModal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title" id="agregarVoluntariosModalLabel">
+              <i class="fa-solid fa-user-plus me-2"></i>Agregar voluntarios a la actividad
+            </h5>
+            <button type="button" class="btn btn-danger btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar">
+              <i class="fa-solid fa-times"></i>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div v-if="voluntariosDisponibles.length === 0">
+              No hay voluntarios disponibles.
+            </div>
+            <div v-else>
+              <div class="mb-2">Seleccione voluntarios:</div>
+              <ul class="list-group">
+                <li v-for="user in voluntariosDisponibles" :key="user.id" class="list-group-item d-flex align-items-center">
+                  <input
+                    class="form-check-input me-2"
+                    type="checkbox"
+                    :id="'voluntario-' + user.id"
+                    :value="user.id"
+                    v-model="voluntariosSeleccionados"
+                  >
+                  <label class="form-check-label" :for="'voluntario-' + user.id">
+                    {{ user.nombre || user.name || user.email }}
+                  </label>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            <button type="button" class="btn btn-danger" @click="guardarVoluntarios">
+              <i class="fa-solid fa-save me-1"></i>Asociar Voluntarios
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -113,6 +172,7 @@ import SidebarMenu from '../components/SidebarMenu.vue'
 import ActividadEditView from './ActividadEditView.vue'
 import ActividadCreateView from './ActividadCreateView.vue'
 import Swal from 'sweetalert2'
+import * as bootstrap from 'bootstrap'
 
 const actividades = ref([])
 const meta = ref({
@@ -201,6 +261,90 @@ function onActividadCreated() {
 }
 
 const actividadCreateModal = ref(null)
+
+function mostrarVoluntarios(actividad) {
+  if (actividad.users && actividad.users.length) {
+    const lista = actividad.users.map(u => {
+      const nombre = u.nombre || u.name || u.email || `ID: ${u.id}`;
+      return `<li>
+        <a href="/usuarios/${u.id}/historial" target="_blank" style="text-decoration:underline;color:#222;">
+          ${nombre}
+        </a>
+      </li>`;
+    }).join('');
+    Swal.fire({
+      title: `Voluntarios asignados a la actividad (${actividad.users.length})`,
+      html: `<label><ul style="list-style:none;padding-left:0">${lista}</ul></label>`,
+      showConfirmButton: true,
+      confirmButtonText: 'Cerrar',
+      customClass: {
+        confirmButton: 'btn btn-danger'
+      },
+      buttonsStyling: false
+    });
+  } else {
+    Swal.fire({
+      title: 'Voluntarios asignados a la actividad (0)',
+      html: '<label>No hay voluntarios asignados.</label>',
+      showConfirmButton: true,
+      confirmButtonText: 'Cerrar',
+      customClass: {
+        confirmButton: 'btn btn-danger'
+      },
+      buttonsStyling: false
+    });
+  }
+}
+
+const agregarVoluntariosModal = ref(null)
+const actividadSeleccionada = ref(null)
+const voluntariosDisponibles = ref([])
+const voluntariosSeleccionados = ref([])
+
+function abrirAgregarVoluntarios(actividad) {
+  // Guarda la actividad seleccionada y los usuarios ya asociados (si existen)
+  actividadSeleccionada.value = actividad
+  voluntariosSeleccionados.value = actividad.users ? actividad.users.map(u => u.id) : []
+  // Cargar usuarios con rol voluntario
+  axios.get('http://localhost:8000/api/users?role=voluntario')
+    .then(res => {
+      const users = Array.isArray(res.data)
+        ? res.data
+        : (res.data.data || []);
+      voluntariosDisponibles.value = users
+    })
+    .catch(() => {
+      voluntariosDisponibles.value = []
+    })
+    .finally(() => {
+      const modal = new bootstrap.Modal(agregarVoluntariosModal.value)
+      modal.show()
+    })
+}
+
+async function guardarVoluntarios() {
+  if (!actividadSeleccionada.value || voluntariosSeleccionados.value.length === 0) {
+    Swal.fire('Seleccione al menos un voluntario', '', 'warning')
+    return
+  }
+  try {
+    // Asocia la lista de usuarios seleccionados a la actividad seleccionada
+    await axios.put(`http://localhost:8000/api/actividad/${actividadSeleccionada.value.id}`, {
+      planilla: voluntariosSeleccionados.value
+    })
+    const modal = bootstrap.Modal.getInstance(agregarVoluntariosModal.value)
+    modal.hide()
+    fetchActividades(meta.value.current_page)
+    Swal.fire({
+      icon: 'success',
+      title: 'Voluntarios asociados correctamente',
+      showConfirmButton: true,
+      confirmButtonText: 'Cerrar'
+    })
+  } catch (e) {
+    Swal.fire('Error', 'No se pudo agregar voluntarios', 'error')
+  }
+}
 
 onMounted(() => fetchActividades())
 </script>
@@ -315,5 +459,25 @@ onMounted(() => fetchActividades())
 .cruz-roja-pagination .page-link i {
   font-size: 0.95em;
   vertical-align: middle;
+}
+
+.btn-danger.btn-close-white {
+  background-color: #e01e1e !important;
+  border: none;
+  color: #fff !important;
+  border-radius: 0.25rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 1.25rem;
+  line-height: 1;
+  opacity: 1;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-danger.btn-close-white:hover {
+  background-color: #b71c1c !important;
+  color: #fff !important;
 }
 </style>

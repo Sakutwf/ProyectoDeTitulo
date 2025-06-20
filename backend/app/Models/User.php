@@ -37,9 +37,9 @@ class User extends Authenticatable
      * NOTA: permite agregar directametne el valor de  la relacion a la consulta
      * @var array<string, string>
      */
-    protected $with = ['role_id'];
+    protected $with = ['role'];
 
-    public function role_id()
+    public function role()
     {
         return $this->belongsTo(Role::class, 'role_id');
     }
@@ -65,5 +65,10 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function actividades()
+    {
+        return $this->belongsToMany(Actividad::class)->withTimestamps();
     }
 }

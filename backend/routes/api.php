@@ -20,3 +20,6 @@ Route::apiResource('evento', EventoController::class);
 Route::apiResource('actividad', ActividadController::class);
 Route::apiResource('historial', HistorialController::class);
 Route::get('/users/{id}/historial', [\App\Http\Controllers\HistorialController::class, 'getByUserId']);
+Route::get('/users', function(){
+  return App\Models\User::select('id','nombre', 'role_id')->get();
+});

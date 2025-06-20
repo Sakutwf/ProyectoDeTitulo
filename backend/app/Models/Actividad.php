@@ -9,7 +9,6 @@ class Actividad extends Model
     protected $fillable = [
         'id',
         'evento_id',
-        'planilla',
         'tipo',
         'N_beneficiarios',
         'created_at',
@@ -21,6 +20,8 @@ class Actividad extends Model
         return $this->belongsTo(Evento::class, 'evento_id');
     }
 
-    // Ejemplo de consulta con eager loading:
-    // Actividad::with('evento')->get();
+    public function users()
+    {
+        return $this->belongsToMany(User::class)->withTimestamps();
+    }
 }

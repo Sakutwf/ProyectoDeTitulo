@@ -11,7 +11,6 @@ class Premio extends Model
         'tipo',
         'nombre',
         'fecha',
-        'porcentaje_asistencia',
         'observaciones'
     ];
 
