@@ -14,12 +14,26 @@ use Illuminate\Http\Request;
 class UserController extends Controller
 {
     /**
-     * Metodo para devolver todos los usuarios
+     * Metodo para devolver todos los usuarios paginados (8 por página)
+     * Permite búsqueda por nombre, email o rut usando el parámetro 'search'
      * @return response json
      */
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(User::all(), 200);
+        $query = User::query();
+
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('nombre', 'like', "%$search%")
+                  ->orWhere('email', 'like', "%$search%")
+                  ->orWhere('rut', 'like', "%$search%");
+            });
+        }
+
+        $users = $query->orderBy('id', 'asc')->paginate(8);
+
+        return response()->json($users, 200);
     }
 
     /**
@@ -46,7 +60,8 @@ class UserController extends Controller
             $user->grupo_sanguineo = $request->grupo_sanguineo;
             $user->factor_rh = $request->factor_rh;
             $user->password = bcrypt($request->password);
-            $user->role = $request->role;
+            $user->role_id = $request->role_id;
+            $user->filial_id = $request->filial_id;
             $user->save();
             return response()->json($user, 201);
         }catch(\Exception $e){
@@ -57,9 +72,9 @@ class UserController extends Controller
     /**
      * Metodo para devolver un usuario
      */
-    public function show(Request $request)
+    public function show($id)
     {
-        return response()->json(User::findOrFail($request->id), 200);
+        return response()->json(User::findOrFail($id), 200);
     }
 
     /**
@@ -77,7 +92,8 @@ class UserController extends Controller
         $user->grupo_sanguineo = $request->grupo_sanguineo;
         $user->factor_rh = $request->factor_rh;
         $user->password = bcrypt($request->password);
-        $user->role = $request->role;
+        $user->role_id = $request->role_id;
+        $user->filial_id = $request->filial_id;
         $user->save();
         return response()->json($user, 200);
     }
@@ -92,7 +108,7 @@ class UserController extends Controller
         $user = User::findOrFail($id);
         $user = $user->delete();  // Realiza el soft delete
 
-        return response()->json($user, 204);  // Responde con éxito
+        return response()->json($user, 200);  // Responde con éxito
     }
 
 }

@@ -2,24 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Activo;
 use Illuminate\Http\Request;
 
-class ActivoController extends Controller
+class NombreDelControlador extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
-    {
-        $activos = Activo::all();
-        return response()->json($activos);
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
     {
         //
     }
@@ -35,15 +25,7 @@ class ActivoController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Activo $activo)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Activo $activo)
+    public function show(string $id)
     {
         //
     }
@@ -51,7 +33,7 @@ class ActivoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Activo $activo)
+    public function update(Request $request, string $id)
     {
         //
     }
@@ -59,7 +41,7 @@ class ActivoController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Activo $activo)
+    public function destroy(string $id)
     {
         //
     }

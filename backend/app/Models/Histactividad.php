@@ -4,21 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Historial extends Model
+class Hist extends Model
 {
+    protected $table = 'histactividades';
     protected $fillable = [
         'id',
         'user_id',
-        'anio',
-        'cargo',
-        'taller',
-        'curso',
-        'seminario',
-        'porcentaje_de_asistencia',
-        'titulos',
-        'premios',
+        'tipo',
+        'nombre',
+        'fecha_inicio',
+        'asistencia',
         'observaciones',
-        'estudios',
         'created_at',
         'updated_at'
     ];

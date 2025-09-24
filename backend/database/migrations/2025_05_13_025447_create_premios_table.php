@@ -11,18 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        /**
-         * los datos son:
-         * id
-         * evento_id
-         * tipo
-         * N_beneficiarios
-         */
-        Schema::create('actividads', function (Blueprint $table) {
+        Schema::create('premios', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('evento_id')->constrained('eventos')->onDelete('cascade');
-            $table->string('tipo');
-            $table->integer('N_beneficiarios')->nullable();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->enum('tipo', ['taller','curso','seminario','otro']);
+            $table->string('nombre');
+            $table->date('fecha');
+            $table->text('observaciones')->nullable();
             $table->timestamps();
         });
     }
@@ -32,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('actividads');
+        Schema::dropIfExists('premios');
     }
 };
