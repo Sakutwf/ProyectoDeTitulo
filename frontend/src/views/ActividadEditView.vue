@@ -114,9 +114,11 @@ export default {
   },
   mounted() {
     this.modalInstance = new Modal(document.getElementById('editActividadModal'));
-    // Cargar todos los usuarios
-    axios.get('http://localhost:8000/api/users').then(res => {
-      this.allUsers = res.data;
+    axios.get('http://localhost:8000/api/voluntarios').then(res => {
+      const voluntarios = Array.isArray(res.data) ? res.data : (res.data.data || []);
+      this.allUsers = voluntarios
+        .map((voluntario) => voluntario.user)
+        .filter(Boolean);
     }).catch(() => {
       this.allUsers = [];
     });

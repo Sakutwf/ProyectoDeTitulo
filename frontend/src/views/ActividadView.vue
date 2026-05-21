@@ -267,7 +267,7 @@ function mostrarVoluntarios(actividad) {
     const lista = actividad.users.map(u => {
       const nombre = u.nombre || u.name || u.email || `ID: ${u.id}`;
       return `<li>
-        <a href="/usuarios/${u.id}/historial" target="_blank" style="text-decoration:underline;color:#222;">
+        <a href="/historial/${u.id}" target="_blank" style="text-decoration:underline;color:#222;">
           ${nombre}
         </a>
       </li>`;
@@ -305,13 +305,14 @@ function abrirAgregarVoluntarios(actividad) {
   // Guarda la actividad seleccionada y los usuarios ya asociados (si existen)
   actividadSeleccionada.value = actividad
   voluntariosSeleccionados.value = actividad.users ? actividad.users.map(u => u.id) : []
-  // Cargar usuarios con rol voluntario
-  axios.get('http://localhost:8000/api/users?role=voluntario')
+  axios.get('http://localhost:8000/api/voluntarios')
     .then(res => {
-      const users = Array.isArray(res.data)
+      const voluntarios = Array.isArray(res.data)
         ? res.data
         : (res.data.data || []);
-      voluntariosDisponibles.value = users
+      voluntariosDisponibles.value = voluntarios
+        .map(voluntario => voluntario.user)
+        .filter(Boolean)
     })
     .catch(() => {
       voluntariosDisponibles.value = []

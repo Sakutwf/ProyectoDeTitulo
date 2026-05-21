@@ -10,8 +10,7 @@ class HojaAnualController extends Controller
 {
     public function index()
     {
-        return response()->json(
-            HojaAnual::with('hojaDeVida.voluntario.user')->get(), 200);
+        return response()->json(HojaAnual::with('hojaDeVida.voluntario.user')->get(), 200);
     }
 
     public function store(Request $request)
@@ -31,12 +30,14 @@ class HojaAnualController extends Controller
     {
         $data = $this->validateHojaAnual($request, $hojas_anuale->id_hoja);
         $hojas_anuale->update($data);
+
         return response()->json($hojas_anuale->load('hojaDeVida.voluntario.user'), 200);
     }
 
     public function destroy(HojaAnual $hojas_anuale)
     {
         $hojas_anuale->delete();
+
         return response()->json(null, 204);
     }
 

@@ -1,36 +1,37 @@
 <template>
-  <div class="card mb-3">
-    <div class="card-header">
+  <div class="card mb-3 shadow-sm">
+    <div class="card-header bg-white">
       <h4 class="mb-0">
-        <button class="btn btn-link text-decoration-none" type="button" data-bs-toggle="collapse" :data-bs-target="'#collapse-' + historial.anio">
-          {{ historial.anio }}
+        <button class="btn btn-link text-decoration-none text-dark fw-semibold px-0" type="button" data-bs-toggle="collapse" :data-bs-target="'#collapse-' + historial.id_hoja">
+          Hoja anual {{ historial.anio }}
         </button>
       </h4>
     </div>
-    <div :id="'collapse-' + historial.anio" class="collapse show">
+    <div :id="'collapse-' + historial.id_hoja" class="collapse show">
       <div class="card-body">
-        <HistorialActividadList :actividades="historial.actividades" />
-        <div v-if="historial.titulos && historial.titulos.length">
-          <h5 class="mt-4">Títulos</h5>
-          <ul class="list-group mb-3">
-            <li v-for="t in historial.titulos" :key="t.id" class="list-group-item d-flex justify-content-between align-items-center">
-              <span>
-                <span class="badge bg-primary me-2">{{ t.fecha_obtenido }}</span>
-                {{ t.nombre }}
-              </span>
-            </li>
-          </ul>
-        </div>
-        <div v-if="historial.premios && historial.premios.length">
-          <h5 class="mt-4">Premios</h5>
-          <ul class="list-group">
-            <li v-for="p in historial.premios" :key="p.id" class="list-group-item d-flex justify-content-between align-items-center">
-              <span>
-                <span class="badge bg-warning text-dark me-2">{{ p.fecha_obtenido }}</span>
-                {{ p.nombre }}
-              </span>
-            </li>
-          </ul>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <div class="info-chip">
+              <span class="label">Cargo</span>
+              <strong>{{ historial.cargo || 'Sin cargo registrado' }}</strong>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="info-chip">
+              <span class="label">Asistencia</span>
+              <strong>{{ formatAttendance(historial.porcentaje_asistencia) }}</strong>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="info-chip">
+              <span class="label">Año</span>
+              <strong>{{ historial.anio }}</strong>
+            </div>
+          </div>
+          <div class="col-12">
+            <h6 class="text-uppercase text-muted small mb-2">Observaciones generales</h6>
+            <p class="mb-0">{{ historial.observaciones_generales || 'Sin observaciones registradas.' }}</p>
+          </div>
         </div>
       </div>
     </div>
@@ -38,6 +39,27 @@
 </template>
 
 <script setup>
-import HistorialActividadList from './HistorialActividadList.vue'
-defineProps({ historial: Object })
+const props = defineProps({ historial: Object })
+
+function formatAttendance(value) {
+  if (value === null || value === undefined || value === '') return 'Sin porcentaje'
+  return `${value}%`
+}
 </script>
+
+<style scoped>
+.info-chip {
+  background: #f8f9fa;
+  border: 1px solid #ececec;
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+}
+
+.label {
+  display: block;
+  color: #6c757d;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  margin-bottom: 0.3rem;
+}
+</style>

@@ -2,113 +2,238 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
 use App\Models\User;
+use App\Models\Voluntario;
 use Illuminate\Http\Request;
-
-/**
- * Controlador para el modelo User
- * Todos los metodos tienen que tener un formato de respuesta json
- * return response()->json(data, 200);
- */
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
+    private const USER_RELATIONS = [
+        'roles.permissions',
+        'voluntario.hojaDeVida.hojasAnuales',
+        'voluntario.hojaDeVida.antecedentes',
+    ];
+
     /**
-     * Metodo para devolver todos los usuarios paginados (8 por página)
-     * Permite búsqueda por nombre, email o rut usando el parámetro 'search'
-     * @return response json
+     * Metodo para devolver todos los usuarios paginados (8 por pagina).
      */
     public function index(Request $request)
     {
-        $query = User::query();
+        $query = User::with(self::USER_RELATIONS);
 
-        if ($request->has('search') && $request->search) {
+        if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('nombre', 'like', "%$search%")
-                  ->orWhere('email', 'like', "%$search%")
-                  ->orWhere('rut', 'like', "%$search%");
+
+            $query->where(function ($subQuery) use ($search) {
+                $subQuery->where('nombre', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('rut', 'like', "%{$search}%");
             });
         }
 
-        $users = $query->orderBy('id', 'asc')->paginate(8);
+        $users = $query->orderBy('id')->paginate(8);
+        $users->through(fn (User $user) => $this->prepareUserResponse($user));
 
         return response()->json($users, 200);
     }
 
     /**
-     * Metodo para buscar un usuario por su rut
+     * Metodo para buscar un usuario por su rut.
      */
     public function search(Request $request)
     {
-        return response()->json(User::where('rut', $request->rut)->get(), 200);
+        $users = User::with(self::USER_RELATIONS)
+                ->where('rut', $request->rut)
+                ->get()
+                ->map(fn (User $user) => $this->prepareUserResponse($user));
+
+        return response()->json($users, 200);
     }
 
     /**
-     * Metodo para crear un nuevo usuario
+     * Metodo para crear un nuevo usuario.
      */
     public function store(Request $request)
     {
-        try{
-            $user = new User();
-            $user->rut = $request->rut;
-            $user->nombre = $request->nombre;
-            $user->email = $request->email;
-            $user->telefono = $request->telefono;
-            $user->fecha_nacimiento = $request->fecha_nacimiento;
-            $user->fecha_ingreso = $request->fecha_ingreso;
-            $user->grupo_sanguineo = $request->grupo_sanguineo;
-            $user->factor_rh = $request->factor_rh;
-            $user->password = bcrypt($request->password);
-            $user->role_id = $request->role_id;
-            $user->filial_id = $request->filial_id;
-            $user->save();
-            return response()->json($user, 201);
-        }catch(\Exception $e){
-            return response()->json($e->getMessage(), 400);
-        }
+        $data = $this->validateUser($request);
+
+        $user = DB::transaction(function () use ($request, $data) {
+            $user = User::create($data);
+            $this->syncRoles($user, $request);
+            $this->syncVoluntario($user, $request);
+
+            return $this->prepareUserResponse($user->load(self::USER_RELATIONS));
+        });
+
+        return response()->json($user, 201);
     }
 
     /**
-     * Metodo para devolver un usuario
+     * Metodo para devolver un usuario.
      */
-    public function show($id)
+    public function show(User $user)
     {
-        return response()->json(User::findOrFail($id), 200);
+        return response()->json(
+            $this->prepareUserResponse($user->load(self::USER_RELATIONS)),
+            200
+        );
     }
 
     /**
-     * Metodo para actualizar un usuario
+     * Metodo para actualizar un usuario.
      */
-    public function update($id, Request $request)
+    public function update(Request $request, User $user)
     {
-        $user = User::findOrFail($id);
-        $user->rut = $request->rut;
-        $user->nombre = $request->nombre;
-        $user->email = $request->email;
-        $user->telefono = $request->telefono;
-        $user->fecha_nacimiento = $request->fecha_nacimiento;
-        $user->fecha_ingreso = $request->fecha_ingreso;
-        $user->grupo_sanguineo = $request->grupo_sanguineo;
-        $user->factor_rh = $request->factor_rh;
-        $user->password = bcrypt($request->password);
-        $user->role_id = $request->role_id;
-        $user->filial_id = $request->filial_id;
-        $user->save();
+        $data = $this->validateUser($request, $user->id);
+
+        $user = DB::transaction(function () use ($request, $user, $data) {
+            $user->update($data);
+            $this->syncRoles($user, $request);
+            $this->syncVoluntario($user, $request);
+
+            return $this->prepareUserResponse($user->load(self::USER_RELATIONS));
+        });
+
         return response()->json($user, 200);
     }
 
-    //Inician los metodos de softDeletes
-
     /**
-     * Metodo para marca un registro como eliminado (Soft Delete)
+     * Metodo para eliminar un usuario.
      */
-    public function destroy($id)
+    public function destroy(User $user)
     {
-        $user = User::findOrFail($id);
-        $user = $user->delete();  // Realiza el soft delete
+        $user->delete();
 
-        return response()->json($user, 200);  // Responde con éxito
+        return response()->json(null, 204);
     }
 
+    private function validateUser(Request $request, ?int $userId = null): array
+    {
+        $passwordRules = $userId === null
+            ? ['nullable', 'string', 'min:6', 'required_without:contrasena']
+            : ['nullable', 'string', 'min:6'];
+
+        $contrasenaRules = $userId === null
+            ? ['nullable', 'string', 'min:6', 'required_without:password']
+            : ['nullable', 'string', 'min:6'];
+
+        $validated = $request->validate([
+            'rut' => ['required', 'string', Rule::unique('users', 'rut')->ignore($userId)],
+            'nombre' => ['required', 'string'],
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($userId)],
+            'telefono' => ['required', 'string'],
+            'estado' => ['required', 'string'],
+            'password' => $passwordRules,
+            'contrasena' => $contrasenaRules,
+            'roles' => ['sometimes', 'array'],
+            'roles.*' => ['integer', Rule::exists('roles', 'id')],
+        ]);
+
+        $password = $validated['password'] ?? $validated['contrasena'] ?? null;
+
+        unset($validated['password'], $validated['contrasena']);
+
+        if ($password !== null) {
+            $validated['password'] = $password;
+        }
+
+        return $validated;
+    }
+
+    private function syncRoles(User $user, Request $request): void
+    {
+        if ($request->exists('roles')) {
+            $user->roles()->sync($request->input('roles', []));
+            $user->load('roles.permissions');
+        }
+    }
+
+    private function syncVoluntario(User $user, Request $request): void
+    {
+        if (! $this->hasVolunteerRole($user, $request)) {
+            return;
+        }
+
+        $voluntarioData = $request->only([
+            'fecha_ingreso',
+            'n_registro',
+            'factor_rh',
+            'grupo_sanguineo',
+            'fecha_nacimiento',
+        ]);
+
+        $validated = validator(array_merge(
+            optional($user->voluntario)->only([
+                'fecha_ingreso',
+                'n_registro',
+                'factor_rh',
+                'grupo_sanguineo',
+                'fecha_nacimiento',
+            ]) ?? [],
+            $voluntarioData
+        ), [
+            'fecha_ingreso' => ['required', 'date'],
+            'n_registro' => [
+                'required',
+                'string',
+                Rule::unique('voluntarios', 'n_registro')->ignore(optional($user->voluntario)->id),
+            ],
+            'factor_rh' => ['required', 'string'],
+            'grupo_sanguineo' => ['required', 'string'],
+            'fecha_nacimiento' => ['required', 'date'],
+        ])->validate();
+
+        $voluntario = $user->voluntario;
+
+        if ($voluntario instanceof Voluntario) {
+            $voluntario->update($validated);
+
+            if ($voluntario->hojaDeVida) {
+                $voluntario->hojaDeVida->update([
+                    'estado' => $user->estado,
+                ]);
+            } else {
+                $voluntario->hojaDeVida()->create([
+                    'fecha_creacion' => now()->toDateString(),
+                    'estado' => $user->estado,
+                ]);
+            }
+
+            return;
+        }
+
+        $voluntario = $user->voluntario()->create($validated);
+        $voluntario->hojaDeVida()->create([
+            'fecha_creacion' => now()->toDateString(),
+            'estado' => $user->estado,
+        ]);
+    }
+
+    private function hasVolunteerRole(User $user, Request $request): bool
+    {
+        if ($request->exists('roles')) {
+            $roleIds = $request->input('roles', []);
+
+            return Role::query()
+                ->whereIn('id', $roleIds)
+                ->where('slug', 'voluntario')
+                ->exists();
+        }
+
+        $user->loadMissing('roles');
+
+        return $user->roles->contains(fn (Role $role) => $role->slug === 'voluntario');
+    }
+
+    private function prepareUserResponse(User $user): User
+    {
+        if (! $user->hasRole('voluntario')) {
+            $user->setRelation('voluntario', null);
+        }
+
+        return $user;
+    }
 }

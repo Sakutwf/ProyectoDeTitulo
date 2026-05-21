@@ -4,7 +4,7 @@
             <div class="modal-content">
                 <div class="modal-header bg-danger text-white">
                     <h5 class="modal-title" id="editUserModalLabel">
-                        <i class="fa-solid fa-user-edit me-2"></i>Editar Usuario
+                        <i class="fa-solid fa-user-edit me-2"></i>Editar Registro
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -15,83 +15,133 @@
                                 <label for="edit-nombre" class="form-label">Nombre</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
-                                    <input type="text" class="form-control" id="edit-nombre" v-model="nombre" required>
+                                    <input id="edit-nombre" v-model="nombre" type="text" class="form-control" required>
                                 </div>
                             </div>
+
                             <div class="col-md-6">
                                 <label for="edit-rut" class="form-label">RUT</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-id-card"></i></span>
-                                    <input type="text" class="form-control" id="edit-rut" v-model="rut" required>
+                                    <input id="edit-rut" v-model="rut" type="text" class="form-control" required>
                                 </div>
                             </div>
+
                             <div class="col-md-6">
-                                <label for="edit-correo" class="form-label">Correo Electrónico</label>
+                                <label for="edit-correo" class="form-label">Correo electronico</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-at"></i></span>
-                                    <input type="email" class="form-control" id="edit-correo" v-model="correo" required>
+                                    <input id="edit-correo" v-model="correo" type="email" class="form-control" required>
                                 </div>
                             </div>
+
                             <div class="col-md-6">
-                                <label for="edit-telefono" class="form-label">Teléfono</label>
+                                <label for="edit-telefono" class="form-label">Telefono</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-phone"></i></span>
-                                    <input type="text" class="form-control" id="edit-telefono" v-model="telefono">
+                                    <input id="edit-telefono" v-model="telefono" type="text" class="form-control">
                                 </div>
                             </div>
+
                             <div class="col-md-6">
-                                <label for="edit-fecha_nacimiento" class="form-label">Fecha de Nacimiento</label>
+                                <label for="edit-estado" class="form-label">Estado</label>
                                 <div class="input-group">
-                                    <span class="input-group-text"><i class="fa-solid fa-calendar"></i></span>
-                                    <input type="date" class="form-control" id="edit-fecha_nacimiento" v-model="fecha_nacimiento">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="edit-fecha_ingreso" class="form-label">Fecha de Ingreso</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fa-solid fa-calendar-check"></i></span>
-                                    <input type="date" class="form-control" id="edit-fecha_ingreso" v-model="fecha_ingreso">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="edit-grupo_sanguineo" class="form-label">Grupo Sanguíneo</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fa-solid fa-tint"></i></span>
-                                    <select class="form-select" id="edit-grupo_sanguineo" v-model="grupo_sanguineo">
-                                        <option value="A">A</option>
-                                        <option value="B">B</option>
-                                        <option value="AB">AB</option>
-                                        <option value="O">O</option>
+                                    <span class="input-group-text"><i class="fa-solid fa-circle-check"></i></span>
+                                    <select id="edit-estado" v-model="estado" class="form-select" required>
+                                        <option value="ACTIVO">ACTIVO</option>
+                                        <option value="INACTIVO">INACTIVO</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <label for="edit-factor_rh" class="form-label">Factor RH</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fa-solid fa-tint"></i></span>
-                                    <select class="form-select" id="edit-factor_rh" v-model="factor_rh">
-                                        <option value="+">+</option>
-                                        <option value="-">-</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="edit-rol" class="form-label">Rol</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fa-solid fa-user-tag"></i></span>
-                                    <select id="edit-rol" v-model="rol" class="form-select" required>
-                                        <option value="">Seleccione un rol</option>
-                                        <option value="1">Administrador</option>
-                                        <option value="2">Voluntario</option>
-                                    </select>
-                                </div>
-                            </div>
+
                             <div class="col-md-12">
-                                <label for="edit-password" class="form-label">Contraseña</label>
+                                <label class="form-label">Roles</label>
+                                <div class="role-grid">
+                                    <label
+                                        v-for="role in rolesOptions"
+                                        :key="role.id"
+                                        class="role-card"
+                                        :class="{ selected: selectedRoles.includes(role.id) }"
+                                    >
+                                        <input
+                                            :id="`edit-role-${role.id}`"
+                                            v-model="selectedRoles"
+                                            class="form-check-input"
+                                            type="checkbox"
+                                            :value="role.id"
+                                        >
+                                        <div>
+                                            <div class="fw-semibold">{{ role.name }}</div>
+                                            <small class="text-muted">{{ role.description || 'Sin descripcion' }}</small>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    La ficha de voluntario depende del rol Voluntario.
+                                </div>
+                            </div>
+
+                            <template v-if="esVoluntario">
+                                <div class="col-md-6">
+                                    <label for="edit-fecha_nacimiento" class="form-label">Fecha de nacimiento</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-calendar"></i></span>
+                                        <input id="edit-fecha_nacimiento" v-model="fecha_nacimiento" type="date" class="form-control">
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="edit-fecha_ingreso" class="form-label">Fecha de ingreso</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-calendar-check"></i></span>
+                                        <input id="edit-fecha_ingreso" v-model="fecha_ingreso" type="date" class="form-control">
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label for="edit-grupo_sanguineo" class="form-label">Grupo sanguineo</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-tint"></i></span>
+                                        <select id="edit-grupo_sanguineo" v-model="grupo_sanguineo" class="form-select">
+                                            <option value="A">A</option>
+                                            <option value="B">B</option>
+                                            <option value="AB">AB</option>
+                                            <option value="O">O</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label for="edit-factor_rh" class="form-label">Factor RH</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-tint"></i></span>
+                                        <select id="edit-factor_rh" v-model="factor_rh" class="form-select">
+                                            <option value="+">+</option>
+                                            <option value="-">-</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label for="edit-n_registro" class="form-label">N registro</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-hashtag"></i></span>
+                                        <input id="edit-n_registro" v-model="n_registro" type="text" class="form-control">
+                                    </div>
+                                </div>
+                            </template>
+
+                            <div class="col-md-12">
+                                <label for="edit-password" class="form-label">Contrasena</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-key"></i></span>
-                                    <input type="password" class="form-control" id="edit-password" v-model="password" 
-                                           placeholder="Contraseña (Deja el campo en blanco si no deseas modificarla)">
+                                    <input
+                                        id="edit-password"
+                                        v-model="password"
+                                        type="password"
+                                        class="form-control"
+                                        placeholder="Dejala vacia si no deseas modificarla"
+                                    >
                                 </div>
                             </div>
                         </div>
@@ -127,16 +177,28 @@ export default {
             id: 0,
             nombre: '',
             rut: '',
-            rol: '',
             telefono: '',
             correo: '',
+            estado: 'ACTIVO',
             fecha_nacimiento: '',
-            grupo_sanguineo: '',
-            factor_rh: '',
+            grupo_sanguineo: 'O',
+            factor_rh: '+',
             fecha_ingreso: '',
+            n_registro: '',
             password: '',
+            rolesOptions: [],
+            selectedRoles: [],
             url: 'http://localhost:8000/api/user/',
+            rolesUrl: 'http://localhost:8000/api/role',
             modalInstance: null
+        };
+    },
+    computed: {
+        esVoluntario() {
+            return this.selectedRoleDetails.some((role) => role.slug === 'voluntario');
+        },
+        selectedRoleDetails() {
+            return this.rolesOptions.filter((role) => this.selectedRoles.includes(role.id));
         }
     },
     watch: {
@@ -150,110 +212,137 @@ export default {
             }
         }
     },
-    mounted() {
+    async mounted() {
         this.modalInstance = new Modal(document.getElementById('editUserModal'));
+        await this.fetchRoles();
     },
     methods: {
+        async fetchRoles() {
+            try {
+                const response = await axios.get(this.rolesUrl);
+                this.rolesOptions = response.data;
+            } catch (error) {
+                show_alerta('No se pudieron cargar los roles', 'error');
+            }
+        },
         show() {
             this.modalInstance.show();
         },
         hide() {
             this.modalInstance.hide();
         },
+        clearVoluntarioFields() {
+            this.fecha_nacimiento = '';
+            this.grupo_sanguineo = 'O';
+            this.factor_rh = '+';
+            this.fecha_ingreso = '';
+            this.n_registro = '';
+        },
         async getUser() {
             try {
+                if (this.rolesOptions.length === 0) {
+                    await this.fetchRoles();
+                }
+
                 const response = await axios.get(this.url + this.id);
-                this.nombre = response.data.nombre;
-                this.rut = response.data.rut;
-                this.rol = response.data.role_id.id;
-                this.telefono = response.data.telefono;
-                this.correo = response.data.email;
-                this.fecha_nacimiento = response.data.fecha_nacimiento;
-                this.grupo_sanguineo = response.data.grupo_sanguineo;
-                this.factor_rh = response.data.factor_rh;
-                this.fecha_ingreso = response.data.fecha_ingreso;
-                
-                console.log("Datos cargados:", {
-                    grupo_sanguineo: this.grupo_sanguineo,
-                    factor_rh: this.factor_rh
-                });
+                const user = response.data;
+                const voluntario = user.voluntario || null;
+
+                this.nombre = user.nombre;
+                this.rut = user.rut;
+                this.telefono = user.telefono;
+                this.correo = user.email;
+                this.estado = user.estado || 'ACTIVO';
+                this.selectedRoles = (user.roles || []).map((role) => role.id);
+                this.fecha_nacimiento = voluntario?.fecha_nacimiento || '';
+                this.grupo_sanguineo = voluntario?.grupo_sanguineo || 'O';
+                this.factor_rh = voluntario?.factor_rh || '+';
+                this.fecha_ingreso = voluntario?.fecha_ingreso || '';
+                this.n_registro = voluntario?.n_registro || '';
+                this.password = '';
             } catch (error) {
-                console.error("Error al cargar usuario:", error);
-                show_alerta('Error al cargar los datos del usuario', 'error');
+                show_alerta('Error al cargar los datos del registro', 'error');
             }
         },
         async guardar() {
-            if(this.nombre.trim() === ''){
-                show_alerta('Escribe el nombre', 'warning', 'nombre');
+            if (this.nombre.trim() === '') {
+                show_alerta('Escribe el nombre', 'warning', 'edit-nombre');
+                return;
             }
-            else if(this.rut.trim() === ''){
-                show_alerta('Escribe el rut', 'warning', 'rut');
+            if (this.rut.trim() === '') {
+                show_alerta('Escribe el rut', 'warning', 'edit-rut');
+                return;
             }
-            else if(!this.rol){
-                show_alerta('Selecciona un rol', 'warning', 'rol');
+            if (this.telefono.trim() === '') {
+                show_alerta('Escribe el telefono', 'warning', 'edit-telefono');
+                return;
             }
-            else if(this.telefono.trim() === ''){
-                show_alerta('Escribe el telefono', 'warning', 'telefono');
+            if (this.correo.trim() === '') {
+                show_alerta('Escribe el correo', 'warning', 'edit-correo');
+                return;
             }
-            else if(this.correo.trim() === ''){
-                show_alerta('Escribe el correo', 'warning', 'correo');
+            if (this.esVoluntario && this.fecha_nacimiento.trim() === '') {
+                show_alerta('Escribe la fecha de nacimiento', 'warning', 'edit-fecha_nacimiento');
+                return;
             }
-            else if(this.fecha_nacimiento.trim() === ''){
-                show_alerta('Escribe la fecha de nacimiento', 'warning', 'fecha_nacimiento');
+            if (this.esVoluntario && this.fecha_ingreso.trim() === '') {
+                show_alerta('Escribe la fecha de ingreso', 'warning', 'edit-fecha_ingreso');
+                return;
             }
-            else if(this.grupo_sanguineo.trim() === ''){
-                show_alerta('Selecciona un grupo sanguineo', 'warning', 'grupo_sanguineo');
+            if (this.esVoluntario && this.n_registro.trim() === '') {
+                show_alerta('Escribe el numero de registro', 'warning', 'edit-n_registro');
+                return;
             }
-            else if(this.factor_rh.trim() === ''){
-                show_alerta('Selecciona un factor Rh', 'warning', 'factor_rh');
-            }
-            else if(this.fecha_ingreso.trim() === ''){
-                show_alerta('Escribe la fecha de ingreso', 'warning', 'fecha_ingreso');
-            }
-            else {
-                try {
-                    var parametros = {
-                        nombre: this.nombre,
-                        rut: this.rut,
-                        role_id: this.rol,
-                        filial_id: 1,
-                        telefono: this.telefono,
-                        email: this.correo,
+
+            try {
+                const parametros = {
+                    nombre: this.nombre,
+                    rut: this.rut,
+                    telefono: this.telefono,
+                    email: this.correo,
+                    estado: this.estado,
+                    roles: this.selectedRoles
+                };
+
+                if (this.esVoluntario) {
+                    Object.assign(parametros, {
                         fecha_nacimiento: this.fecha_nacimiento,
                         grupo_sanguineo: this.grupo_sanguineo,
                         factor_rh: this.factor_rh,
                         fecha_ingreso: this.fecha_ingreso,
-                        password: this.password
-                    }
+                        n_registro: this.n_registro
+                    });
+                }
 
-                    if (this.password.trim() === '') {
-                        delete parametros.password;
-                    }
-                    
-                    const respuesta = await axios.put(this.url + this.id, parametros);
-                    const status = respuesta.status;
-                    const mensaje = respuesta.mensaje || 'Usuario Actualizado';
+                if (this.password.trim() !== '') {
+                    parametros.password = this.password;
+                }
 
-                    if (status === 200) {
-                        show_alerta(mensaje, 'success');
-                        this.hide();
-                        this.$emit('user-updated');
-                    } else {
-                        const errores = respuesta.errors || {};
-                        let listado = '';
-                        Object.keys(errores).forEach(key => {
-                            listado += errores[key][0] + '. ';
-                        });
-                        show_alerta(listado, 'error');
-                    }
-                } catch (error) {
-                    console.error("Error al actualizar:", error);
-                    show_alerta('Error al actualizar usuario', 'error');
+                const respuesta = await axios.put(this.url + this.id, parametros);
+
+                if (respuesta.status === 200) {
+                    show_alerta('Registro actualizado', 'success');
+                    this.hide();
+                    this.$emit('user-updated');
+                    return;
+                }
+
+                show_alerta('No se pudo actualizar el registro', 'error');
+            } catch (error) {
+                if (error.response && error.response.data) {
+                    const errores = error.response.data.errors || {};
+                    let listado = '';
+                    Object.keys(errores).forEach((key) => {
+                        listado += `${errores[key][0]}. `;
+                    });
+                    show_alerta(listado || 'Error al actualizar el registro', 'error');
+                } else {
+                    show_alerta('Error al actualizar el registro', 'error');
                 }
             }
         }
     }
-}
+};
 </script>
 
 <style scoped>
@@ -272,5 +361,27 @@ export default {
 
 .modal-body {
     padding: 20px 30px;
+}
+
+.role-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.role-card {
+    display: flex;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid #d9d9d9;
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.role-card.selected {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.15rem rgba(220, 53, 69, 0.15);
 }
 </style>

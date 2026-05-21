@@ -193,10 +193,11 @@ export default {
     async cargarVoluntariosYMostrarModal() {
       this.voluntariosSeleccionados = [];
       try {
-        const res = await axios.get('http://localhost:8000/api/users?role=voluntario');
-        this.voluntariosDisponibles = Array.isArray(res.data)
-          ? res.data
-          : (res.data.data || []);
+        const res = await axios.get('http://localhost:8000/api/voluntarios');
+        const voluntarios = Array.isArray(res.data) ? res.data : (res.data.data || []);
+        this.voluntariosDisponibles = voluntarios
+          .map((voluntario) => voluntario.user)
+          .filter(Boolean);
       } catch {
         this.voluntariosDisponibles = [];
       }

@@ -4,82 +4,63 @@ namespace App\Http\Controllers;
 
 use App\Models\Role;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class RoleController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        return response()->json(Role::all(), 200);
+        return response()->json(Role::with('permissions')->orderBy('name')->get(), 200);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        try {
-            $role = new Role();
-            $role->name = $request->name;
-            $role->save();
-            return response()->json($role, 201);
-        } catch (\Exception $e) {
-            return response()->json($e->getMessage(), 400);
-        }
+        $data = $this->validateRole($request);
+
+        $role = Role::create($data);
+        $role->permissions()->sync($request->input('permissions', []));
+
+        return response()->json($role->load('permissions'), 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Role $role)
     {
-        //
+        return response()->json($role->load('permissions'), 200);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Role $role)
+    public function update(Request $request, Role $role)
     {
-        //
-    }
+        $data = $this->validateRole($request, $role->id);
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update($id, Request $request)
-    {
-        try {
-            $role = Role::findOrFail($id);
-            $role->name = $request->name;
-            $role->save();
-            return response()->json($role, 200);
-        } catch (\Exception $e) {
-            return response()->json($e->getMessage(), 400);
+        $role->update($data);
+
+        if ($request->exists('permissions')) {
+            $role->permissions()->sync($request->input('permissions', []));
         }
+
+        return response()->json($role->load('permissions'), 200);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
+    public function destroy(Role $role)
     {
-        try {
-            $role = Role::findOrFail($id);
-            $role->delete();
-            return response()->json(['message' => 'Role deleted successfully'], 200);
-        } catch (\Exception $e) {
-            return response()->json($e->getMessage(), 400);
-        }
+        $role->delete();
+
+        return response()->json(null, 204);
+    }
+
+    private function validateRole(Request $request, ?int $roleId = null): array
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', Rule::unique('roles', 'name')->ignore($roleId)],
+            'slug' => ['nullable', 'string', Rule::unique('roles', 'slug')->ignore($roleId)],
+            'description' => ['nullable', 'string'],
+            'permissions' => ['sometimes', 'array'],
+            'permissions.*' => ['integer', Rule::exists('permissions', 'id')],
+        ]);
+
+        $validated['slug'] = $validated['slug'] ?? Str::slug($validated['name']);
+
+        return $validated;
     }
 }

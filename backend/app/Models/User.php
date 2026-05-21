@@ -7,8 +7,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-use App\Models\Role;
-
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -24,24 +22,18 @@ class User extends Authenticatable
         'nombre',
         'email',
         'telefono',
-        'fecha_nacimiento',
-        'fecha_ingreso',
-        'grupo_sanguineo',
-        'factor_rh',
+        'estado',
         'password',
-        'role_id',
     ];
 
-    /**
-     * Metodo para obtener el rol del usuario
-     * NOTA: permite agregar directametne el valor de  la relacion a la consulta
-     * @var array<string, string>
-     */
-    protected $with = ['role'];
-
-    public function role()
+    public function voluntario()
     {
-        return $this->belongsTo(Role::class, 'role_id');
+        return $this->hasOne(Voluntario::class);
+    }
+
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class)->with('permissions')->withTimestamps();
     }
 
     /**
@@ -70,5 +62,17 @@ class User extends Authenticatable
     public function actividades()
     {
         return $this->belongsToMany(Actividad::class)->withTimestamps();
+    }
+
+    public function hasRole(string $roleSlug): bool
+    {
+        return $this->roles->contains(fn (Role $role) => $role->slug === $roleSlug);
+    }
+
+    public function hasPermission(string $permissionSlug): bool
+    {
+        return $this->roles
+            ->flatMap(fn (Role $role) => $role->permissions)
+            ->contains(fn ($permission) => $permission->slug === $permissionSlug);
     }
 }

@@ -4,11 +4,11 @@
         <div class="content-wrapper">
             <div class="content-header">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h3 class="m-0"><i class="fa-solid fa-users me-2"></i>Gestión de Usuarios</h3>
+                    <h3 class="m-0"><i class="fa-solid fa-users me-2"></i>Gestion de Usuarios</h3>
                     <div class="d-flex">
                         <input v-model="search" @input="onSearch" type="text" class="form-control form-control-sm me-2" placeholder="Buscar usuario...">
                         <button class="btn btn-danger btn-sm" @click="abrirModalNuevoUsuario">
-                            <i class="fa-solid fa-user-plus me-1"></i> Nuevo Usuario
+                            <i class="fa-solid fa-user-plus me-1"></i> Nuevo Registro
                         </button>
                     </div>
                 </div>
@@ -23,13 +23,14 @@
                                         <th class="fw-semibold">#</th>
                                         <th class="fw-semibold">Usuario</th>
                                         <th class="fw-semibold">Rut</th>
-                                        <th class="fw-semibold">Rol</th>
-                                        <th class="fw-semibold">Teléfono</th>
-                                        <th class="fw-semibold">Fecha de nacimiento</th>
-                                        <th class="fw-semibold">Grupo sanguíneo</th>
-                                        <th class="fw-semibold">Factor Rh</th>
-                                        <th class="fw-semibold">Fecha de ingreso</th>
-                                        <th class="fw-semibold text-center">Historial</th>
+                                        <th class="fw-semibold">Roles</th>
+                                        <th class="fw-semibold">Estado</th>
+                                        <th class="fw-semibold">Telefono</th>
+                                        <th class="fw-semibold">Fecha nacimiento</th>
+                                        <th class="fw-semibold">Grupo sanguineo</th>
+                                        <th class="fw-semibold">Factor RH</th>
+                                        <th class="fw-semibold">Fecha ingreso</th>
+                                        <th class="fw-semibold text-center">Hoja de vida</th>
                                         <th class="fw-semibold text-center">Acciones</th>
                                     </tr>
                                 </thead>
@@ -44,12 +45,14 @@
                                                 <div class="ms-3">
                                                     <h6 class="mb-0">
                                                         <router-link
+                                                            v-if="user.voluntario"
                                                             :to="{ name: 'HistorialView', params: { id: user.id } }"
                                                             class="text-decoration-none text-dark"
-                                                            style="cursor:pointer;"
+                                                            style="cursor: pointer;"
                                                         >
                                                             {{ user.nombre }}
                                                         </router-link>
+                                                        <span v-else>{{ user.nombre }}</span>
                                                     </h6>
                                                     <span class="text-muted small">{{ user.email }}</span>
                                                 </div>
@@ -57,40 +60,57 @@
                                         </td>
                                         <td>{{ user.rut }}</td>
                                         <td>
-                                            <span :class="'badge ' + getRoleBadgeClass(user.role_id.name)">{{ user.role_id.name }}</span>
+                                            <div class="role-badges">
+                                                <span
+                                                    v-for="role in user.roles || []"
+                                                    :key="role.id"
+                                                    class="badge bg-light text-dark border"
+                                                >
+                                                    {{ role.name }}
+                                                </span>
+                                                <span v-if="!user.roles || user.roles.length === 0" class="text-muted small">
+                                                    Sin roles
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span :class="'badge ' + getStatusBadgeClass(user.estado)">
+                                                {{ user.estado || '-' }}
+                                            </span>
                                         </td>
                                         <td>{{ user.telefono }}</td>
-                                        <td>{{ formatDate(user.fecha_nacimiento) }}</td>
-                                        <td class="text-center">{{ user.grupo_sanguineo }}</td>
-                                        <td class="text-center">{{ user.factor_rh }}</td>
-                                        <td>{{ formatDate(user.fecha_ingreso) }}</td>
+                                        <td>{{ formatDate(user.voluntario?.fecha_nacimiento) }}</td>
+                                        <td class="text-center">{{ user.voluntario?.grupo_sanguineo || '-' }}</td>
+                                        <td class="text-center">{{ user.voluntario?.factor_rh || '-' }}</td>
+                                        <td>{{ formatDate(user.voluntario?.fecha_ingreso) }}</td>
                                         <td class="text-center">
                                             <router-link
+                                                v-if="user.voluntario"
                                                 :to="{ name: 'HistorialView', params: { id: user.id } }"
                                                 class="btn btn-sm btn-danger"
                                                 style="color: #fff;"
                                             >
                                                 Ver Historial
                                             </router-link>
+                                            <span v-else class="text-muted small">No aplica</span>
                                         </td>
                                         <td>
                                             <div class="d-flex justify-content-center">
                                                 <button @click="editUser(user.id)" class="btn btn-sm btn-outline-primary me-2" title="Editar">
                                                     <i class="fa-solid fa-edit"></i>
                                                 </button>
-                                                <button class="btn btn-sm btn-outline-danger" title="Eliminar" v-on:click="eliminar(user.id, user.nombre)">
+                                                <button class="btn btn-sm btn-outline-danger" title="Eliminar" @click="eliminar(user.id, user.nombre)">
                                                     <i class="fa-solid fa-trash"></i>
                                                 </button>
                                             </div>
                                         </td>
                                     </tr>
                                     <tr v-if="!users || users.length === 0">
-                                        <td colspan="11" class="text-center py-3">No hay usuarios disponibles</td>
+                                        <td colspan="12" class="text-center py-3">No hay usuarios disponibles</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-                        <!-- Paginación alineada a la derecha -->
                         <nav v-if="meta.last_page > 1" class="mt-3">
                             <ul class="pagination cruz-roja-pagination justify-content-end">
                                 <li class="page-item" :class="{ disabled: meta.current_page === 1 }">
@@ -114,155 +134,113 @@
         </div>
     </div>
 
-    <UserCreateView
-        ref="userCreateModal"
-        @user-created="getUsers"
-    />
-    <UserEditView
-        :userId="selectedUserId"
-        ref="userEditModal"
-        @user-updated="getUsers"
-    />
+    <UserCreateView ref="userCreateModal" @user-created="getUsers" />
+    <UserEditView :userId="selectedUserId" ref="userEditModal" @user-updated="getUsers" />
 </template>
 
 <script>
-    import axios from 'axios';
-    import { show_alerta } from '../funciones';
-    import Swal from 'sweetalert2';
-    import SidebarMenu from '../components/SidebarMenu.vue';
-    import UserEditView from './UserEditView.vue';
-    import UserCreateView from './UserCreateView.vue';
-    
-    export default {
-        name: 'UserView',
-        components: {
-            SidebarMenu,
-            UserEditView,
-            UserCreateView
+import axios from 'axios';
+import { show_alerta } from '../funciones';
+import Swal from 'sweetalert2';
+import SidebarMenu from '../components/SidebarMenu.vue';
+import UserEditView from './UserEditView.vue';
+import UserCreateView from './UserCreateView.vue';
+
+export default {
+    name: 'UserView',
+    components: {
+        SidebarMenu,
+        UserEditView,
+        UserCreateView
+    },
+    data() {
+        return {
+            users: [],
+            meta: {
+                current_page: 1,
+                last_page: 1,
+                from: 1
+            },
+            search: '',
+            selectedUserId: null
+        };
+    },
+    mounted() {
+        this.getUsers();
+    },
+    methods: {
+        async getUsers(page = 1) {
+            const params = { page };
+            if (this.search) params.search = this.search;
+
+            const response = await axios.get('http://127.0.0.1:8000/api/user', { params });
+            this.users = response.data.data;
+            this.meta = {
+                current_page: response.data.current_page,
+                last_page: response.data.last_page,
+                from: response.data.from
+            };
         },
-        data() {
-            return {
-                users: [],
-                meta: {
-                    current_page: 1,
-                    last_page: 1,
-                    from: 1
-                },
-                search: '',
-                selectedUserId: null,
-                roles: [
-                    { id: 1, name: 'Administrador' },
-                    { id: 2, name: 'Voluntario' },
-                ],
+        onSearch() {
+            this.getUsers(1);
+        },
+        goToPage(page) {
+            if (page >= 1 && page <= this.meta.last_page) {
+                this.getUsers(page);
             }
         },
-        mounted() {
-            this.getUsers();
-            this.getRoles();
+        editUser(userId) {
+            this.selectedUserId = userId;
+            setTimeout(() => {
+                this.$refs.userEditModal.show();
+            }, 100);
         },
-        methods: {
-            async getUsers(page = 1) {
-                let params = { page };
-                if (this.search) params.search = this.search;
-                const response = await axios.get('http://127.0.0.1:8000/api/user', { params });
-                // Laravel paginator returns { data, current_page, last_page, from, ... }
-                this.users = response.data.data;
-                this.meta = {
-                    current_page: response.data.current_page,
-                    last_page: response.data.last_page,
-                    from: response.data.from
-                };
-            },
-            onSearch() {
-                this.getUsers(1);
-            },
-            goToPage(page) {
-                if (page >= 1 && page <= this.meta.last_page) {
-                    this.getUsers(page);
+        abrirModalNuevoUsuario() {
+            this.$refs.userCreateModal.show();
+        },
+        async eliminar(id, nombre) {
+            const url = 'http://localhost:8000/api/user/' + id;
+            const swalWithBootstrapButtons = Swal.mixin({
+                customClass: { confirmButton: 'btn btn-success me-3', cancelButton: 'btn btn-danger' },
+                buttonsStyling: false
+            });
+            swalWithBootstrapButtons.fire({
+                title: 'Esta seguro de que desea eliminar a ' + nombre + '?',
+                text: 'Se perdera la informacion del registro',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: '<i class="fa-solid fa-check"></i> Si, eliminar',
+                cancelButtonText: '<i class="fa-solid fa-ban"></i> Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    axios.delete(url).then(() => {
+                        this.getUsers();
+                        show_alerta('Registro eliminado', 'success');
+                    }).catch(() => {
+                        show_alerta('Error al eliminar el registro', 'error');
+                    });
+                } else {
+                    show_alerta('Operacion cancelada', 'info');
                 }
-            },
-            async getRoles() {
-                try {
-                    const response = await axios.get('http://127.0.0.1:8000/api/role');
-                    if (response.data && Array.isArray(response.data)) {
-                        this.roles = response.data;
-                    }
-                } catch (error) {
-                    // Error al cargar roles
-                }
-            },
-            editUser(userId) {
-                this.selectedUserId = userId;
-                setTimeout(() => {
-                    this.$refs.userEditModal.show();
-                }, 100);
-            },
-            abrirModalNuevoUsuario() {
-                this.$refs.userCreateModal.show();
-            },
-            async eliminar(id, nombre){
-                var url = 'http://localhost:8000/api/user/' + id;
-                const swalWithBootstrapButtons = Swal.mixin({
-                    customClass: {confirmButton: 'btn btn-success me-3', cancelButton: 'btn btn-danger' },
-                    buttonsStyling: false
-                });
-                swalWithBootstrapButtons.fire({
-                    title: '¿Está seguro de que desea eliminar al usuario ' + nombre + '?',
-                    text: "Se perderá la información del usuario",
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: '<i class="fa-solid fa-check"></i>Sí, eliminar!',
-                    cancelButtonText: '<i class="fa-solid fa-ban"></i> Cancelar!'}).then((result) => {
-                        if (result.isConfirmed) {
-                            axios.delete(url).then(
-                                response => {
-                                    this.getUsers();
-                                    show_alerta('Usuario eliminado', 'success');
-                                }
-                            ).catch(error => {
-                                show_alerta('Error al eliminar el usuario', 'error');
-                            });
-                        }else{
-                            show_alerta('Operación cancelada', 'info');
-                        }
-                    })
-            },
-            getInitials(name) {
-                if (!name) return 'U';
-                return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-            },
-            formatDate(dateString) {
-                if (!dateString) return '-'
-                // Si el string es del tipo ddmmaaaa (ej: 12062024)
-                if (/^\d{8}$/.test(dateString)) {
-                    const day = parseInt(dateString.slice(0, 2), 10)
-                    const month = parseInt(dateString.slice(2, 4), 10) - 1
-                    const year = parseInt(dateString.slice(4, 8), 10)
-                    const date = new Date(Date.UTC(year, month, day))
-                    return date.toLocaleDateString()
-                }
-                // Si es formato ISO (YYYY-MM-DD o YYYY-MM-DDTHH:mm:ssZ)
-                if (/^\d{4}-\d{2}-\d{2}/.test(dateString)) {
-                    // Solo toma la parte de la fecha
-                    return dateString.slice(0, 10).split('-').reverse().join('-')
-                }
-                // Si no, usar el parseo normal
-                const date = new Date(dateString)
-                return date.toLocaleDateString()
-            },
-            getRoleBadgeClass(role) {
-                const roleMap = {
-                    'Admin': 'bg-danger',
-                    'Administrador': 'bg-danger',
-                    'Usuario': 'bg-primary',
-                    'Voluntario': 'bg-success',
-                    'Coordinador': 'bg-info',
-                    'Beneficiario': 'bg-warning'
-                };
-                return roleMap[role] || 'bg-secondary';
+            });
+        },
+        getInitials(name) {
+            if (!name) return 'U';
+            return name.split(' ').map((n) => n[0]).join('').toUpperCase().substring(0, 2);
+        },
+        formatDate(dateString) {
+            if (!dateString) return '-';
+            if (/^\d{4}-\d{2}-\d{2}/.test(dateString)) {
+                return dateString.slice(0, 10).split('-').reverse().join('-');
             }
+            const date = new Date(dateString);
+            return Number.isNaN(date.getTime()) ? '-' : date.toLocaleDateString();
+        },
+        getStatusBadgeClass(status) {
+            return status === 'ACTIVO' ? 'bg-danger' : 'bg-secondary';
         }
     }
+};
 </script>
 
 <style scoped>
@@ -330,29 +308,11 @@
     overflow: hidden;
 }
 
-.card-header {
-    padding: 15px 20px;
-}
-
-/* Estilos adicionales para el modal */
-.modal-header {
-    border-bottom: 0;
-}
-
-.modal-footer {
-    border-top: 0;
-}
-
 .modal-content {
     border-radius: 8px;
     border: none;
 }
 
-.modal-body {
-    padding: 20px 30px;
-}
-
-/* Estilos para el contenido principal */
 .content-wrapper {
     flex: 1;
     background-color: #f5f7fa;
@@ -372,6 +332,12 @@
 
 .d-flex {
     display: flex;
+}
+
+.role-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
 }
 
 .cruz-roja-pagination .page-link {
