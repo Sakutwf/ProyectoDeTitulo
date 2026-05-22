@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Voluntario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
@@ -15,6 +16,7 @@ class UserController extends Controller
         'roles.permissions',
         'voluntario.hojaDeVida.hojasAnuales',
         'voluntario.hojaDeVida.antecedentes',
+        'actividades.evento',
     ];
 
     /**
@@ -100,6 +102,28 @@ class UserController extends Controller
         return response()->json($user, 200);
     }
 
+    public function updateVolunteerPhoto(Request $request, User $user)
+    {
+        $request->validate([
+            'foto_perfil' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ]);
+
+        $voluntario = $user->voluntario;
+
+        if (! $voluntario instanceof Voluntario) {
+            return response()->json([
+                'message' => 'El usuario no tiene ficha de voluntario.',
+            ], 422);
+        }
+
+        $this->syncVoluntarioPhoto($request, $voluntario);
+
+        return response()->json(
+            $this->prepareUserResponse($user->fresh()->load(self::USER_RELATIONS)),
+            200
+        );
+    }
+
     /**
      * Metodo para eliminar un usuario.
      */
@@ -157,6 +181,8 @@ class UserController extends Controller
             return;
         }
 
+        $voluntario = $user->voluntario;
+
         $voluntarioData = $request->only([
             'fecha_ingreso',
             'n_registro',
@@ -164,6 +190,8 @@ class UserController extends Controller
             'grupo_sanguineo',
             'fecha_nacimiento',
         ]);
+
+        $fotoRules = ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'];
 
         $validated = validator(array_merge(
             optional($user->voluntario)->only([
@@ -173,7 +201,8 @@ class UserController extends Controller
                 'grupo_sanguineo',
                 'fecha_nacimiento',
             ]) ?? [],
-            $voluntarioData
+            $voluntarioData,
+            ['foto_perfil' => $request->file('foto_perfil')]
         ), [
             'fecha_ingreso' => ['required', 'date'],
             'n_registro' => [
@@ -184,12 +213,14 @@ class UserController extends Controller
             'factor_rh' => ['required', 'string'],
             'grupo_sanguineo' => ['required', 'string'],
             'fecha_nacimiento' => ['required', 'date'],
+            'foto_perfil' => $fotoRules,
         ])->validate();
 
-        $voluntario = $user->voluntario;
+        unset($validated['foto_perfil']);
 
         if ($voluntario instanceof Voluntario) {
             $voluntario->update($validated);
+            $this->syncVoluntarioPhoto($request, $voluntario);
 
             if ($voluntario->hojaDeVida) {
                 $voluntario->hojaDeVida->update([
@@ -206,6 +237,7 @@ class UserController extends Controller
         }
 
         $voluntario = $user->voluntario()->create($validated);
+        $this->syncVoluntarioPhoto($request, $voluntario);
         $voluntario->hojaDeVida()->create([
             'fecha_creacion' => now()->toDateString(),
             'estado' => $user->estado,
@@ -235,5 +267,19 @@ class UserController extends Controller
         }
 
         return $user;
+    }
+
+    private function syncVoluntarioPhoto(Request $request, Voluntario $voluntario): void
+    {
+        if (! $request->hasFile('foto_perfil')) {
+            return;
+        }
+
+        if ($voluntario->foto_perfil) {
+            Storage::disk('public')->delete($voluntario->foto_perfil);
+        }
+
+        $path = $request->file('foto_perfil')->store('voluntarios/fotos', 'public');
+        $voluntario->update(['foto_perfil' => $path]);
     }
 }

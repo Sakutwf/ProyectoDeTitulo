@@ -13,6 +13,11 @@ class Voluntario extends Model
         'factor_rh',
         'grupo_sanguineo',
         'fecha_nacimiento',
+        'foto_perfil',
+    ];
+
+    protected $appends = [
+        'foto_perfil_url',
     ];
 
     public function user()
@@ -23,5 +28,14 @@ class Voluntario extends Model
     public function hojaDeVida()
     {
         return $this->hasOne(HojaDeVida::class);
+    }
+
+    public function getFotoPerfilUrlAttribute(): ?string
+    {
+        if (! $this->foto_perfil) {
+            return null;
+        }
+
+        return url('/storage/'.ltrim($this->foto_perfil, '/'));
     }
 }

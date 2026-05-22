@@ -39,8 +39,14 @@
                                         <td>{{ (meta.from || 1) + i }}</td>
                                         <td>
                                             <div class="d-flex align-items-center py-2">
-                                                <div class="avatar-circle">
-                                                    <span class="initials">{{ getInitials(user.nombre) }}</span>
+                                                <div class="avatar-circle" :class="{ 'has-photo': Boolean(user.voluntario?.foto_perfil_url) }">
+                                                    <img
+                                                        v-if="user.voluntario?.foto_perfil_url"
+                                                        :src="user.voluntario.foto_perfil_url"
+                                                        :alt="`Foto de ${user.nombre}`"
+                                                        class="avatar-image"
+                                                    >
+                                                    <span v-else class="initials">{{ getInitials(user.nombre) }}</span>
                                                 </div>
                                                 <div class="ms-3">
                                                     <h6 class="mb-0">
@@ -280,10 +286,21 @@ export default {
     align-items: center;
     justify-content: center;
     font-weight: bold;
+    overflow: hidden;
+}
+
+.avatar-circle.has-photo {
+    background-color: #e8edf5;
 }
 
 .initials {
     font-size: 15px;
+}
+
+.avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .btn-outline-primary, .btn-outline-danger {

@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class RolePermissionApiTest extends TestCase
@@ -29,6 +31,7 @@ class RolePermissionApiTest extends TestCase
 
     public function test_it_creates_a_user_with_multiple_roles_and_volunteer_profile(): void
     {
+        Storage::fake('public');
         $voluntarioRole = Role::where('slug', 'voluntario')->firstOrFail();
         $secretarioRole = Role::where('slug', 'secretario-directiva')->firstOrFail();
 
@@ -45,9 +48,13 @@ class RolePermissionApiTest extends TestCase
             'factor_rh' => '+',
             'grupo_sanguineo' => 'B',
             'fecha_nacimiento' => '1999-08-15',
+            'foto_perfil' => UploadedFile::fake()->createWithContent(
+                'voluntaria.png',
+                base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9sOtTS4AAAAASUVORK5CYII=')
+            ),
         ];
 
-        $this->postJson('/api/user', $payload)
+        $this->post('/api/user', $payload)
             ->assertCreated()
             ->assertJsonPath('voluntario.n_registro', 'VOL-777')
             ->assertJsonFragment(['slug' => 'voluntario'])
@@ -59,6 +66,53 @@ class RolePermissionApiTest extends TestCase
         $this->assertTrue($user->hasRole('secretario-directiva'));
         $this->assertTrue($user->hasPermission('gestionar_voluntarios'));
         $this->assertNotNull($user->voluntario);
+        $this->assertNotNull($user->voluntario->foto_perfil);
+        Storage::disk('public')->assertExists($user->voluntario->foto_perfil);
+    }
+
+    public function test_it_allows_creating_a_volunteer_without_a_profile_photo(): void
+    {
+        $voluntarioRole = Role::where('slug', 'voluntario')->firstOrFail();
+
+        $payload = [
+            'rut' => '66.666.666-6',
+            'nombre' => 'Paula Silva',
+            'email' => 'paula@example.com',
+            'telefono' => '987654321',
+            'estado' => 'ACTIVO',
+            'password' => 'Secreta123',
+            'roles' => [$voluntarioRole->id],
+            'fecha_ingreso' => '2024-03-01',
+            'n_registro' => 'VOL-888',
+            'factor_rh' => '+',
+            'grupo_sanguineo' => 'A',
+            'fecha_nacimiento' => '2000-01-01',
+        ];
+
+        $this->post('/api/user', $payload)
+            ->assertCreated()
+            ->assertJsonPath('voluntario.foto_perfil_url', null);
+    }
+
+    public function test_it_updates_the_volunteer_profile_photo_from_the_history_flow(): void
+    {
+        Storage::fake('public');
+        $user = User::where('rut', '22.222.222-2')->firstOrFail();
+
+        $response = $this->post("/api/user/{$user->id}/foto-perfil", [
+            'foto_perfil' => UploadedFile::fake()->createWithContent(
+                'nueva-foto.png',
+                base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9sOtTS4AAAAASUVORK5CYII=')
+            ),
+        ]);
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('voluntario.user_id', $user->id);
+
+        $user->refresh();
+        $this->assertNotNull($user->voluntario->foto_perfil);
+        Storage::disk('public')->assertExists($user->voluntario->foto_perfil);
     }
 
     public function test_it_keeps_volunteer_profile_archived_when_volunteer_role_is_removed(): void

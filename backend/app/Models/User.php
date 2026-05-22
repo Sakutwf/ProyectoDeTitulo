@@ -61,7 +61,9 @@ class User extends Authenticatable
 
     public function actividades()
     {
-        return $this->belongsToMany(Actividad::class)->withTimestamps();
+        return $this->belongsToMany(Actividad::class)
+            ->withPivot('asistio')
+            ->withTimestamps();
     }
 
     public function hasRole(string $roleSlug): bool

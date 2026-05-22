@@ -55,7 +55,6 @@
     </div>
   </div>
 
-  <!-- Modal para seleccionar voluntarios tras crear actividad -->
   <div class="modal fade" id="selectVoluntariosModal" tabindex="-1" aria-labelledby="selectVoluntariosModalLabel" aria-hidden="true" ref="selectVoluntariosModal">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -70,19 +69,35 @@
             No hay voluntarios disponibles.
           </div>
           <div v-else>
-            <div class="mb-2">Seleccione voluntarios:</div>
+            <div class="mb-2">Seleccione voluntarios y ajuste la asistencia si hace falta:</div>
             <ul class="list-group">
-              <li v-for="user in voluntariosDisponibles" :key="user.id" class="list-group-item d-flex align-items-center">
-                <input
-                  class="form-check-input me-2"
-                  type="checkbox"
-                  :id="'voluntario-' + user.id"
-                  :value="user.id"
-                  v-model="voluntariosSeleccionados"
-                >
-                <label class="form-check-label" :for="'voluntario-' + user.id">
-                  {{ user.nombre || user.name || user.email }}
-                </label>
+              <li v-for="user in voluntariosDisponibles" :key="user.id" class="list-group-item">
+                <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                  <div class="d-flex align-items-center">
+                    <input
+                      class="form-check-input me-2"
+                      type="checkbox"
+                      :id="'voluntario-' + user.id"
+                      :value="user.id"
+                      v-model="voluntariosSeleccionados"
+                      @change="asegurarAsistencia(user.id)"
+                    >
+                    <label class="form-check-label" :for="'voluntario-' + user.id">
+                      {{ user.nombre || user.name || user.email }}
+                    </label>
+                  </div>
+                  <div v-if="voluntariosSeleccionados.includes(user.id)" class="form-check form-switch attendance-switch">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      :id="'asistencia-' + user.id"
+                      v-model="asistenciaPorUsuario[user.id]"
+                    >
+                    <label class="form-check-label" :for="'asistencia-' + user.id">
+                      {{ asistenciaPorUsuario[user.id] ? 'Asistio' : 'Ausente' }}
+                    </label>
+                  </div>
+                </div>
               </li>
             </ul>
           </div>
@@ -90,7 +105,7 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" @click="cerrarModalVoluntarios">Asociar en otro momento</button>
           <button type="button" class="btn btn-danger" @click="asociarVoluntarios">
-            <i class="fa-solid fa-save me-1"></i>Asociar Voluntarios
+            <i class="fa-solid fa-save me-1"></i>Guardar Planilla
           </button>
         </div>
       </div>
@@ -103,7 +118,6 @@ import axios from 'axios';
 import { Modal } from 'bootstrap';
 import { show_alerta } from '../funciones';
 import Swal from 'sweetalert2';
-import * as bootstrap from 'bootstrap'
 
 export default {
   name: 'ActividadCreateView',
@@ -118,15 +132,13 @@ export default {
       modalInstance: null,
       nuevaActividadId: null,
       voluntariosDisponibles: [],
-      voluntariosSeleccionados: []
-    }
+      voluntariosSeleccionados: [],
+      asistenciaPorUsuario: {}
+    };
   },
   computed: {
     isFormValid() {
-      return (
-        this.evento_id &&
-        this.tipo.trim() !== ''
-      );
+      return this.evento_id && this.tipo.trim() !== '';
     }
   },
   mounted() {
@@ -145,6 +157,9 @@ export default {
       this.evento_id = '';
       this.tipo = '';
       this.N_beneficiarios = '';
+      this.nuevaActividadId = null;
+      this.voluntariosSeleccionados = [];
+      this.asistenciaPorUsuario = {};
     },
     async getEventos() {
       try {
@@ -159,6 +174,7 @@ export default {
         show_alerta('Complete todos los campos correctamente', 'warning');
         return;
       }
+
       try {
         const parametros = {
           evento_id: this.evento_id,
@@ -166,8 +182,8 @@ export default {
           ...(this.N_beneficiarios !== '' ? { N_beneficiarios: this.N_beneficiarios } : {})
         };
         const respuesta = await axios.post(this.url, parametros);
+
         if (respuesta.status === 201 || respuesta.status === 200) {
-          // Guarda la ID de la nueva actividad
           this.nuevaActividadId = respuesta.data.id;
           this.hide();
           this.cargarVoluntariosYMostrarModal();
@@ -178,12 +194,15 @@ export default {
         if (error.response && error.response.data) {
           const errores = error.response.data.errors || {};
           let listado = '';
+
           Object.keys(errores).forEach(key => {
             listado += errores[key][0] + '. ';
           });
+
           if (error.response.data.error) {
             listado += error.response.data.error;
           }
+
           show_alerta(listado || 'Error al crear la actividad', 'error');
         } else {
           show_alerta('Error al crear la actividad', 'error');
@@ -192,6 +211,8 @@ export default {
     },
     async cargarVoluntariosYMostrarModal() {
       this.voluntariosSeleccionados = [];
+      this.asistenciaPorUsuario = {};
+
       try {
         const res = await axios.get('http://localhost:8000/api/voluntarios');
         const voluntarios = Array.isArray(res.data) ? res.data : (res.data.data || []);
@@ -201,37 +222,44 @@ export default {
       } catch {
         this.voluntariosDisponibles = [];
       }
-      // Mostrar el modal
+
       const modal = new Modal(this.$refs.selectVoluntariosModal);
       modal.show();
     },
+    asegurarAsistencia(userId) {
+      if (this.voluntariosSeleccionados.includes(userId) && this.asistenciaPorUsuario[userId] === undefined) {
+        this.asistenciaPorUsuario = {
+          ...this.asistenciaPorUsuario,
+          [userId]: true
+        };
+      }
+    },
     async asociarVoluntarios() {
       if (!this.nuevaActividadId) {
-        show_alerta('No se encontró la actividad', 'error');
+        show_alerta('No se encontro la actividad', 'error');
         return;
       }
-      if (this.voluntariosSeleccionados.length === 0) {
-        show_alerta('Seleccione al menos un voluntario', 'warning');
-        return;
-      }
+
       try {
-        // Asocia todos los usuarios seleccionados a la actividad (en lote)
         await axios.put(`http://localhost:8000/api/actividad/${this.nuevaActividadId}`, {
-          planilla: this.voluntariosSeleccionados
+          planilla_detalle: this.voluntariosSeleccionados.map((userId) => ({
+            user_id: userId,
+            asistio: this.asistenciaPorUsuario[userId] ?? true
+          }))
         });
+
         const modal = Modal.getInstance(this.$refs.selectVoluntariosModal);
         modal.hide();
-        // Mostrar alerta de éxito con SweetAlert2
         Swal.fire({
           icon: 'success',
-          title: 'Voluntarios asociados correctamente',
+          title: 'Planilla guardada correctamente',
           showConfirmButton: true,
           confirmButtonText: 'Cerrar'
         });
         this.$emit('actividad-created');
         this.resetForm();
       } catch {
-        show_alerta('No se pudo asociar voluntarios', 'error');
+        show_alerta('No se pudo guardar la planilla', 'error');
       }
     },
     cerrarModalVoluntarios() {
@@ -239,31 +267,9 @@ export default {
       modal.hide();
       this.$emit('actividad-created');
       this.resetForm();
-    },
-    async toggleVoluntario(user) {
-      // Si ya está seleccionado, desasocia
-      if (this.voluntariosSeleccionados.includes(user.id)) {
-        // Elimina del array local
-        this.voluntariosSeleccionados = this.voluntariosSeleccionados.filter(id => id !== user.id);
-        // Elimina de la tabla pivote en backend
-        if (this.nuevaActividadId) {
-          await axios.post(`http://localhost:8000/api/actividad/${this.nuevaActividadId}/desasociar-voluntario`, {
-            user_id: user.id
-          });
-        }
-      } else {
-        // Agrega al array local
-        this.voluntariosSeleccionados.push(user.id);
-        // Asocia en la tabla pivote en backend
-        if (this.nuevaActividadId) {
-          await axios.post(`http://localhost:8000/api/actividad/${this.nuevaActividadId}/asociar-voluntario`, {
-            user_id: user.id
-          });
-        }
-      }
     }
   }
-}
+};
 </script>
 
 <style scoped>
@@ -307,7 +313,9 @@ export default {
   box-shadow: 0 2px 6px rgba(224,30,30,0.08);
   transition: background 0.2s, border 0.2s;
 }
-.btn-cruzroja:hover, .btn-cruzroja:focus {
+
+.btn-cruzroja:hover,
+.btn-cruzroja:focus {
   background-color: #b71c1c !important;
   border-color: #b71c1c !important;
   color: #fff !important;
@@ -336,5 +344,9 @@ export default {
 
 .btn-close-white {
   filter: invert(1) brightness(2);
+}
+
+.attendance-switch {
+  min-width: 120px;
 }
 </style>

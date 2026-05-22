@@ -1,65 +1,112 @@
 <template>
-  <div class="card mb-3 shadow-sm">
-    <div class="card-header bg-white">
-      <h4 class="mb-0">
-        <button class="btn btn-link text-decoration-none text-dark fw-semibold px-0" type="button" data-bs-toggle="collapse" :data-bs-target="'#collapse-' + historial.id_hoja">
-          Hoja anual {{ historial.anio }}
-        </button>
-      </h4>
-    </div>
-    <div :id="'collapse-' + historial.id_hoja" class="collapse show">
-      <div class="card-body">
-        <div class="row g-3">
-          <div class="col-md-4">
-            <div class="info-chip">
-              <span class="label">Cargo</span>
-              <strong>{{ historial.cargo || 'Sin cargo registrado' }}</strong>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="info-chip">
-              <span class="label">Asistencia</span>
-              <strong>{{ formatAttendance(historial.porcentaje_asistencia) }}</strong>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="info-chip">
-              <span class="label">Año</span>
-              <strong>{{ historial.anio }}</strong>
-            </div>
-          </div>
-          <div class="col-12">
-            <h6 class="text-uppercase text-muted small mb-2">Observaciones generales</h6>
-            <p class="mb-0">{{ historial.observaciones_generales || 'Sin observaciones registradas.' }}</p>
-          </div>
-        </div>
+  <RouterLink
+    class="annual-card text-decoration-none"
+    :class="{ active: active }"
+    :to="to"
+  >
+    <div class="annual-card__year">{{ yearLabel }}</div>
+    <div class="annual-card__body">
+      <div class="annual-card__header">
+        <strong>{{ historial.cargo || 'Sin cargo' }}</strong>
+        <span class="annual-card__attendance">{{ formatAttendance(historial.porcentaje_asistencia) }}</span>
       </div>
+      <p class="annual-card__text">
+        {{ historial.observaciones_generales || 'Ver detalle del periodo anual.' }}
+      </p>
     </div>
-  </div>
+  </RouterLink>
 </template>
 
 <script setup>
-const props = defineProps({ historial: Object })
+import { computed } from 'vue'
+
+const props = defineProps({
+  historial: {
+    type: Object,
+    required: true
+  },
+  active: {
+    type: Boolean,
+    default: false
+  },
+  to: {
+    type: Object,
+    required: true
+  }
+})
+
+const yearLabel = computed(() => String(props.historial.anio || '----'))
 
 function formatAttendance(value) {
-  if (value === null || value === undefined || value === '') return 'Sin porcentaje'
+  if (value === null || value === undefined || value === '') return 'Sin %'
   return `${value}%`
 }
 </script>
 
 <style scoped>
-.info-chip {
-  background: #f8f9fa;
-  border: 1px solid #ececec;
-  border-radius: 12px;
-  padding: 0.85rem 1rem;
+.annual-card {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 0.85rem;
+  align-items: stretch;
+  background: #ffffff;
+  border: 1px solid #ece8e2;
+  border-radius: 18px;
+  padding: 0.8rem;
+  color: #0f2f5f;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.label {
-  display: block;
-  color: #6c757d;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  margin-bottom: 0.3rem;
+.annual-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(15, 47, 95, 0.08);
+  border-color: #d6dfe9;
+}
+
+.annual-card.active {
+  border-color: #ff313d;
+  box-shadow: 0 14px 30px rgba(255, 49, 61, 0.16);
+}
+
+.annual-card__year {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 76px;
+  border-radius: 22px;
+  background: #ff313d;
+  color: #fff;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.annual-card__body {
+  min-width: 0;
+}
+
+.annual-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.annual-card__attendance {
+  white-space: nowrap;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: #eef4fb;
+  color: #0f2f5f;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.annual-card__text {
+  margin: 0;
+  color: #5f6f82;
+  font-size: 0.92rem;
+  line-height: 1.4;
 }
 </style>

@@ -18,7 +18,6 @@
         <div class="modal-body">
           <form @submit.prevent="guardar">
             <div class="row g-3">
-              <!-- Campos de Evento -->
               <div class="col-md-6">
                 <label class="form-label">Nombre Evento</label>
                 <input type="text" class="form-control" v-model="evento_nombre" required>
@@ -39,16 +38,17 @@
                 <label class="form-label">Tipo Evento</label>
                 <input type="text" class="form-control" v-model="evento_tipo">
               </div>
-              <!-- Campos de Actividad -->
               <div class="col-md-6">
                 <label class="form-label">Planilla</label>
-                <!-- Selector de usuarios para la planilla -->
-                <label class="form-label mt-2">Usuarios asignados a la Planilla</label>
+                <label class="form-label mt-2">Usuarios asignados a la planilla</label>
                 <select class="form-select" multiple v-model="selectedUserIds">
                   <option v-for="user in allUsers" :key="user.id" :value="user.id">
                     {{ user.nombre }}
                   </option>
                 </select>
+                <small class="text-muted d-block mt-2">
+                  Los voluntarios nuevos quedarán con asistencia marcada por defecto. Las ausencias ya registradas se conservan.
+                </small>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Tipo Actividad</label>
@@ -98,8 +98,9 @@ export default {
       evento_tipo: '',
       modalInstance: null,
       allUsers: [],
-      selectedUserIds: []
-    }
+      selectedUserIds: [],
+      attendanceByUserId: {}
+    };
   },
   watch: {
     actividadId: {
@@ -125,7 +126,6 @@ export default {
   },
   methods: {
     show() {
-      // Cargar datos antes de mostrar el modal
       this.getActividad();
     },
     hide() {
@@ -134,13 +134,14 @@ export default {
     async getActividad() {
       try {
         const res = await axios.get(`http://localhost:8000/api/actividad/${this.id}`);
-        // Cargar datos de actividad
         this.tipo = res.data.tipo;
         this.N_beneficiarios = res.data.N_beneficiarios;
         this.evento_id = res.data.evento_id;
-        // Cargar usuarios asignados a la actividad
         this.selectedUserIds = res.data.users ? res.data.users.map(u => u.id) : [];
-        // Cargar datos de evento relacionado
+        this.attendanceByUserId = Object.fromEntries(
+          (res.data.users || []).map(user => [user.id, user.pivot?.asistio ?? true])
+        );
+
         if (res.data.evento) {
           this.evento_nombre = res.data.evento.nombre;
           this.evento_fecha_inicio = res.data.evento.fecha_inicio;
@@ -148,15 +149,14 @@ export default {
           this.evento_descripcion = res.data.evento.descripcion;
           this.evento_tipo = res.data.evento.tipo;
         }
-        // Mostrar el modal después de cargar los datos
+
         this.modalInstance.show();
       } catch (e) {
-        // Manejo de error
+        // Manejo de error silencioso para mantener el comportamiento actual
       }
     },
     async guardar() {
       try {
-        // Actualizar evento primero
         await axios.put(`http://localhost:8000/api/evento/${this.evento_id}`, {
           nombre: this.evento_nombre,
           fecha_inicio: this.evento_fecha_inicio,
@@ -164,21 +164,25 @@ export default {
           descripcion: this.evento_descripcion,
           tipo: this.evento_tipo
         });
-        // Actualizar actividad
+
         await axios.put(`http://localhost:8000/api/actividad/${this.id}`, {
-          planilla: this.selectedUserIds, // planilla es la lista de IDs de usuarios
+          planilla_detalle: this.selectedUserIds.map((userId) => ({
+            user_id: userId,
+            asistio: this.attendanceByUserId[userId] ?? true
+          })),
           tipo: this.tipo,
           N_beneficiarios: this.N_beneficiarios,
           evento_id: this.evento_id
         });
+
         this.hide();
         this.$emit('actividad-updated');
       } catch (e) {
-        // Manejo de error
+        // Manejo de error silencioso para mantener el comportamiento actual
       }
     }
   }
-}
+};
 </script>
 
 <style scoped>

@@ -82,6 +82,31 @@
                             </div>
 
                             <template v-if="esVoluntario">
+                                <div class="col-md-12">
+                                    <label for="edit-foto_perfil" class="form-label">Foto de perfil</label>
+                                    <div class="photo-upload-card">
+                                        <div class="photo-preview">
+                                            <img v-if="fotoPreview" :src="fotoPreview" alt="Vista previa de foto de perfil">
+                                            <span v-else>Sin foto</span>
+                                        </div>
+                                        <div class="photo-upload-fields">
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fa-solid fa-image"></i></span>
+                                                <input
+                                                    id="edit-foto_perfil"
+                                                    type="file"
+                                                    class="form-control"
+                                                    accept=".jpg,.jpeg,.png,.webp"
+                                                    @change="onPhotoSelected"
+                                                >
+                                            </div>
+                                            <small class="text-muted">
+                                                Sube una nueva imagen solo si deseas reemplazar la foto actual del voluntario.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div class="col-md-6">
                                     <label for="edit-fecha_nacimiento" class="form-label">Fecha de nacimiento</label>
                                     <div class="input-group">
@@ -185,6 +210,8 @@ export default {
             factor_rh: '+',
             fecha_ingreso: '',
             n_registro: '',
+            foto_perfil: null,
+            fotoPreview: '',
             password: '',
             rolesOptions: [],
             selectedRoles: [],
@@ -237,6 +264,45 @@ export default {
             this.factor_rh = '+';
             this.fecha_ingreso = '';
             this.n_registro = '';
+            this.clearPhotoSelection();
+        },
+        clearPhotoSelection() {
+            this.foto_perfil = null;
+            this.fotoPreview = '';
+        },
+        onPhotoSelected(event) {
+            const file = event.target.files?.[0] || null;
+            this.foto_perfil = file;
+            this.fotoPreview = file ? URL.createObjectURL(file) : (this.fotoPreview || '');
+        },
+        buildFormData() {
+            const formData = new FormData();
+
+            formData.append('_method', 'PUT');
+            formData.append('nombre', this.nombre);
+            formData.append('rut', this.rut);
+            formData.append('telefono', this.telefono);
+            formData.append('email', this.correo);
+            formData.append('estado', this.estado);
+            this.selectedRoles.forEach((roleId) => formData.append('roles[]', roleId));
+
+            if (this.esVoluntario) {
+                formData.append('fecha_nacimiento', this.fecha_nacimiento);
+                formData.append('grupo_sanguineo', this.grupo_sanguineo);
+                formData.append('factor_rh', this.factor_rh);
+                formData.append('fecha_ingreso', this.fecha_ingreso);
+                formData.append('n_registro', this.n_registro);
+
+                if (this.foto_perfil) {
+                    formData.append('foto_perfil', this.foto_perfil);
+                }
+            }
+
+            if (this.password.trim() !== '') {
+                formData.append('password', this.password);
+            }
+
+            return formData;
         },
         async getUser() {
             try {
@@ -259,6 +325,8 @@ export default {
                 this.factor_rh = voluntario?.factor_rh || '+';
                 this.fecha_ingreso = voluntario?.fecha_ingreso || '';
                 this.n_registro = voluntario?.n_registro || '';
+                this.foto_perfil = null;
+                this.fotoPreview = voluntario?.foto_perfil_url || '';
                 this.password = '';
             } catch (error) {
                 show_alerta('Error al cargar los datos del registro', 'error');
@@ -295,30 +363,11 @@ export default {
             }
 
             try {
-                const parametros = {
-                    nombre: this.nombre,
-                    rut: this.rut,
-                    telefono: this.telefono,
-                    email: this.correo,
-                    estado: this.estado,
-                    roles: this.selectedRoles
-                };
-
-                if (this.esVoluntario) {
-                    Object.assign(parametros, {
-                        fecha_nacimiento: this.fecha_nacimiento,
-                        grupo_sanguineo: this.grupo_sanguineo,
-                        factor_rh: this.factor_rh,
-                        fecha_ingreso: this.fecha_ingreso,
-                        n_registro: this.n_registro
-                    });
-                }
-
-                if (this.password.trim() !== '') {
-                    parametros.password = this.password;
-                }
-
-                const respuesta = await axios.put(this.url + this.id, parametros);
+                const respuesta = await axios.post(this.url + this.id, this.buildFormData(), {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
 
                 if (respuesta.status === 200) {
                     show_alerta('Registro actualizado', 'success');
@@ -383,5 +432,41 @@ export default {
 .role-card.selected {
     border-color: #dc3545;
     box-shadow: 0 0 0 0.15rem rgba(220, 53, 69, 0.15);
+}
+
+.photo-upload-card {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 16px;
+    align-items: center;
+    padding: 12px;
+    border: 1px solid #d9d9d9;
+    border-radius: 10px;
+    background: #fafafa;
+}
+
+.photo-preview {
+    width: 120px;
+    height: 120px;
+    border-radius: 16px;
+    background: #f0f2f5;
+    border: 2px dashed #c9d2dd;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #7a8699;
+    font-weight: 600;
+}
+
+.photo-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.photo-upload-fields {
+    display: grid;
+    gap: 8px;
 }
 </style>

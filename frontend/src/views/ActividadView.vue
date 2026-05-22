@@ -48,21 +48,13 @@
                       <span class="badge bg-cruz-roja">{{ actividad.evento?.tipo || '-' }}</span>
                     </td>
                     <td>
-                      <template v-if="actividad.users && actividad.users.length > 0">
-                        <button class="btn btn-link p-0" @click="mostrarVoluntarios(actividad)" title="Ver voluntarios">
-                          <i class="fa-solid fa-users text-primary"></i>
-                        </button>
-                      </template>
-                      <template v-else>
-                        <span
-                          class="badge bg-cruz-roja"
-                          style="cursor:pointer"
-                          @click="abrirAgregarVoluntarios(actividad)"
-                          title="Agregar voluntarios"
-                        >
-                          Agregar voluntarios
-                        </span>
-                      </template>
+                      <button
+                        class="btn btn-sm btn-outline-primary"
+                        @click="abrirGestionVoluntarios(actividad)"
+                        title="Gestionar planilla y asistencia"
+                      >
+                        {{ resumenPlanilla(actividad) }}
+                      </button>
                     </td>
                     <td>
                       <span class="badge bg-secondary">{{ actividad.tipo }}</span>
@@ -119,13 +111,13 @@
       ref="actividadCreateModal"
       @actividad-created="onActividadCreated"
     />
-    <!-- Modal para agregar voluntarios a la planilla -->
+    <!-- Modal para gestionar voluntarios y asistencia -->
     <div class="modal fade" id="agregarVoluntariosModal" tabindex="-1" aria-labelledby="agregarVoluntariosModalLabel" aria-hidden="true" ref="agregarVoluntariosModal">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header bg-danger text-white">
             <h5 class="modal-title" id="agregarVoluntariosModalLabel">
-              <i class="fa-solid fa-user-plus me-2"></i>Agregar voluntarios a la actividad
+              <i class="fa-solid fa-user-check me-2"></i>Gestionar planilla y asistencia
             </h5>
             <button type="button" class="btn btn-danger btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar">
               <i class="fa-solid fa-times"></i>
@@ -136,19 +128,36 @@
               No hay voluntarios disponibles.
             </div>
             <div v-else>
-              <div class="mb-2">Seleccione voluntarios:</div>
+              <div class="mb-2">Seleccione voluntarios y ajuste su asistencia si hace falta:</div>
               <ul class="list-group">
-                <li v-for="user in voluntariosDisponibles" :key="user.id" class="list-group-item d-flex align-items-center">
-                  <input
-                    class="form-check-input me-2"
-                    type="checkbox"
-                    :id="'voluntario-' + user.id"
-                    :value="user.id"
-                    v-model="voluntariosSeleccionados"
-                  >
-                  <label class="form-check-label" :for="'voluntario-' + user.id">
-                    {{ user.nombre || user.name || user.email }}
-                  </label>
+                <li v-for="user in voluntariosDisponibles" :key="user.id" class="list-group-item">
+                  <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                    <div class="d-flex align-items-center">
+                      <input
+                        class="form-check-input me-2"
+                        type="checkbox"
+                        :id="'voluntario-' + user.id"
+                        :value="user.id"
+                        v-model="voluntariosSeleccionados"
+                        @change="asegurarAsistencia(user.id)"
+                      >
+                      <label class="form-check-label" :for="'voluntario-' + user.id">
+                        {{ user.nombre || user.name || user.email }}
+                      </label>
+                    </div>
+
+                    <div v-if="voluntariosSeleccionados.includes(user.id)" class="form-check form-switch attendance-switch">
+                      <input
+                        class="form-check-input"
+                        type="checkbox"
+                        :id="'asistencia-' + user.id"
+                        v-model="asistenciaPorUsuario[user.id]"
+                      >
+                      <label class="form-check-label" :for="'asistencia-' + user.id">
+                        {{ asistenciaPorUsuario[user.id] ? 'Asistio' : 'Ausente' }}
+                      </label>
+                    </div>
+                  </div>
                 </li>
               </ul>
             </div>
@@ -156,7 +165,7 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             <button type="button" class="btn btn-danger" @click="guardarVoluntarios">
-              <i class="fa-solid fa-save me-1"></i>Asociar Voluntarios
+              <i class="fa-solid fa-save me-1"></i>Guardar Planilla
             </button>
           </div>
         </div>
@@ -300,11 +309,35 @@ const agregarVoluntariosModal = ref(null)
 const actividadSeleccionada = ref(null)
 const voluntariosDisponibles = ref([])
 const voluntariosSeleccionados = ref([])
+const asistenciaPorUsuario = ref({})
 
-function abrirAgregarVoluntarios(actividad) {
-  // Guarda la actividad seleccionada y los usuarios ya asociados (si existen)
+function resumenPlanilla(actividad) {
+  const usuarios = actividad.users || []
+
+  if (!usuarios.length) {
+    return 'Agregar voluntarios'
+  }
+
+  const asistieron = usuarios.filter(user => user.pivot?.asistio !== false).length
+  return `${asistieron}/${usuarios.length} asistencia`
+}
+
+function asegurarAsistencia(userId) {
+  if (voluntariosSeleccionados.value.includes(userId) && asistenciaPorUsuario.value[userId] === undefined) {
+    asistenciaPorUsuario.value = {
+      ...asistenciaPorUsuario.value,
+      [userId]: true
+    }
+  }
+}
+
+function abrirGestionVoluntarios(actividad) {
   actividadSeleccionada.value = actividad
   voluntariosSeleccionados.value = actividad.users ? actividad.users.map(u => u.id) : []
+  asistenciaPorUsuario.value = Object.fromEntries(
+    (actividad.users || []).map(user => [user.id, user.pivot?.asistio ?? true])
+  )
+
   axios.get('http://localhost:8000/api/voluntarios')
     .then(res => {
       const voluntarios = Array.isArray(res.data)
@@ -324,26 +357,29 @@ function abrirAgregarVoluntarios(actividad) {
 }
 
 async function guardarVoluntarios() {
-  if (!actividadSeleccionada.value || voluntariosSeleccionados.value.length === 0) {
-    Swal.fire('Seleccione al menos un voluntario', '', 'warning')
+  if (!actividadSeleccionada.value) {
+    Swal.fire('Seleccione una actividad', '', 'warning')
     return
   }
+
   try {
-    // Asocia la lista de usuarios seleccionados a la actividad seleccionada
     await axios.put(`http://localhost:8000/api/actividad/${actividadSeleccionada.value.id}`, {
-      planilla: voluntariosSeleccionados.value
+      planilla_detalle: voluntariosSeleccionados.value.map(userId => ({
+        user_id: userId,
+        asistio: asistenciaPorUsuario.value[userId] ?? true
+      }))
     })
     const modal = bootstrap.Modal.getInstance(agregarVoluntariosModal.value)
     modal.hide()
     fetchActividades(meta.value.current_page)
     Swal.fire({
       icon: 'success',
-      title: 'Voluntarios asociados correctamente',
+      title: 'Planilla actualizada correctamente',
       showConfirmButton: true,
       confirmButtonText: 'Cerrar'
     })
   } catch (e) {
-    Swal.fire('Error', 'No se pudo agregar voluntarios', 'error')
+    Swal.fire('Error', 'No se pudo actualizar la planilla', 'error')
   }
 }
 
@@ -480,5 +516,9 @@ onMounted(() => fetchActividades())
 .btn-danger.btn-close-white:hover {
   background-color: #b71c1c !important;
   color: #fff !important;
+}
+
+.attendance-switch {
+  min-width: 120px;
 }
 </style>

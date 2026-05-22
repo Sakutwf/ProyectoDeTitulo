@@ -18,6 +18,7 @@ use App\Http\Controllers\VoluntarioController;
 //})->middleware('auth:sanctum');
 
 Route::get('user/search', [UserController::class, 'search']);
+Route::post('user/{user}/foto-perfil', [UserController::class, 'updateVolunteerPhoto']);
 Route::apiResource('user', UserController::class);
 Route::apiResource('role', RoleController::class);
 Route::apiResource('permissions', PermissionController::class);

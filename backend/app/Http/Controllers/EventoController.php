@@ -3,10 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Evento;
+use App\Services\AttendanceSheetService;
 use Illuminate\Http\Request;
 
 class EventoController extends Controller
 {
+    public function __construct(private AttendanceSheetService $attendanceSheetService)
+    {
+    }
+
     /**
      * Display a listing of the resource paginated (8 per page) and searchable.
      */
@@ -77,12 +82,14 @@ class EventoController extends Controller
     public function update($id, Request $request)
     {
         $evento = Evento::findOrFail($id);
+        $affectedUserIds = $this->getAffectedUserIds($evento);
         $evento->nombre = $request->nombre;
         $evento->fecha_inicio = $request->fecha_inicio;
         $evento->fecha_termino = $request->fecha_termino;
         $evento->descripcion = $request->descripcion;
         $evento->tipo = $request->tipo;
         $evento->save();
+        $this->attendanceSheetService->syncForUsers($affectedUserIds);
         return response()->json($evento, 200);
     }
 
@@ -92,7 +99,21 @@ class EventoController extends Controller
     public function destroy($id)
     {
         $evento = Evento::findOrFail($id);
+        $affectedUserIds = $this->getAffectedUserIds($evento);
         $evento = $evento->delete(); // Soft delete
+        $this->attendanceSheetService->syncForUsers($affectedUserIds);
         return response()->json($evento, 200);
     }
+
+    private function getAffectedUserIds(Evento $evento): array
+    {
+        return $evento->load('actividades.users')
+            ->actividades
+            ->flatMap(fn ($actividad) => $actividad->users->pluck('id'))
+            ->map(fn ($userId) => (int) $userId)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
 }
