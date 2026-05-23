@@ -31,12 +31,43 @@ class NewResourcesApiTest extends TestCase
             'anio' => 2025,
             'porcentaje_asistencia' => 95.5,
             'cargo' => 'Instructor',
+            'lista' => 'Lista A',
+            'labor_efectuada' => 'Coordinacion de actividades comunitarias.',
             'observaciones_generales' => 'Buen desempeno anual.',
+            'antecedentes' => [
+                'cursos' => ['Primeros auxilios', 'Gestion de emergencias'],
+                'talleres' => ['Comunicacion efectiva'],
+                'seminarios' => ['Seminario regional'],
+                'titulos' => ['Monitor comunitario'],
+                'premios' => ['Reconocimiento anual'],
+            ],
         ];
 
         $this->postJson('/api/hojas-anuales', $payload)
             ->assertCreated()
             ->assertJsonPath('anio', 2025)
-            ->assertJsonPath('cargo', 'Instructor');
+            ->assertJsonPath('cargo', 'Instructor')
+            ->assertJsonPath('lista', 'Lista A')
+            ->assertJsonPath('labor_efectuada', 'Coordinacion de actividades comunitarias.');
+
+        $this->assertDatabaseHas('hojas_anuales', [
+            'hoja_de_vida_id' => 1,
+            'anio' => 2025,
+            'lista' => 'Lista A',
+        ]);
+
+        $this->assertDatabaseHas('antecedentes_voluntarios', [
+            'hoja_de_vida_id' => 1,
+            'tipo' => 'CURSO',
+            'nombre' => 'Primeros auxilios',
+            'fecha_inicio' => '2025-01-01',
+        ]);
+
+        $this->assertDatabaseHas('antecedentes_voluntarios', [
+            'hoja_de_vida_id' => 1,
+            'tipo' => 'PREMIO',
+            'nombre' => 'Reconocimiento anual',
+            'fecha_inicio' => '2025-01-01',
+        ]);
     }
 }

@@ -15,6 +15,8 @@ class HojaAnual extends Model
         'anio',
         'porcentaje_asistencia',
         'cargo',
+        'lista',
+        'labor_efectuada',
         'observaciones_generales',
     ];
 

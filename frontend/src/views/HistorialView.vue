@@ -59,11 +59,11 @@
               <strong>{{ formatAttendance(selectedHojaAnual?.porcentaje_asistencia) }}</strong>
             </article>
             <article class="summary-pill outline compact summary-ingreso">
-              <span class="summary-label dark">Ingresó el</span>
+              <span class="summary-label dark">Ingreso</span>
               <strong>{{ formatDate(user?.voluntario?.fecha_ingreso || hojaDeVida.fecha_creacion) }}</strong>
             </article>
             <article class="summary-pill compact summary-registro">
-              <span class="summary-label">N° Registro</span>
+              <span class="summary-label">N. Registro</span>
               <strong>{{ user?.voluntario?.n_registro || 'Sin registro' }}</strong>
             </article>
           </div>
@@ -74,7 +74,7 @@
         <input
           v-model="search"
           class="form-control search-box"
-          placeholder="Buscar actividades, cursos, premios u observaciones del año seleccionado..."
+          placeholder="Buscar actividades, cursos, premios u observaciones del ano seleccionado..."
         >
         <span class="status-chip toolbar-status" :class="statusClass">
           {{ formattedStatus }}
@@ -86,7 +86,7 @@
           <section class="panel">
             <div class="panel-header">
               <div>
-                <p class="panel-kicker">Año en curso / periodo seleccionado</p>
+                <p class="panel-kicker">Ano en curso / periodo seleccionado</p>
                 <h2>Participacion en actividades</h2>
               </div>
               <span class="counter-chip">{{ filteredActividades.length }} registros</span>
@@ -140,7 +140,7 @@
                       {{ item.nombre }}
                     </li>
                   </ul>
-                  <p v-else class="empty-inline">Sin cursos registrados en este año.</p>
+                  <p v-else class="empty-inline">Sin cursos registrados en este ano.</p>
                 </div>
 
                 <div class="category-card">
@@ -150,7 +150,7 @@
                       {{ item.nombre }}
                     </li>
                   </ul>
-                  <p v-else class="empty-inline">Sin talleres registrados en este año.</p>
+                  <p v-else class="empty-inline">Sin talleres registrados en este ano.</p>
                 </div>
 
                 <div class="category-card">
@@ -160,7 +160,7 @@
                       {{ item.nombre }}
                     </li>
                   </ul>
-                  <p v-else class="empty-inline">Sin seminarios registrados en este año.</p>
+                  <p v-else class="empty-inline">Sin seminarios registrados en este ano.</p>
                 </div>
               </div>
             </section>
@@ -197,13 +197,13 @@
             </div>
             <div class="observation-grid">
               <div class="observation-box">
-                <span class="observation-label">Resumen anual</span>
+                <span class="observation-label">Labor efectuada y observaciones</span>
                 <p>
-                  {{ selectedHojaAnual?.observaciones_generales || 'Sin observaciones generales registradas para este año.' }}
+                  {{ laborYObservacionesTexto }}
                 </p>
               </div>
               <div class="observation-box">
-                <span class="observation-label">Antecedentes del periodo</span>
+                <span class="observation-label">Resumen anual</span>
                 <p>
                   {{ yearlyAntecedentesSummary }}
                 </p>
@@ -213,6 +213,12 @@
         </main>
 
         <aside class="sidebar-column">
+          <section class="panel sidebar-panel sidebar-admin-panel">
+            <button type="button" class="action-button sidebar-add-button" @click="openBlankAnnualForm">
+              Agregar hoja anual
+            </button>
+          </section>
+
           <section class="panel sidebar-panel">
             <div class="panel-header compact">
               <div>
@@ -236,6 +242,142 @@
           </section>
         </aside>
       </div>
+
+      <div v-if="showAnnualForm" class="modal-backdrop" @click.self="closeAnnualForm">
+        <section class="annual-modal">
+          <div class="panel-header annual-modal__header">
+            <h2>{{ annualForm.id_hoja ? 'Editar hoja anual' : 'Agregar hoja anual' }}</h2>
+            <button
+              type="button"
+              class="text-button annual-modal__close"
+              :disabled="isSavingAnnual"
+              @click="closeAnnualForm"
+            >
+              Cerrar
+            </button>
+          </div>
+
+          <form class="annual-form" @submit.prevent="saveAnnualRecord">
+            <div class="form-grid">
+              <label class="form-group">
+                <span class="form-label">Ano</span>
+                <input
+                  v-model="annualForm.anio"
+                  type="number"
+                  min="1900"
+                  max="9999"
+                  class="admin-input"
+                  required
+                >
+              </label>
+
+              <label class="form-group">
+                <span class="form-label">Cargo</span>
+                <input v-model="annualForm.cargo" type="text" class="admin-input" placeholder="Ej: Jefa de juventud">
+              </label>
+
+              <label class="form-group">
+                <span class="form-label">Lista</span>
+                <input v-model="annualForm.lista" type="text" class="admin-input" placeholder="Ej: Lista A">
+              </label>
+
+              <label class="form-group">
+                <span class="form-label">Porcentaje de asistencia</span>
+                <input
+                  v-model="annualForm.porcentaje_asistencia"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  class="admin-input"
+                  placeholder="0 - 100"
+                >
+              </label>
+
+              <label class="form-group form-span-2">
+                <span class="form-label">Labor efectuada</span>
+                <textarea
+                  v-model="annualForm.labor_efectuada"
+                  rows="4"
+                  class="admin-textarea"
+                  placeholder="Describe la labor realizada durante el periodo."
+                ></textarea>
+              </label>
+
+              <label class="form-group form-span-2">
+                <span class="form-label">Observaciones del periodo</span>
+                <textarea
+                  v-model="annualForm.observaciones_generales"
+                  rows="4"
+                  class="admin-textarea"
+                  placeholder="Observaciones generales del ano."
+                ></textarea>
+              </label>
+            </div>
+
+            <div class="form-grid categories-grid">
+              <label class="form-group">
+                <span class="form-label">Cursos</span>
+                <textarea
+                  v-model="annualForm.cursos"
+                  rows="5"
+                  class="admin-textarea"
+                  placeholder="Un curso por linea"
+                ></textarea>
+              </label>
+
+              <label class="form-group">
+                <span class="form-label">Talleres</span>
+                <textarea
+                  v-model="annualForm.talleres"
+                  rows="5"
+                  class="admin-textarea"
+                  placeholder="Un taller por linea"
+                ></textarea>
+              </label>
+
+              <label class="form-group">
+                <span class="form-label">Seminarios</span>
+                <textarea
+                  v-model="annualForm.seminarios"
+                  rows="5"
+                  class="admin-textarea"
+                  placeholder="Un seminario por linea"
+                ></textarea>
+              </label>
+
+              <label class="form-group">
+                <span class="form-label">Titulos</span>
+                <textarea
+                  v-model="annualForm.titulos"
+                  rows="5"
+                  class="admin-textarea"
+                  placeholder="Un titulo por linea"
+                ></textarea>
+              </label>
+
+              <label class="form-group form-span-2">
+                <span class="form-label">Premios</span>
+                <textarea
+                  v-model="annualForm.premios"
+                  rows="5"
+                  class="admin-textarea"
+                  placeholder="Un premio por linea"
+                ></textarea>
+              </label>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="action-button secondary" :disabled="isSavingAnnual" @click="closeAnnualForm">
+                Cancelar
+              </button>
+              <button type="submit" class="action-button" :disabled="isSavingAnnual">
+                {{ isSavingAnnual ? 'Guardando...' : 'Guardar hoja anual' }}
+              </button>
+            </div>
+          </form>
+        </section>
+      </div>
     </div>
 
     <div v-else class="alert alert-info">No existe hoja de vida para este usuario.</div>
@@ -246,7 +388,10 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
+import { show_alerta } from '../funciones'
 import HistorialAnualCard from '../components/HistorialAnualCard.vue'
+
+const API_BASE = 'http://localhost:8000/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -259,6 +404,9 @@ const antecedentes = ref([])
 const actividades = ref([])
 const search = ref('')
 const isUploadingPhoto = ref(false)
+const showAnnualForm = ref(false)
+const isSavingAnnual = ref(false)
+const annualForm = ref(createEmptyAnnualForm(currentYear))
 
 const normalizedSearch = computed(() => search.value.trim().toLowerCase())
 
@@ -309,7 +457,9 @@ const annualNavigationCards = computed(() => {
   return availableYears.value.map((year) => annualsByYear.get(year) || {
     anio: year,
     cargo: null,
+    lista: null,
     porcentaje_asistencia: null,
+    labor_efectuada: null,
     observaciones_generales: null
   })
 })
@@ -350,8 +500,11 @@ const groupedAntecedentes = computed(() => ({
 }))
 
 const selectedListLabel = computed(() => {
-  const listaAntecedente = filteredAntecedentes.value.find((item) => normalizeTipo(item.tipo) === 'CARGO')
-  return listaAntecedente?.nombre || 'No registra'
+  if (selectedHojaAnual.value?.lista) {
+    return selectedHojaAnual.value.lista
+  }
+
+  return findLegacyListForYear(selectedYear.value) || 'No registra'
 })
 
 const formattedStatus = computed(() => {
@@ -376,11 +529,41 @@ const yearlyAntecedentesSummary = computed(() => {
   return `Este periodo registra ${totalActividades} actividad(es) y ${totalAntecedentes} antecedente(s) vinculados al voluntario.`
 })
 
+const laborYObservacionesTexto = computed(() => {
+  const parts = [
+    selectedHojaAnual.value?.labor_efectuada?.trim(),
+    selectedHojaAnual.value?.observaciones_generales?.trim()
+  ].filter(Boolean)
+
+  if (!parts.length) {
+    return 'Sin informacion registrada para este ano.'
+  }
+
+  return parts.join(' ')
+})
+
 function yearLink(year) {
   return {
     name: 'HistorialView',
     params: { id: route.params.id },
     query: { anio: year }
+  }
+}
+
+function createEmptyAnnualForm(year) {
+  return {
+    id_hoja: null,
+    anio: year,
+    cargo: '',
+    lista: '',
+    porcentaje_asistencia: '',
+    labor_efectuada: '',
+    observaciones_generales: '',
+    cursos: '',
+    talleres: '',
+    seminarios: '',
+    titulos: '',
+    premios: ''
   }
 }
 
@@ -424,8 +607,153 @@ function getYearFromAntecedente(antecedente) {
   return getYearFromDate(antecedente?.fecha_inicio) || getYearFromDate(antecedente?.fecha_termino)
 }
 
+function getAntecedentesForYear(year) {
+  return antecedentes.value.filter((antecedente) => getYearFromAntecedente(antecedente) === Number(year))
+}
+
+function joinAntecedentesByTipo(year, tipos) {
+  return getAntecedentesForYear(year)
+    .filter((item) => tipos.includes(normalizeTipo(item.tipo)))
+    .map((item) => item.nombre)
+    .filter(Boolean)
+    .join('\n')
+}
+
+function findLegacyListForYear(year) {
+  return getAntecedentesForYear(year)
+    .find((item) => normalizeTipo(item.tipo) === 'CARGO')
+    ?.nombre || ''
+}
+
+function buildAnnualForm(year, annual = null) {
+  const targetYear = Number(year) || currentYear
+
+  return {
+    id_hoja: annual?.id_hoja || null,
+    anio: targetYear,
+    cargo: annual?.cargo || '',
+    lista: annual?.lista || findLegacyListForYear(targetYear),
+    porcentaje_asistencia: annual?.porcentaje_asistencia ?? '',
+    labor_efectuada: annual?.labor_efectuada || '',
+    observaciones_generales: annual?.observaciones_generales || '',
+    cursos: joinAntecedentesByTipo(targetYear, ['CURSO']),
+    talleres: joinAntecedentesByTipo(targetYear, ['TALLER']),
+    seminarios: joinAntecedentesByTipo(targetYear, ['SEMINARIO', 'CAPACITACION']),
+    titulos: joinAntecedentesByTipo(targetYear, ['TITULO']),
+    premios: joinAntecedentesByTipo(targetYear, ['PREMIO'])
+  }
+}
+
+function parseLineItems(text) {
+  return String(text || '')
+    .split(/\r?\n/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+function getSuggestedNewYear() {
+  const existingYears = new Set(hojasAnuales.value.map((item) => Number(item.anio)).filter(Boolean))
+  let year = currentYear
+
+  while (existingYears.has(year)) {
+    year += 1
+  }
+
+  return year
+}
+
+function openBlankAnnualForm() {
+  annualForm.value = createEmptyAnnualForm(getSuggestedNewYear())
+  showAnnualForm.value = true
+}
+
+function closeAnnualForm() {
+  showAnnualForm.value = false
+  annualForm.value = createEmptyAnnualForm(selectedYear.value)
+}
+
 function goBack() {
   router.back()
+}
+
+function getValidationMessage(error) {
+  const responseErrors = error?.response?.data?.errors
+  if (!responseErrors) {
+    return 'No se pudo guardar la hoja anual.'
+  }
+
+  return Object.values(responseErrors)
+    .flat()
+    .join(' ')
+}
+
+async function loadUser() {
+  const userId = route.params.id
+  const res = await axios.get(`${API_BASE}/user/${userId}`)
+
+  user.value = res.data
+  hojaDeVida.value = res.data?.voluntario?.hoja_de_vida || null
+  hojasAnuales.value = [...(hojaDeVida.value?.hojas_anuales || [])]
+    .sort((a, b) => Number(b.anio) - Number(a.anio))
+  antecedentes.value = hojaDeVida.value?.antecedentes || []
+  actividades.value = (res.data?.actividades || []).map((actividad) => ({
+    ...actividad,
+    evento: actividad.evento
+      ? {
+          ...actividad.evento,
+          fecha_inicio_formateada: formatDate(actividad.evento.fecha_inicio)
+        }
+      : null
+  }))
+}
+
+async function saveAnnualRecord() {
+  if (!hojaDeVida.value?.id_libro) {
+    show_alerta('No existe una hoja de vida asociada al voluntario.', 'error')
+    return
+  }
+
+  const year = Number(annualForm.value.anio)
+  if (!Number.isInteger(year) || year < 1900 || year > 9999) {
+    show_alerta('Debes indicar un ano valido de cuatro digitos.', 'error')
+    return
+  }
+
+  const payload = {
+    hoja_de_vida_id: hojaDeVida.value.id_libro,
+    anio: year,
+    cargo: annualForm.value.cargo.trim() || null,
+    lista: annualForm.value.lista.trim() || null,
+    porcentaje_asistencia: annualForm.value.porcentaje_asistencia === '' ? null : Number(annualForm.value.porcentaje_asistencia),
+    labor_efectuada: annualForm.value.labor_efectuada.trim() || null,
+    observaciones_generales: annualForm.value.observaciones_generales.trim() || null,
+    antecedentes: {
+      cursos: parseLineItems(annualForm.value.cursos),
+      talleres: parseLineItems(annualForm.value.talleres),
+      seminarios: parseLineItems(annualForm.value.seminarios),
+      titulos: parseLineItems(annualForm.value.titulos),
+      premios: parseLineItems(annualForm.value.premios)
+    }
+  }
+
+  const request = annualForm.value.id_hoja
+    ? axios.put(`${API_BASE}/hojas-anuales/${annualForm.value.id_hoja}`, payload)
+    : axios.post(`${API_BASE}/hojas-anuales`, payload)
+
+  isSavingAnnual.value = true
+
+  try {
+    await request
+    await router.replace(yearLink(year))
+    await loadUser()
+    showAnnualForm.value = false
+    annualForm.value = buildAnnualForm(year, selectedHojaAnual.value)
+    show_alerta('Hoja anual guardada correctamente.', 'success')
+  } catch (error) {
+    show_alerta(getValidationMessage(error), 'error')
+  } finally {
+    isSavingAnnual.value = false
+  }
 }
 
 async function onProfilePhotoSelected(event) {
@@ -441,7 +769,7 @@ async function onProfilePhotoSelected(event) {
   isUploadingPhoto.value = true
 
   try {
-    const response = await axios.post(`http://localhost:8000/api/user/${user.value.id}/foto-perfil`, formData, {
+    const response = await axios.post(`${API_BASE}/user/${user.value.id}/foto-perfil`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -455,22 +783,7 @@ async function onProfilePhotoSelected(event) {
 }
 
 onMounted(async () => {
-  const userId = route.params.id
-  const res = await axios.get(`http://localhost:8000/api/user/${userId}`)
-
-  user.value = res.data
-  hojaDeVida.value = res.data?.voluntario?.hoja_de_vida || null
-  hojasAnuales.value = hojaDeVida.value?.hojas_anuales || []
-  antecedentes.value = hojaDeVida.value?.antecedentes || []
-  actividades.value = (res.data?.actividades || []).map((actividad) => ({
-    ...actividad,
-    evento: actividad.evento
-      ? {
-          ...actividad.evento,
-          fecha_inicio_formateada: formatDate(actividad.evento.fecha_inicio)
-        }
-      : null
-  }))
+  await loadUser()
 })
 </script>
 
@@ -798,6 +1111,132 @@ onMounted(async () => {
   margin-left: auto;
 }
 
+.action-button,
+.text-button {
+  border: none;
+  border-radius: 999px;
+  font-weight: 700;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.action-button {
+  background: #ff313d;
+  color: #fff;
+  padding: 0.8rem 1.1rem;
+  box-shadow: 0 14px 28px rgba(255, 49, 61, 0.16);
+}
+
+.action-button.secondary {
+  background: #ffffff;
+  color: #0f2f5f;
+  border: 1px solid #d4dbe5;
+  box-shadow: none;
+}
+
+.action-button:disabled,
+.text-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.action-button:not(:disabled):hover,
+.text-button:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+.text-button {
+  background: transparent;
+  color: #0f2f5f;
+  padding: 0.45rem 0.25rem;
+}
+
+.annual-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.form-group {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.form-span-2 {
+  grid-column: span 2;
+}
+
+.form-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #3f526f;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.admin-input,
+.admin-textarea {
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid #d8e0ea;
+  background: #fff;
+  color: #163a69;
+  padding: 0.9rem 1rem;
+  outline: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.admin-input:focus,
+.admin-textarea:focus {
+  border-color: #0f2f5f;
+  box-shadow: 0 0 0 3px rgba(15, 47, 95, 0.08);
+}
+
+.admin-textarea {
+  resize: vertical;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(15, 47, 95, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.annual-modal {
+  width: min(960px, 100%);
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(15, 47, 95, 0.1);
+  border-radius: 28px;
+  padding: 1.4rem;
+  box-shadow: 0 28px 60px rgba(15, 47, 95, 0.2);
+}
+
+.annual-modal__header {
+  margin-bottom: 1rem;
+}
+
+.annual-modal__close {
+  padding-right: 0;
+}
+
 .content-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.9fr);
@@ -1028,10 +1467,28 @@ onMounted(async () => {
   top: 1rem;
 }
 
+.sidebar-admin-panel {
+  position: static;
+  padding: 1rem;
+}
+
+.sidebar-add-button {
+  width: 100%;
+  justify-content: center;
+  background: #0f2f5f;
+  box-shadow: 0 14px 28px rgba(15, 47, 95, 0.16);
+}
+
 @media (max-width: 1199.98px) {
   .content-grid,
-  .detail-grid {
+  .detail-grid,
+  .observation-grid,
+  .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .form-span-2 {
+    grid-column: auto;
   }
 
   .sidebar-panel {
@@ -1068,14 +1525,18 @@ onMounted(async () => {
     font-size: 1.25rem;
   }
 
-  .summary-grid,
-  .observation-grid {
+  .summary-grid {
     grid-template-columns: 1fr;
     grid-template-areas: none;
   }
 
-  .toolbar-status {
-    margin-left: 0;
+  .form-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .action-button {
+    width: 100%;
   }
 
   .activity-item {
