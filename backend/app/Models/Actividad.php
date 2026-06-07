@@ -13,6 +13,7 @@ class Actividad extends Model
         'nombre',
         'tipo',
         'N_beneficiarios',
+        'horas_participacion',
         'created_at',
         'updated_at'
     ];
@@ -21,6 +22,7 @@ class Actividad extends Model
     {
         return [
             'tipo' => ActividadTipo::class,
+            'horas_participacion' => 'decimal:2',
         ];
     }
 

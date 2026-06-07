@@ -31,6 +31,7 @@ class AttendanceSheetService
         $user = User::with([
             'voluntario.hojaDeVida.hojasAnuales',
             'actividades' => fn ($query) => $query->with('evento'),
+            'registrosHorasFilial',
         ])->find($userId);
 
         if (! $user || ! $user->voluntario?->hojaDeVida) {
@@ -76,24 +77,46 @@ class AttendanceSheetService
 
     private function calculatePercentagesByYear(User $user): Collection
     {
-        return $user->actividades
+        $activityHoursByYear = $user->actividades
             ->filter(fn ($actividad) => filled($actividad->evento?->fecha_inicio))
             ->filter(fn ($actividad) => EventoTipo::tryFromMixed($actividad->evento?->tipo) === EventoTipo::SERVICIO)
             ->groupBy(fn ($actividad) => Carbon::parse($actividad->evento->fecha_inicio)->year)
             ->map(function (Collection $actividades) {
-                $totalActividades = $actividades->count();
+                return [
+                    'horas_programadas' => (float) $actividades->sum(fn ($actividad) => (float) ($actividad->horas_participacion ?? 0)),
+                    'horas_cumplidas' => (float) $actividades
+                        ->filter(fn ($actividad) => (bool) ($actividad->pivot->asistio ?? false))
+                        ->sum(fn ($actividad) => (float) ($actividad->horas_participacion ?? 0)),
+                ];
+            })
+            ->sortKeys();
 
-                if ($totalActividades === 0) {
-                    return null;
+        $filialHoursByYear = $user->registrosHorasFilial
+            ->filter(fn ($registro) => filled($registro->fecha))
+            ->groupBy(fn ($registro) => Carbon::parse($registro->fecha)->year)
+            ->map(fn (Collection $registros) => (float) $registros->sum(fn ($registro) => (float) ($registro->horas_totales ?? 0)));
+
+        return $activityHoursByYear
+            ->keys()
+            ->merge($filialHoursByYear->keys())
+            ->unique()
+            ->sort()
+            ->values()
+            ->mapWithKeys(function ($year) use ($activityHoursByYear, $filialHoursByYear) {
+                $activityHours = $activityHoursByYear->get($year, [
+                    'horas_programadas' => 0,
+                    'horas_cumplidas' => 0,
+                ]);
+                $horasFilial = (float) ($filialHoursByYear->get($year, 0));
+                $horasEsperadas = (float) $activityHours['horas_programadas'] + $horasFilial;
+                $horasCumplidas = (float) $activityHours['horas_cumplidas'] + $horasFilial;
+
+                if ($horasEsperadas <= 0) {
+                    return [$year => null];
                 }
 
-                $asistencias = $actividades
-                    ->filter(fn ($actividad) => (bool) ($actividad->pivot->asistio ?? false))
-                    ->count();
-
-                return round(($asistencias / $totalActividades) * 100, 2);
+                return [$year => round(($horasCumplidas / $horasEsperadas) * 100, 2)];
             })
-            ->filter(fn ($porcentaje) => $porcentaje !== null)
-            ->sortKeys();
+            ->filter(fn ($porcentaje) => $porcentaje !== null);
     }
 }

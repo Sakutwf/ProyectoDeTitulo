@@ -61,6 +61,21 @@
                   >
                 </div>
               </div>
+              <div class="col-md-6">
+                <label for="create-horas_participacion" class="form-label">Horas de Participacion</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fa-solid fa-clock"></i></span>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="create-horas_participacion"
+                    v-model="horas_participacion"
+                    min="0"
+                    step="0.25"
+                    placeholder="Ej: 4"
+                  >
+                </div>
+              </div>
             </div>
           </form>
         </div>
@@ -151,10 +166,11 @@ export default {
   data() {
     return {
       evento_id: '',
-      nombre: '',
-      tipo: '',
-      N_beneficiarios: '',
-      eventos: [],
+        nombre: '',
+        tipo: '',
+        N_beneficiarios: '',
+        horas_participacion: 1,
+        eventos: [],
       url: 'http://localhost:8000/api/actividad',
       modalInstance: null,
       nuevaActividadId: null,
@@ -202,6 +218,7 @@ export default {
       this.nombre = '';
       this.tipo = '';
       this.N_beneficiarios = '';
+      this.horas_participacion = 1;
       this.nuevaActividadId = null;
       this.voluntariosSeleccionados = [];
       this.asistenciaPorUsuario = {};
@@ -225,6 +242,7 @@ export default {
           evento_id: this.evento_id,
           nombre: this.nombre.trim(),
           tipo: this.tipo,
+          horas_participacion: this.horas_participacion,
           ...(this.N_beneficiarios !== '' ? { N_beneficiarios: this.N_beneficiarios } : {})
         };
         const respuesta = await axios.post(this.url, parametros);

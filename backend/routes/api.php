@@ -12,6 +12,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ActivoController;
 use App\Http\Controllers\EventoController;
 use App\Http\Controllers\ActividadController;
+use App\Http\Controllers\RegistroHoraFilialController;
 use App\Http\Controllers\VoluntarioController;
 //Route::get('/user', function (Request $request) {
 //    return $request->user();
@@ -25,6 +26,7 @@ Route::apiResource('permissions', PermissionController::class);
 Route::apiResource('activo', ActivoController::class);
 Route::apiResource('evento', EventoController::class);
 Route::apiResource('actividad', ActividadController::class);
+Route::apiResource('registros-horas-filial', RegistroHoraFilialController::class);
 Route::apiResource('voluntarios', VoluntarioController::class);
 Route::apiResource('hojas-de-vida', HojaDeVidaController::class);
 Route::apiResource('hojas-anuales', HojaAnualController::class);

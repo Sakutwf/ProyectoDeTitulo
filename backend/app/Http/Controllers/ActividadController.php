@@ -57,6 +57,7 @@ class ActividadController extends Controller
             'nombre' => 'required|string|max:255',
             'tipo' => ['required', Rule::enum(ActividadTipo::class)],
             'N_beneficiarios' => 'nullable|integer',
+            'horas_participacion' => 'nullable|numeric|min:0',
         ]);
         $this->ensureEventAndActivityTypesAreCompatible((int) $request->evento_id, (string) $request->tipo);
 
@@ -66,6 +67,7 @@ class ActividadController extends Controller
             $actividad->nombre = trim((string) $request->nombre);
             $actividad->tipo = ActividadTipo::tryFromMixed($request->tipo);
             $actividad->N_beneficiarios = $request->N_beneficiarios;
+            $actividad->horas_participacion = $request->horas_participacion ?? 1;
             $actividad->save();
 
             return response()->json($actividad->load('users'), 201);
@@ -100,6 +102,7 @@ class ActividadController extends Controller
             'nombre' => 'sometimes|string|max:255',
             'tipo' => ['sometimes', Rule::enum(ActividadTipo::class)],
             'N_beneficiarios' => 'nullable|integer',
+            'horas_participacion' => 'nullable|numeric|min:0',
             'planilla' => 'sometimes|array',
             'planilla.*' => 'integer|exists:users,id',
             'planilla_detalle' => 'sometimes|array',
@@ -123,6 +126,7 @@ class ActividadController extends Controller
                 ? ActividadTipo::tryFromMixed($request->tipo)
                 : $actividad->tipo;
             $actividad->N_beneficiarios = $request->N_beneficiarios ?? $actividad->N_beneficiarios;
+            $actividad->horas_participacion = $request->horas_participacion ?? $actividad->horas_participacion;
             $actividad->save();
 
             $updatedUserIds = $this->syncPlanilla($actividad, $request);

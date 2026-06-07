@@ -17,6 +17,7 @@ class UserController extends Controller
         'voluntario.hojaDeVida.hojasAnuales',
         'voluntario.hojaDeVida.antecedentes',
         'actividades.evento',
+        'registrosHorasFilial',
     ];
 
     /**

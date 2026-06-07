@@ -66,6 +66,11 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    public function registrosHorasFilial()
+    {
+        return $this->hasMany(RegistroHoraFilial::class);
+    }
+
     public function hasRole(string $roleSlug): bool
     {
         return $this->roles->contains(fn (Role $role) => $role->slug === $roleSlug);

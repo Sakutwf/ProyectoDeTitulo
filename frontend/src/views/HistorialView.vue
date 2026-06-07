@@ -126,6 +126,53 @@
             </div>
           </section>
 
+          <section class="panel">
+            <div class="panel-header compact">
+              <div>
+                <p class="panel-kicker">Horas en filial</p>
+                <h2>Registro manual alternativo</h2>
+              </div>
+              <div class="panel-header-actions">
+                <span class="counter-chip">{{ formatHours(totalFilialHoursForYear) }}</span>
+                <button type="button" class="action-button" @click="openFilialRecordModal()">
+                  Registrar horas
+                </button>
+              </div>
+            </div>
+
+            <div v-if="filteredFilialRecords.length" class="filial-record-list">
+              <article
+                v-for="record in filteredFilialRecords"
+                :key="record.id"
+                class="filial-record-card"
+              >
+                <div class="filial-record-card__top">
+                  <div>
+                    <strong>{{ formatDate(record.fecha) }}</strong>
+                    <p>{{ formatTime(record.hora_entrada) }} - {{ formatTime(record.hora_salida) }}</p>
+                  </div>
+                  <span class="mini-tag">{{ formatHours(record.horas_totales) }}</span>
+                </div>
+                <div class="filial-record-card__footer">
+                  <button type="button" class="text-button award-link" @click="openFilialRecordModal(record)">
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    class="text-button award-delete"
+                    :disabled="deletingFilialRecordId === record.id"
+                    @click="deleteFilialRecord(record)"
+                  >
+                    {{ deletingFilialRecordId === record.id ? 'Eliminando...' : 'Eliminar' }}
+                  </button>
+                </div>
+              </article>
+            </div>
+            <div v-else class="empty-state small">
+              No hay horas de filial registradas para {{ selectedYear }}.
+            </div>
+          </section>
+
           <div class="detail-grid">
             <section class="panel">
               <div class="panel-header compact">
@@ -427,6 +474,59 @@
         </section>
       </div>
 
+      <div v-if="showFilialRecordModal" class="modal-backdrop" @click.self="closeFilialRecordModal">
+        <section class="annual-modal filial-modal">
+          <div class="panel-header annual-modal__header">
+            <h2>{{ isEditingFilialRecord ? 'Editar horas en filial' : 'Registrar horas en filial' }}</h2>
+            <button
+              type="button"
+              class="text-button annual-modal__close"
+              :disabled="isSavingFilialRecord"
+              @click="closeFilialRecordModal"
+            >
+              Cerrar
+            </button>
+          </div>
+
+          <form class="filial-record-form" @submit.prevent="saveFilialRecord">
+            <label class="form-group">
+              <span class="form-label">Fecha</span>
+              <input v-model="filialRecordForm.fecha" type="date" class="admin-input" required>
+            </label>
+
+            <div class="filial-record-form__times">
+              <label class="form-group">
+                <span class="form-label">Hora de entrada</span>
+                <input v-model="filialRecordForm.hora_entrada" type="time" class="admin-input" required>
+              </label>
+
+              <label class="form-group">
+                <span class="form-label">Hora de salida</span>
+                <input v-model="filialRecordForm.hora_salida" type="time" class="admin-input" required>
+              </label>
+            </div>
+
+            <p class="form-note">
+              Usa este registro cuando haya que corregir o completar manualmente una marcacion de filial.
+            </p>
+
+            <div class="form-actions">
+              <button
+                type="button"
+                class="action-button secondary"
+                :disabled="isSavingFilialRecord"
+                @click="closeFilialRecordModal"
+              >
+                Cancelar
+              </button>
+              <button type="submit" class="action-button achievement-submit-button" :disabled="isSavingFilialRecord">
+                {{ isSavingFilialRecord ? 'Guardando...' : (isEditingFilialRecord ? 'Guardar cambios' : 'Guardar registro') }}
+              </button>
+            </div>
+          </form>
+        </section>
+      </div>
+
       <div v-if="showAchievementModal" class="modal-backdrop" @click.self="closeAchievementModal">
         <section class="annual-modal achievement-modal">
           <div class="panel-header annual-modal__header">
@@ -524,16 +624,21 @@ const hojaDeVida = ref(null)
 const hojasAnuales = ref([])
 const antecedentes = ref([])
 const actividades = ref([])
+const registrosHorasFilial = ref([])
 const search = ref('')
 const isUploadingPhoto = ref(false)
 const isUploadingAchievement = ref(false)
 const deletingAchievementId = ref(null)
+const deletingFilialRecordId = ref(null)
 const showAnnualForm = ref(false)
 const showAchievementModal = ref(false)
+const showFilialRecordModal = ref(false)
 const isSavingAnnual = ref(false)
 const isSavingObservation = ref(false)
+const isSavingFilialRecord = ref(false)
 const annualForm = ref(createEmptyAnnualForm(currentYear))
 const achievementForm = ref(createEmptyAchievementForm(currentYear))
+const filialRecordForm = ref(createEmptyFilialRecordForm(currentYear))
 const observationDraft = ref(createObservationDraft())
 
 const achievementTypeOptions = [
@@ -542,6 +647,7 @@ const achievementTypeOptions = [
 ]
 
 const isEditingAchievement = computed(() => Boolean(achievementForm.value.id_antecedente))
+const isEditingFilialRecord = computed(() => Boolean(filialRecordForm.value.id))
 
 const achievementAttachmentHelpText = computed(() => {
   if (achievementForm.value.archivo) {
@@ -575,6 +681,11 @@ const availableYears = computed(() => {
 
   antecedentes.value.forEach((antecedente) => {
     const year = getYearFromAntecedente(antecedente)
+    if (year) years.add(year)
+  })
+
+  registrosHorasFilial.value.forEach((registro) => {
+    const year = getYearFromDate(registro.fecha)
     if (year) years.add(year)
   })
 
@@ -672,6 +783,37 @@ const groupedLogros = computed(() =>
   filteredAntecedentes.value.filter((item) => ['TITULO', 'PREMIO'].includes(normalizeTipo(item.tipo)))
 )
 
+const filialRecordsForYear = computed(() =>
+  registrosHorasFilial.value
+    .filter((record) => getYearFromDate(record.fecha) === selectedYear.value)
+    .sort((a, b) => {
+      const left = `${b.fecha || ''} ${b.hora_entrada || ''}`
+      const right = `${a.fecha || ''} ${a.hora_entrada || ''}`
+      return left.localeCompare(right)
+    })
+)
+
+const filteredFilialRecords = computed(() => {
+  if (!normalizedSearch.value) {
+    return filialRecordsForYear.value
+  }
+
+  return filialRecordsForYear.value.filter((record) => {
+    const fields = [
+      formatDate(record.fecha),
+      formatTime(record.hora_entrada),
+      formatTime(record.hora_salida),
+      formatHours(record.horas_totales)
+    ]
+
+    return fields.some((field) => field.toLowerCase().includes(normalizedSearch.value))
+  })
+})
+
+const totalFilialHoursForYear = computed(() =>
+  filialRecordsForYear.value.reduce((total, record) => total + Number(record.horas_totales || 0), 0)
+)
+
 const selectedListLabel = computed(() => {
   if (selectedHojaAnual.value?.lista) {
     return selectedHojaAnual.value.lista
@@ -695,12 +837,13 @@ const yearlyAntecedentesSummary = computed(() => {
   const totalLogros = groupedLogros.value.length
   const totalFormacion = filteredFormativeActivities.value.length
   const totalActividades = filteredActividades.value.length
+  const totalFilialHours = totalFilialHoursForYear.value
 
-  if (!totalLogros && !totalFormacion && !totalActividades) {
-    return 'Todavia no hay actividades ni antecedentes asociados a este periodo.'
+  if (!totalLogros && !totalFormacion && !totalActividades && totalFilialHours <= 0) {
+    return 'Todavia no hay actividades, horas en filial ni antecedentes asociados a este periodo.'
   }
 
-  return `Este periodo registra ${totalActividades} actividad(es) de servicio, ${totalFormacion} instancia(s) formativa(s) aprobada(s) y ${totalLogros} logro(s) cargado(s).`
+  return `Este periodo registra ${totalActividades} actividad(es) de servicio, ${formatHours(totalFilialHours)} en filial, ${totalFormacion} instancia(s) formativa(s) aprobada(s) y ${totalLogros} logro(s) cargado(s).`
 })
 
 const hasObservationDraftChanges = computed(() =>
@@ -749,6 +892,15 @@ function createObservationDraft(annual = null) {
   }
 }
 
+function createEmptyFilialRecordForm(year) {
+  return {
+    id: null,
+    fecha: getSuggestedDateForYear(year),
+    hora_entrada: '09:00',
+    hora_salida: '13:00'
+  }
+}
+
 function formatDate(dateString) {
   if (!dateString) return '-'
   return dateString.slice(0, 10).split('-').reverse().join('-')
@@ -765,12 +917,36 @@ function formatAttendance(value) {
   return `${value}%`
 }
 
+function formatHours(value) {
+  const numericValue = Number(value || 0)
+  return `${new Intl.NumberFormat('es-CL', {
+    minimumFractionDigits: numericValue % 1 === 0 ? 0 : 2,
+    maximumFractionDigits: 2
+  }).format(numericValue)} h`
+}
+
+function formatTime(value) {
+  if (!value) return '--:--'
+  return String(value).slice(0, 5)
+}
+
 function getTodayIsoDate() {
   const now = new Date()
   const year = now.getFullYear()
   const month = String(now.getMonth() + 1).padStart(2, '0')
   const day = String(now.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
+}
+
+function getSuggestedDateForYear(year) {
+  const today = getTodayIsoDate()
+  const selected = Number(year)
+
+  if (!Number.isInteger(selected) || selected === currentYear) {
+    return today
+  }
+
+  return `${selected}-01-01`
 }
 
 function prettyTipo(tipo) {
@@ -893,6 +1069,26 @@ function closeAchievementModal() {
   achievementForm.value = createEmptyAchievementForm(selectedYear.value)
 }
 
+function openFilialRecordModal(record = null) {
+  if (record) {
+    filialRecordForm.value = {
+      id: record.id,
+      fecha: record.fecha ? String(record.fecha).slice(0, 10) : getSuggestedDateForYear(selectedYear.value),
+      hora_entrada: formatTime(record.hora_entrada),
+      hora_salida: formatTime(record.hora_salida)
+    }
+  } else {
+    filialRecordForm.value = createEmptyFilialRecordForm(selectedYear.value)
+  }
+
+  showFilialRecordModal.value = true
+}
+
+function closeFilialRecordModal() {
+  showFilialRecordModal.value = false
+  filialRecordForm.value = createEmptyFilialRecordForm(selectedYear.value)
+}
+
 function resetObservationDraft() {
   observationDraft.value = createObservationDraft(selectedHojaAnual.value)
 }
@@ -921,6 +1117,8 @@ async function loadUser() {
   hojasAnuales.value = [...(hojaDeVida.value?.hojas_anuales || [])]
     .sort((a, b) => Number(b.anio) - Number(a.anio))
   antecedentes.value = hojaDeVida.value?.antecedentes || []
+  registrosHorasFilial.value = [...(res.data?.registros_horas_filial || [])]
+    .sort((a, b) => `${b.fecha || ''} ${b.hora_entrada || ''}`.localeCompare(`${a.fecha || ''} ${a.hora_entrada || ''}`))
   actividades.value = (res.data?.actividades || []).map((actividad) => ({
     ...actividad,
     evento: actividad.evento
@@ -1075,6 +1273,62 @@ async function saveAchievement() {
   }
 }
 
+async function saveFilialRecord() {
+  if (!user.value?.id) {
+    show_alerta('No existe un voluntario valido para registrar horas en filial.', 'error')
+    return
+  }
+
+  if (!filialRecordForm.value.fecha || !filialRecordForm.value.hora_entrada || !filialRecordForm.value.hora_salida) {
+    show_alerta('Debes completar la fecha, la hora de entrada y la hora de salida.', 'warning')
+    return
+  }
+
+  const payload = {
+    user_id: user.value.id,
+    fecha: filialRecordForm.value.fecha,
+    hora_entrada: filialRecordForm.value.hora_entrada,
+    hora_salida: filialRecordForm.value.hora_salida
+  }
+
+  const isEditing = Boolean(filialRecordForm.value.id)
+  const request = isEditing
+    ? axios.put(`${API_BASE}/registros-horas-filial/${filialRecordForm.value.id}`, payload)
+    : axios.post(`${API_BASE}/registros-horas-filial`, payload)
+
+  isSavingFilialRecord.value = true
+
+  try {
+    await request
+    closeFilialRecordModal()
+    await loadUser()
+    show_alerta(
+      isEditing
+        ? 'Horas en filial actualizadas correctamente.'
+        : 'Horas en filial registradas correctamente.',
+      'success'
+    )
+  } catch (error) {
+    show_alerta(getValidationMessage(error, 'No se pudieron guardar las horas en filial.'), 'error')
+  } finally {
+    isSavingFilialRecord.value = false
+  }
+}
+
+async function deleteFilialRecord(record) {
+  deletingFilialRecordId.value = record.id
+
+  try {
+    await axios.delete(`${API_BASE}/registros-horas-filial/${record.id}`)
+    await loadUser()
+    show_alerta('Registro de horas en filial eliminado correctamente.', 'success')
+  } catch (error) {
+    show_alerta(getValidationMessage(error, 'No se pudo eliminar el registro de horas en filial.'), 'error')
+  } finally {
+    deletingFilialRecordId.value = null
+  }
+}
+
 async function deleteAchievement(antecedente) {
   deletingAchievementId.value = antecedente.id_antecedente
 
@@ -1138,6 +1392,10 @@ watch(selectedYear, (year) => {
 
   if (!showAchievementModal.value && !isUploadingAchievement.value) {
     achievementForm.value = createEmptyAchievementForm(year)
+  }
+
+  if (!showFilialRecordModal.value && !isSavingFilialRecord.value) {
+    filialRecordForm.value = createEmptyFilialRecordForm(year)
   }
 
   if (!isSavingObservation.value) {
@@ -1861,6 +2119,45 @@ watch(selectedYear, (year) => {
   color: #b42318;
 }
 
+.panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.filial-record-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.filial-record-card {
+  border-radius: 22px;
+  border: 1px solid #d8e0ea;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  padding: 1rem 1.05rem 0.9rem;
+}
+
+.filial-record-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.filial-record-card__top p {
+  margin: 0.25rem 0 0;
+  color: #6b7b91;
+}
+
+.filial-record-card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
 .file-trigger {
   display: inline-flex;
   align-items: center;
@@ -1896,6 +2193,21 @@ watch(selectedYear, (year) => {
 
 .achievement-submit-button:not(:disabled):hover {
   background: #163a69;
+}
+
+.filial-modal {
+  width: min(580px, 100%);
+}
+
+.filial-record-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.filial-record-form__times {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
 }
 
 .observation-grid {
@@ -1986,7 +2298,8 @@ watch(selectedYear, (year) => {
   .content-grid,
   .detail-grid,
   .observation-grid,
-  .form-grid {
+  .form-grid,
+  .filial-record-form__times {
     grid-template-columns: 1fr;
   }
 

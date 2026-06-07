@@ -88,6 +88,10 @@
                 <label class="form-label">N° Beneficiarios</label>
                 <input type="number" class="form-control" v-model="N_beneficiarios">
               </div>
+              <div class="col-md-6">
+                <label class="form-label">Horas de Participacion</label>
+                <input type="number" class="form-control" v-model="horas_participacion" min="0" step="0.25">
+              </div>
             </div>
           </form>
         </div>
@@ -126,10 +130,11 @@ export default {
   data() {
     return {
       id: null,
-      nombre: '',
-      tipo: '',
-      N_beneficiarios: 0,
-      evento_id: null,
+        nombre: '',
+        tipo: '',
+        N_beneficiarios: 0,
+        horas_participacion: 1,
+        evento_id: null,
       evento_nombre: '',
       evento_fecha_inicio: '',
       evento_fecha_termino: '',
@@ -226,6 +231,7 @@ export default {
         this.nombre = res.data.nombre || res.data.nombre_actividad || '';
         this.tipo = res.data.tipo;
         this.N_beneficiarios = res.data.N_beneficiarios;
+        this.horas_participacion = Number(res.data.horas_participacion ?? 1);
         this.evento_id = res.data.evento_id;
         this.selectedUserIds = res.data.users ? res.data.users.map(u => u.id) : [];
         this.attendanceByUserId = Object.fromEntries(
@@ -269,6 +275,7 @@ export default {
           nombre: this.nombre,
           tipo: this.tipo,
           N_beneficiarios: this.N_beneficiarios,
+          horas_participacion: this.horas_participacion,
           evento_id: this.evento_id
         });
 
