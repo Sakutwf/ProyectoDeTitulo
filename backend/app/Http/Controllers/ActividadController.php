@@ -2,9 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ActividadTipo;
+use App\Enums\EventoTipo;
 use App\Models\Actividad;
+use App\Models\Evento;
 use App\Services\AttendanceSheetService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
 
 class ActividadController extends Controller
 {
@@ -23,6 +28,7 @@ class ActividadController extends Controller
             $search = $request->search;
             $query->where(function ($subQuery) use ($search) {
                 $subQuery->where('tipo', 'like', "%{$search}%")
+                    ->orWhere('nombre', 'like', "%{$search}%")
                     ->orWhereHas('evento', function ($eventoQuery) use ($search) {
                         $eventoQuery->where('nombre', 'like', "%{$search}%")
                             ->orWhere('tipo', 'like', "%{$search}%");
@@ -48,14 +54,17 @@ class ActividadController extends Controller
     {
         $request->validate([
             'evento_id' => 'required|integer|exists:eventos,id',
-            'tipo' => 'required|string',
+            'nombre' => 'required|string|max:255',
+            'tipo' => ['required', Rule::enum(ActividadTipo::class)],
             'N_beneficiarios' => 'nullable|integer',
         ]);
+        $this->ensureEventAndActivityTypesAreCompatible((int) $request->evento_id, (string) $request->tipo);
 
         try {
             $actividad = new Actividad();
             $actividad->evento_id = $request->evento_id;
-            $actividad->tipo = $request->tipo;
+            $actividad->nombre = trim((string) $request->nombre);
+            $actividad->tipo = ActividadTipo::tryFromMixed($request->tipo);
             $actividad->N_beneficiarios = $request->N_beneficiarios;
             $actividad->save();
 
@@ -88,7 +97,8 @@ class ActividadController extends Controller
     {
         $request->validate([
             'evento_id' => 'sometimes|integer|exists:eventos,id',
-            'tipo' => 'sometimes|string',
+            'nombre' => 'sometimes|string|max:255',
+            'tipo' => ['sometimes', Rule::enum(ActividadTipo::class)],
             'N_beneficiarios' => 'nullable|integer',
             'planilla' => 'sometimes|array',
             'planilla.*' => 'integer|exists:users,id',
@@ -100,9 +110,18 @@ class ActividadController extends Controller
         try {
             $actividad = Actividad::findOrFail($id);
             $affectedUserIds = $actividad->users()->pluck('users.id')->all();
+            $eventoId = (int) ($request->evento_id ?? $actividad->evento_id);
+            $tipo = $request->tipo ?? $actividad->tipo;
+
+            $this->ensureEventAndActivityTypesAreCompatible($eventoId, $tipo);
 
             $actividad->evento_id = $request->evento_id ?? $actividad->evento_id;
-            $actividad->tipo = $request->tipo ?? $actividad->tipo;
+            $actividad->nombre = $request->has('nombre')
+                ? trim((string) $request->nombre)
+                : $actividad->nombre;
+            $actividad->tipo = $request->has('tipo')
+                ? ActividadTipo::tryFromMixed($request->tipo)
+                : $actividad->tipo;
             $actividad->N_beneficiarios = $request->N_beneficiarios ?? $actividad->N_beneficiarios;
             $actividad->save();
 
@@ -180,5 +199,24 @@ class ActividadController extends Controller
         }
 
         return $actividad->users()->pluck('users.id')->map(fn ($userId) => (int) $userId)->all();
+    }
+
+    private function ensureEventAndActivityTypesAreCompatible(int $eventoId, mixed $tipo): void
+    {
+        $evento = Evento::findOrFail($eventoId);
+        $tipoEvento = EventoTipo::tryFromMixed($evento->tipo);
+        $tipoActividad = ActividadTipo::tryFromMixed($tipo);
+
+        if ($tipoEvento === EventoTipo::FORMATIVO && ! $tipoActividad?->isFormativa()) {
+            throw ValidationException::withMessages([
+                'tipo' => ['Las actividades de eventos FORMATIVOS solo pueden ser CURSO, TALLER o SEMINARIO.'],
+            ]);
+        }
+
+        if ($tipoEvento === EventoTipo::SERVICIO && ! $tipoActividad?->isServicio()) {
+            throw ValidationException::withMessages([
+                'tipo' => ['Las actividades de eventos SERVICIO solo pueden ser CAMPAÑA, OPERATIVO, COBERTURA o COMUNITARIA.'],
+            ]);
+        }
     }
 }

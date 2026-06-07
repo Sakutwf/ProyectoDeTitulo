@@ -22,18 +22,36 @@
                 <label for="edit-fecha_inicio" class="form-label">Fecha Inicio</label>
                 <div class="input-group">
                   <span class="input-group-text"><i class="fa-solid fa-calendar-day"></i></span>
-                  <input type="date" class="form-control" id="edit-fecha_inicio" v-model="fecha_inicio" required>
+                  <input
+                    ref="fechaInicioInput"
+                    type="date"
+                    class="form-control"
+                    id="edit-fecha_inicio"
+                    v-model="fecha_inicio"
+                    required
+                    @focus="openDatePicker('fechaInicioInput')"
+                    @change="handleStartDateChange('fechaTerminoInput')"
+                  >
                 </div>
               </div>
               <div class="col-md-3">
-                <label for="edit-fecha_termino" class="form-label">Fecha Término</label>
+                <label for="edit-fecha_termino" class="form-label">Fecha Termino</label>
                 <div class="input-group">
                   <span class="input-group-text"><i class="fa-solid fa-calendar-day"></i></span>
-                  <input type="date" class="form-control" id="edit-fecha_termino" v-model="fecha_termino" required>
+                  <input
+                    ref="fechaTerminoInput"
+                    type="date"
+                    class="form-control"
+                    id="edit-fecha_termino"
+                    v-model="fecha_termino"
+                    :min="fecha_inicio || null"
+                    required
+                    @focus="openDatePicker('fechaTerminoInput')"
+                  >
                 </div>
               </div>
               <div class="col-md-12">
-                <label for="edit-descripcion" class="form-label">Descripción</label>
+                <label for="edit-descripcion" class="form-label">Descripcion</label>
                 <div class="input-group">
                   <span class="input-group-text"><i class="fa-solid fa-align-left"></i></span>
                   <textarea class="form-control" id="edit-descripcion" v-model="descripcion" rows="2"></textarea>
@@ -43,7 +61,12 @@
                 <label for="edit-tipo" class="form-label">Tipo</label>
                 <div class="input-group">
                   <span class="input-group-text"><i class="fa-solid fa-tag"></i></span>
-                  <input type="text" class="form-control" id="edit-tipo" v-model="tipo">
+                  <select class="form-select" id="edit-tipo" v-model="tipo" required>
+                    <option value="">Seleccione un tipo</option>
+                    <option v-for="option in eventTypeOptions" :key="option.value" :value="option.value">
+                      {{ option.label }}
+                    </option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -64,6 +87,7 @@
 import axios from 'axios';
 import { Modal } from 'bootstrap';
 import { show_alerta } from '../funciones';
+import { EVENT_TYPE_OPTIONS } from '../constants/activityTypes';
 
 export default {
   name: 'EventoEditView',
@@ -83,8 +107,9 @@ export default {
       descripcion: '',
       tipo: '',
       url: 'http://localhost:8000/api/evento/',
-      modalInstance: null
-    }
+      modalInstance: null,
+      eventTypeOptions: EVENT_TYPE_OPTIONS
+    };
   },
   watch: {
     eventoId: {
@@ -101,6 +126,32 @@ export default {
     this.modalInstance = new Modal(document.getElementById('editEventoModal'));
   },
   methods: {
+    openDatePicker(refName) {
+      this.$nextTick(() => {
+        const input = this.$refs[refName];
+
+        if (input && typeof input.showPicker === 'function') {
+          input.showPicker();
+        }
+      });
+    },
+    handleStartDateChange(endRefName) {
+      if (this.fecha_termino && this.fecha_termino < this.fecha_inicio) {
+        this.fecha_termino = this.fecha_inicio;
+      }
+
+      this.$nextTick(() => {
+        const input = this.$refs[endRefName];
+
+        if (input) {
+          input.focus();
+        }
+
+        if (input && typeof input.showPicker === 'function') {
+          input.showPicker();
+        }
+      });
+    },
     show() {
       this.modalInstance.show();
     },
@@ -111,8 +162,8 @@ export default {
       try {
         const response = await axios.get(this.url + this.id);
         this.nombre = response.data.nombre;
-        this.fecha_inicio = response.data.fecha_inicio;
-        this.fecha_termino = response.data.fecha_termino;
+        this.fecha_inicio = response.data.fecha_inicio?.slice(0, 10) || '';
+        this.fecha_termino = response.data.fecha_termino?.slice(0, 10) || '';
         this.descripcion = response.data.descripcion;
         this.tipo = response.data.tipo;
       } catch (error) {
@@ -125,7 +176,7 @@ export default {
       } else if (this.fecha_inicio.trim() === '') {
         show_alerta('Escribe la fecha de inicio', 'warning', 'fecha_inicio');
       } else if (this.fecha_termino.trim() === '') {
-        show_alerta('Escribe la fecha de término', 'warning', 'fecha_termino');
+        show_alerta('Escribe la fecha de termino', 'warning', 'fecha_termino');
       } else if (this.tipo.trim() === '') {
         show_alerta('Escribe el tipo', 'warning', 'tipo');
       } else {
@@ -151,7 +202,7 @@ export default {
       }
     }
   }
-}
+};
 </script>
 
 <style scoped>

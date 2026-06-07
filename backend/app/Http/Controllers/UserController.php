@@ -279,6 +279,8 @@ class UserController extends Controller
             Storage::disk('public')->delete($voluntario->foto_perfil);
         }
 
+        Storage::disk('public')->makeDirectory('voluntarios/fotos');
+
         $path = $request->file('foto_perfil')->store('voluntarios/fotos', 'public');
         $voluntario->update(['foto_perfil' => $path]);
     }

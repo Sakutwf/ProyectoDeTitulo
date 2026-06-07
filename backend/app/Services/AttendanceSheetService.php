@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\EventoTipo;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -77,6 +78,7 @@ class AttendanceSheetService
     {
         return $user->actividades
             ->filter(fn ($actividad) => filled($actividad->evento?->fecha_inicio))
+            ->filter(fn ($actividad) => EventoTipo::tryFromMixed($actividad->evento?->tipo) === EventoTipo::SERVICIO)
             ->groupBy(fn ($actividad) => Carbon::parse($actividad->evento->fecha_inicio)->year)
             ->map(function (Collection $actividades) {
                 $totalActividades = $actividades->count();

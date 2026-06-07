@@ -22,10 +22,29 @@
                 </div>
               </div>
               <div class="col-md-6">
+                <label for="create-nombre" class="form-label">Nombre Actividad</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fa-solid fa-pen-to-square"></i></span>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="create-nombre"
+                    v-model="nombre"
+                    placeholder="Ej: Puesto de primeros auxilios"
+                    required
+                  >
+                </div>
+              </div>
+              <div class="col-md-6">
                 <label for="create-tipo" class="form-label">Tipo de Actividad</label>
                 <div class="input-group">
                   <span class="input-group-text"><i class="fa-solid fa-tag"></i></span>
-                  <input type="text" class="form-control" id="create-tipo" v-model="tipo" required placeholder="Tipo de actividad">
+                  <select class="form-select" id="create-tipo" v-model="tipo" required>
+                    <option value="">Seleccione un tipo</option>
+                    <option v-for="option in filteredActivityTypeOptions" :key="option.value" :value="option.value">
+                      {{ option.label }}
+                    </option>
+                  </select>
                 </div>
               </div>
               <div class="col-md-6">
@@ -118,6 +137,13 @@ import axios from 'axios';
 import { Modal } from 'bootstrap';
 import { show_alerta } from '../funciones';
 import Swal from 'sweetalert2';
+import {
+  ACTIVITY_TYPE_OPTIONS,
+  FORMATIVE_ACTIVITY_TYPES,
+  isFormativeEvent,
+  isServiceEvent,
+  normalizeCatalogValue
+} from '../constants/activityTypes';
 
 export default {
   name: 'ActividadCreateView',
@@ -125,6 +151,7 @@ export default {
   data() {
     return {
       evento_id: '',
+      nombre: '',
       tipo: '',
       N_beneficiarios: '',
       eventos: [],
@@ -133,12 +160,29 @@ export default {
       nuevaActividadId: null,
       voluntariosDisponibles: [],
       voluntariosSeleccionados: [],
-      asistenciaPorUsuario: {}
+      asistenciaPorUsuario: {},
+      activityTypeOptions: ACTIVITY_TYPE_OPTIONS
     };
   },
   computed: {
     isFormValid() {
-      return this.evento_id && this.tipo.trim() !== '';
+      return this.evento_id && this.nombre.trim() !== '' && this.tipo.trim() !== '';
+    },
+    selectedEvento() {
+      return this.eventos.find((evento) => Number(evento.id) === Number(this.evento_id)) || null;
+    },
+    filteredActivityTypeOptions() {
+      const tipoEvento = normalizeCatalogValue(this.selectedEvento?.tipo);
+
+      if (isFormativeEvent(tipoEvento)) {
+        return this.activityTypeOptions.filter((option) => FORMATIVE_ACTIVITY_TYPES.includes(option.value));
+      }
+
+      if (isServiceEvent(tipoEvento)) {
+        return this.activityTypeOptions.filter((option) => !FORMATIVE_ACTIVITY_TYPES.includes(option.value));
+      }
+
+      return this.activityTypeOptions;
     }
   },
   mounted() {
@@ -155,6 +199,7 @@ export default {
     },
     resetForm() {
       this.evento_id = '';
+      this.nombre = '';
       this.tipo = '';
       this.N_beneficiarios = '';
       this.nuevaActividadId = null;
@@ -178,6 +223,7 @@ export default {
       try {
         const parametros = {
           evento_id: this.evento_id,
+          nombre: this.nombre.trim(),
           tipo: this.tipo,
           ...(this.N_beneficiarios !== '' ? { N_beneficiarios: this.N_beneficiarios } : {})
         };
@@ -208,6 +254,15 @@ export default {
           show_alerta('Error al crear la actividad', 'error');
         }
       }
+    },
+    normalizeTipoSegunEvento() {
+      const availableTypes = this.filteredActivityTypeOptions.map((option) => option.value);
+
+      if (availableTypes.includes(this.tipo)) {
+        return;
+      }
+
+      this.tipo = availableTypes[0] || '';
     },
     async cargarVoluntariosYMostrarModal() {
       this.voluntariosSeleccionados = [];
@@ -267,6 +322,11 @@ export default {
       modal.hide();
       this.$emit('actividad-created');
       this.resetForm();
+    }
+  },
+  watch: {
+    evento_id() {
+      this.normalizeTipoSegunEvento();
     }
   }
 };

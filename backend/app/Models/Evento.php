@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\EventoTipo;
 use Illuminate\Database\Eloquent\Model;
 
 class Evento extends Model
@@ -16,6 +17,13 @@ class Evento extends Model
         'created_at',
         'updated_at'
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'tipo' => EventoTipo::class,
+        ];
+    }
 
     public function actividades()
     {

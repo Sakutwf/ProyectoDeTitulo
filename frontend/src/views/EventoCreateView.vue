@@ -30,29 +30,35 @@
                 <div class="input-group">
                   <span class="input-group-text"><i class="fa-solid fa-calendar-day"></i></span>
                   <input
-                    type="datetime-local"
+                    ref="fechaInicioInput"
+                    type="date"
                     class="form-control"
                     id="create-fecha_inicio"
                     v-model="fecha_inicio"
                     required
+                    @focus="openDatePicker('fechaInicioInput')"
+                    @change="handleStartDateChange('fechaTerminoInput')"
                   >
                 </div>
               </div>
               <div class="col-md-3">
-                <label for="create-fecha_termino" class="form-label">Fecha Término</label>
+                <label for="create-fecha_termino" class="form-label">Fecha Termino</label>
                 <div class="input-group">
                   <span class="input-group-text"><i class="fa-solid fa-calendar-day"></i></span>
                   <input
-                    type="datetime-local"
+                    ref="fechaTerminoInput"
+                    type="date"
                     class="form-control"
                     id="create-fecha_termino"
                     v-model="fecha_termino"
+                    :min="fecha_inicio || null"
                     required
+                    @focus="openDatePicker('fechaTerminoInput')"
                   >
                 </div>
               </div>
               <div class="col-md-12">
-                <label for="create-descripcion" class="form-label">Descripción</label>
+                <label for="create-descripcion" class="form-label">Descripcion</label>
                 <div class="input-group">
                   <span class="input-group-text"><i class="fa-solid fa-align-left"></i></span>
                   <textarea
@@ -60,7 +66,7 @@
                     id="create-descripcion"
                     v-model="descripcion"
                     rows="2"
-                    placeholder="Descripción del evento"
+                    placeholder="Descripcion del evento"
                   ></textarea>
                 </div>
               </div>
@@ -68,14 +74,17 @@
                 <label for="create-tipo" class="form-label">Tipo</label>
                 <div class="input-group">
                   <span class="input-group-text"><i class="fa-solid fa-tag"></i></span>
-                  <input
-                    type="text"
-                    class="form-control"
+                  <select
+                    class="form-select"
                     id="create-tipo"
                     v-model="tipo"
                     required
-                    placeholder="Tipo de evento"
                   >
+                    <option value="">Seleccione un tipo</option>
+                    <option v-for="option in eventTypeOptions" :key="option.value" :value="option.value">
+                      {{ option.label }}
+                    </option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -96,6 +105,7 @@
 import axios from 'axios';
 import { Modal } from 'bootstrap';
 import { show_alerta } from '../funciones';
+import { EVENT_TYPE_OPTIONS } from '../constants/activityTypes';
 
 export default {
   name: 'EventoCreateView',
@@ -107,8 +117,9 @@ export default {
       descripcion: '',
       tipo: '',
       url: 'http://localhost:8000/api/evento',
-      modalInstance: null
-    }
+      modalInstance: null,
+      eventTypeOptions: EVENT_TYPE_OPTIONS
+    };
   },
   computed: {
     isFormValid() {
@@ -124,6 +135,32 @@ export default {
     this.modalInstance = new Modal(document.getElementById('newEventoModal'));
   },
   methods: {
+    openDatePicker(refName) {
+      this.$nextTick(() => {
+        const input = this.$refs[refName];
+
+        if (input && typeof input.showPicker === 'function') {
+          input.showPicker();
+        }
+      });
+    },
+    handleStartDateChange(endRefName) {
+      if (this.fecha_termino && this.fecha_termino < this.fecha_inicio) {
+        this.fecha_termino = this.fecha_inicio;
+      }
+
+      this.$nextTick(() => {
+        const input = this.$refs[endRefName];
+
+        if (input) {
+          input.focus();
+        }
+
+        if (input && typeof input.showPicker === 'function') {
+          input.showPicker();
+        }
+      });
+    },
     show() {
       this.resetForm();
       this.modalInstance.show();
@@ -174,7 +211,7 @@ export default {
       }
     }
   }
-}
+};
 </script>
 
 <style scoped>

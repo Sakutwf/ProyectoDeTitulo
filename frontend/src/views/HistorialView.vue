@@ -122,7 +122,7 @@
               </article>
             </div>
             <div v-else class="empty-state">
-              No hay actividades registradas para {{ selectedYear }}.
+              No hay actividades de servicio registradas para {{ selectedYear }}.
             </div>
           </section>
 
@@ -135,9 +135,9 @@
               <div class="category-stack">
                 <div class="category-card">
                   <h3>Cursos</h3>
-                  <ul v-if="groupedAntecedentes.cursos.length" class="bullet-list">
-                    <li v-for="item in groupedAntecedentes.cursos" :key="item.id_antecedente">
-                      {{ item.nombre }}
+                  <ul v-if="groupedFormacion.cursos.length" class="bullet-list">
+                    <li v-for="item in groupedFormacion.cursos" :key="item.id">
+                      {{ item.evento?.nombre || item.tipo }} - {{ formatDate(item.evento?.fecha_inicio) }}
                     </li>
                   </ul>
                   <p v-else class="empty-inline">Sin cursos registrados en este ano.</p>
@@ -145,9 +145,9 @@
 
                 <div class="category-card">
                   <h3>Talleres</h3>
-                  <ul v-if="groupedAntecedentes.talleres.length" class="bullet-list">
-                    <li v-for="item in groupedAntecedentes.talleres" :key="item.id_antecedente">
-                      {{ item.nombre }}
+                  <ul v-if="groupedFormacion.talleres.length" class="bullet-list">
+                    <li v-for="item in groupedFormacion.talleres" :key="item.id">
+                      {{ item.evento?.nombre || item.tipo }} - {{ formatDate(item.evento?.fecha_inicio) }}
                     </li>
                   </ul>
                   <p v-else class="empty-inline">Sin talleres registrados en este ano.</p>
@@ -155,9 +155,9 @@
 
                 <div class="category-card">
                   <h3>Seminarios</h3>
-                  <ul v-if="groupedAntecedentes.seminarios.length" class="bullet-list">
-                    <li v-for="item in groupedAntecedentes.seminarios" :key="item.id_antecedente">
-                      {{ item.nombre }}
+                  <ul v-if="groupedFormacion.seminarios.length" class="bullet-list">
+                    <li v-for="item in groupedFormacion.seminarios" :key="item.id">
+                      {{ item.evento?.nombre || item.tipo }} - {{ formatDate(item.evento?.fecha_inicio) }}
                     </li>
                   </ul>
                   <p v-else class="empty-inline">Sin seminarios registrados en este ano.</p>
@@ -168,11 +168,14 @@
             <section class="panel">
               <div class="panel-header compact">
                 <h2>Titulos y premios</h2>
+                <button type="button" class="action-button award-upload-button" @click="openAchievementModal">
+                  Carga aqui tu certificado
+                </button>
               </div>
 
-              <div class="award-stack" v-if="groupedAntecedentes.logros.length">
+              <div class="award-stack" v-if="groupedLogros.length">
                 <article
-                  v-for="item in groupedAntecedentes.logros"
+                  v-for="item in groupedLogros"
                   :key="item.id_antecedente"
                   class="award-card"
                 >
@@ -182,7 +185,34 @@
                   </div>
                   <h3>{{ item.nombre }}</h3>
                   <p v-if="item.descripcion">{{ item.descripcion }}</p>
+                  <img
+                    v-if="hasImageAttachment(item)"
+                    :src="item.archivo_url"
+                    :alt="`Respaldo de ${item.nombre}`"
+                    class="award-image"
+                  >
+                  <div v-else-if="hasPdfAttachment(item)" class="award-file-chip">
+                    PDF adjunto
+                  </div>
+                  <div v-if="item.archivo_url" class="award-actions">
+                    <a :href="item.archivo_url" target="_blank" rel="noopener" class="text-button award-link">
+                      {{ hasPdfAttachment(item) ? 'Ver PDF' : 'Ver archivo' }}
+                    </a>
+                  </div>
                   <small v-if="item.duracion">Duracion: {{ item.duracion }}</small>
+                  <div class="award-footer">
+                    <button type="button" class="text-button award-link" @click="openAchievementModal(item)">
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      class="text-button award-delete"
+                      :disabled="deletingAchievementId === item.id_antecedente"
+                      @click="deleteAchievement(item)"
+                    >
+                      {{ deletingAchievementId === item.id_antecedente ? 'Eliminando...' : 'Eliminar' }}
+                    </button>
+                  </div>
                 </article>
               </div>
               <div v-else class="empty-state small">
@@ -197,17 +227,47 @@
             </div>
             <div class="observation-grid">
               <div class="observation-box">
-                <span class="observation-label">Labor efectuada y observaciones</span>
-                <p>
-                  {{ laborYObservacionesTexto }}
-                </p>
+                <span class="observation-label">Labor efectuada</span>
+                <textarea
+                  v-model="observationDraft.labor_efectuada"
+                  class="observation-editor"
+                  rows="5"
+                  placeholder="Escribe la labor efectuada durante este periodo."
+                ></textarea>
               </div>
               <div class="observation-box">
+                <span class="observation-label">Observaciones del periodo</span>
+                <textarea
+                  v-model="observationDraft.observaciones_generales"
+                  class="observation-editor"
+                  rows="5"
+                  placeholder="Escribe observaciones relevantes para este periodo."
+                ></textarea>
+              </div>
+              <div class="observation-box observation-box--summary">
                 <span class="observation-label">Resumen anual</span>
                 <p>
                   {{ yearlyAntecedentesSummary }}
                 </p>
               </div>
+            </div>
+            <div v-if="hasObservationDraftChanges" class="observation-actions">
+              <button
+                type="button"
+                class="action-button secondary"
+                :disabled="isSavingObservation"
+                @click="resetObservationDraft"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                class="action-button observation-save-button"
+                :disabled="isSavingObservation"
+                @click="saveObservationDraft"
+              >
+                {{ isSavingObservation ? 'Guardando...' : (selectedHojaAnual ? 'Guardar cambios' : 'Guardar') }}
+              </button>
             </div>
           </section>
         </main>
@@ -284,14 +344,12 @@
               <label class="form-group">
                 <span class="form-label">Porcentaje de asistencia</span>
                 <input
-                  v-model="annualForm.porcentaje_asistencia"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.01"
+                  :value="formatAttendance(annualForm.porcentaje_asistencia)"
+                  type="text"
                   class="admin-input"
-                  placeholder="0 - 100"
+                  readonly
                 >
+                <small class="hero-photo-text">Se calcula automaticamente solo con actividades de servicio.</small>
               </label>
 
               <label class="form-group form-span-2">
@@ -317,53 +375,43 @@
 
             <div class="form-grid categories-grid">
               <label class="form-group">
-                <span class="form-label">Cursos</span>
+                <span class="form-label">Cursos (automatico)</span>
                 <textarea
                   v-model="annualForm.cursos"
                   rows="5"
                   class="admin-textarea"
-                  placeholder="Un curso por linea"
+                  readonly
+                  placeholder="Se completa desde actividades FORMATIVAS de tipo curso"
                 ></textarea>
               </label>
 
               <label class="form-group">
-                <span class="form-label">Talleres</span>
+                <span class="form-label">Talleres (automatico)</span>
                 <textarea
                   v-model="annualForm.talleres"
                   rows="5"
                   class="admin-textarea"
-                  placeholder="Un taller por linea"
+                  readonly
+                  placeholder="Se completa desde actividades FORMATIVAS de tipo taller"
                 ></textarea>
               </label>
 
               <label class="form-group">
-                <span class="form-label">Seminarios</span>
+                <span class="form-label">Seminarios (automatico)</span>
                 <textarea
                   v-model="annualForm.seminarios"
                   rows="5"
                   class="admin-textarea"
-                  placeholder="Un seminario por linea"
-                ></textarea>
-              </label>
-
-              <label class="form-group">
-                <span class="form-label">Titulos</span>
-                <textarea
-                  v-model="annualForm.titulos"
-                  rows="5"
-                  class="admin-textarea"
-                  placeholder="Un titulo por linea"
+                  readonly
+                  placeholder="Se completa desde actividades FORMATIVAS de tipo seminario"
                 ></textarea>
               </label>
 
               <label class="form-group form-span-2">
-                <span class="form-label">Premios</span>
-                <textarea
-                  v-model="annualForm.premios"
-                  rows="5"
-                  class="admin-textarea"
-                  placeholder="Un premio por linea"
-                ></textarea>
+                <span class="form-label">Titulos y premios</span>
+                <div class="form-note">
+                  Esta seccion se administra desde el apartado de titulos y premios. Cada registro se reflejara automaticamente en la hoja de vida anual segun su fecha.
+                </div>
               </label>
             </div>
 
@@ -378,6 +426,74 @@
           </form>
         </section>
       </div>
+
+      <div v-if="showAchievementModal" class="modal-backdrop" @click.self="closeAchievementModal">
+        <section class="annual-modal achievement-modal">
+          <div class="panel-header annual-modal__header">
+            <h2>{{ isEditingAchievement ? 'Editar titulo o premio' : 'Cargar titulo o premio' }}</h2>
+            <button
+              type="button"
+              class="text-button annual-modal__close"
+              :disabled="isUploadingAchievement"
+              @click="closeAchievementModal"
+            >
+              Cerrar
+            </button>
+          </div>
+
+          <form class="achievement-form" @submit.prevent="saveAchievement">
+            <label class="form-group">
+              <span class="form-label">Tipo</span>
+              <select v-model="achievementForm.tipo" class="admin-input" required>
+                <option v-for="option in achievementTypeOptions" :key="option.value" :value="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </label>
+
+            <label class="form-group">
+              <span class="form-label">Nombre</span>
+              <input
+                v-model="achievementForm.nombre"
+                type="text"
+                class="admin-input"
+                placeholder="Ej: Monitor comunitario"
+                required
+              >
+            </label>
+
+            <label class="form-group">
+              <span class="form-label">Fecha</span>
+              <input v-model="achievementForm.fecha_inicio" type="date" class="admin-input" required>
+            </label>
+
+            <label class="form-group">
+              <span class="form-label">Archivo</span>
+              <label class="file-trigger">
+                {{ achievementFileButtonLabel }}
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.webp,.pdf"
+                  class="d-none"
+                  @change="onAchievementFileSelected"
+                >
+              </label>
+              <small class="hero-photo-text achievement-file-help">
+                {{ achievementAttachmentHelpText }}
+              </small>
+            </label>
+
+            <div class="form-actions">
+              <button type="button" class="action-button secondary" :disabled="isUploadingAchievement" @click="closeAchievementModal">
+                Cancelar
+              </button>
+              <button type="submit" class="action-button achievement-submit-button" :disabled="isUploadingAchievement">
+                {{ isUploadingAchievement ? 'Guardando...' : (isEditingAchievement ? 'Guardar cambios' : 'Guardar registro') }}
+              </button>
+            </div>
+          </form>
+        </section>
+      </div>
     </div>
 
     <div v-else class="alert alert-info">No existe hoja de vida para este usuario.</div>
@@ -385,11 +501,17 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { show_alerta } from '../funciones'
 import HistorialAnualCard from '../components/HistorialAnualCard.vue'
+import {
+  FORMATIVE_ACTIVITY_TYPES,
+  isFormativeEvent,
+  isServiceEvent,
+  normalizeCatalogValue
+} from '../constants/activityTypes'
 
 const API_BASE = 'http://localhost:8000/api'
 
@@ -404,9 +526,38 @@ const antecedentes = ref([])
 const actividades = ref([])
 const search = ref('')
 const isUploadingPhoto = ref(false)
+const isUploadingAchievement = ref(false)
+const deletingAchievementId = ref(null)
 const showAnnualForm = ref(false)
+const showAchievementModal = ref(false)
 const isSavingAnnual = ref(false)
+const isSavingObservation = ref(false)
 const annualForm = ref(createEmptyAnnualForm(currentYear))
+const achievementForm = ref(createEmptyAchievementForm(currentYear))
+const observationDraft = ref(createObservationDraft())
+
+const achievementTypeOptions = [
+  { value: 'TITULO', label: 'Titulo' },
+  { value: 'PREMIO', label: 'Premio' }
+]
+
+const isEditingAchievement = computed(() => Boolean(achievementForm.value.id_antecedente))
+
+const achievementAttachmentHelpText = computed(() => {
+  if (achievementForm.value.archivo) {
+    return achievementForm.value.archivo.name
+  }
+
+  if (achievementForm.value.archivo_url) {
+    return 'Deja este campo vacio si quieres conservar el archivo actual.'
+  }
+
+  return 'Selecciona una imagen o un PDF del certificado, reconocimiento o premio.'
+})
+
+const achievementFileButtonLabel = computed(() =>
+  isEditingAchievement.value ? 'Subir otro archivo' : 'Seleccionar archivo'
+)
 
 const normalizedSearch = computed(() => search.value.trim().toLowerCase())
 
@@ -466,6 +617,7 @@ const annualNavigationCards = computed(() => {
 
 const filteredActividades = computed(() => {
   const items = actividades.value
+    .filter((actividad) => isServiceEvent(actividad.evento?.tipo))
     .filter((actividad) => getYearFromDate(actividad.evento?.fecha_inicio) === selectedYear.value)
     .sort((a, b) => (b.evento?.fecha_inicio || '').localeCompare(a.evento?.fecha_inicio || ''))
 
@@ -479,8 +631,26 @@ const filteredActividades = computed(() => {
   )
 })
 
+const filteredFormativeActivities = computed(() => {
+  const items = actividades.value
+    .filter((actividad) => isFormativeEvent(actividad.evento?.tipo))
+    .filter((actividad) => FORMATIVE_ACTIVITY_TYPES.includes(normalizeTipo(actividad.tipo)))
+    .filter((actividad) => getYearFromDate(actividad.evento?.fecha_inicio) === selectedYear.value)
+    .filter((actividad) => actividad.pivot?.asistio !== false)
+    .sort((a, b) => (b.evento?.fecha_inicio || '').localeCompare(a.evento?.fecha_inicio || ''))
+
+  if (!normalizedSearch.value) return items
+
+  return items.filter((actividad) =>
+    (actividad.tipo || '').toLowerCase().includes(normalizedSearch.value) ||
+    (actividad.evento?.nombre || '').toLowerCase().includes(normalizedSearch.value) ||
+    (actividad.evento?.descripcion || '').toLowerCase().includes(normalizedSearch.value)
+  )
+})
+
 const filteredAntecedentes = computed(() => {
   const items = antecedentes.value
+    .filter((antecedente) => ['TITULO', 'PREMIO', 'CARGO'].includes(normalizeTipo(antecedente.tipo)))
     .filter((antecedente) => getYearFromAntecedente(antecedente) === selectedYear.value)
 
   if (!normalizedSearch.value) return items
@@ -492,12 +662,15 @@ const filteredAntecedentes = computed(() => {
   )
 })
 
-const groupedAntecedentes = computed(() => ({
-  cursos: filteredAntecedentes.value.filter((item) => normalizeTipo(item.tipo) === 'CURSO'),
-  talleres: filteredAntecedentes.value.filter((item) => normalizeTipo(item.tipo) === 'TALLER'),
-  seminarios: filteredAntecedentes.value.filter((item) => ['SEMINARIO', 'CAPACITACION'].includes(normalizeTipo(item.tipo))),
-  logros: filteredAntecedentes.value.filter((item) => ['TITULO', 'PREMIO'].includes(normalizeTipo(item.tipo)))
+const groupedFormacion = computed(() => ({
+  cursos: filteredFormativeActivities.value.filter((item) => normalizeTipo(item.tipo) === 'CURSO'),
+  talleres: filteredFormativeActivities.value.filter((item) => normalizeTipo(item.tipo) === 'TALLER'),
+  seminarios: filteredFormativeActivities.value.filter((item) => normalizeTipo(item.tipo) === 'SEMINARIO')
 }))
+
+const groupedLogros = computed(() =>
+  filteredAntecedentes.value.filter((item) => ['TITULO', 'PREMIO'].includes(normalizeTipo(item.tipo)))
+)
 
 const selectedListLabel = computed(() => {
   if (selectedHojaAnual.value?.lista) {
@@ -519,28 +692,21 @@ const statusClass = computed(() => {
 })
 
 const yearlyAntecedentesSummary = computed(() => {
-  const totalAntecedentes = filteredAntecedentes.value.length
+  const totalLogros = groupedLogros.value.length
+  const totalFormacion = filteredFormativeActivities.value.length
   const totalActividades = filteredActividades.value.length
 
-  if (!totalAntecedentes && !totalActividades) {
+  if (!totalLogros && !totalFormacion && !totalActividades) {
     return 'Todavia no hay actividades ni antecedentes asociados a este periodo.'
   }
 
-  return `Este periodo registra ${totalActividades} actividad(es) y ${totalAntecedentes} antecedente(s) vinculados al voluntario.`
+  return `Este periodo registra ${totalActividades} actividad(es) de servicio, ${totalFormacion} instancia(s) formativa(s) aprobada(s) y ${totalLogros} logro(s) cargado(s).`
 })
 
-const laborYObservacionesTexto = computed(() => {
-  const parts = [
-    selectedHojaAnual.value?.labor_efectuada?.trim(),
-    selectedHojaAnual.value?.observaciones_generales?.trim()
-  ].filter(Boolean)
-
-  if (!parts.length) {
-    return 'Sin informacion registrada para este ano.'
-  }
-
-  return parts.join(' ')
-})
+const hasObservationDraftChanges = computed(() =>
+  observationDraft.value.labor_efectuada !== (selectedHojaAnual.value?.labor_efectuada || '') ||
+  observationDraft.value.observaciones_generales !== (selectedHojaAnual.value?.observaciones_generales || '')
+)
 
 function yearLink(year) {
   return {
@@ -561,9 +727,25 @@ function createEmptyAnnualForm(year) {
     observaciones_generales: '',
     cursos: '',
     talleres: '',
-    seminarios: '',
-    titulos: '',
-    premios: ''
+    seminarios: ''
+  }
+}
+
+function createEmptyAchievementForm(year) {
+  return {
+    id_antecedente: null,
+    tipo: 'TITULO',
+    nombre: '',
+    fecha_inicio: getTodayIsoDate(),
+    archivo: null,
+    archivo_url: ''
+  }
+}
+
+function createObservationDraft(annual = null) {
+  return {
+    labor_efectuada: annual?.labor_efectuada || '',
+    observaciones_generales: annual?.observaciones_generales || ''
   }
 }
 
@@ -583,6 +765,14 @@ function formatAttendance(value) {
   return `${value}%`
 }
 
+function getTodayIsoDate() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 function prettyTipo(tipo) {
   const normalized = normalizeTipo(tipo)
   if (normalized === 'TITULO') return 'Titulo'
@@ -595,7 +785,19 @@ function badgeClassForTipo(tipo) {
 }
 
 function normalizeTipo(tipo) {
-  return String(tipo || '').trim().toUpperCase()
+  return normalizeCatalogValue(tipo)
+}
+
+function getAttachmentReference(item) {
+  return String(item?.archivo_url || item?.archivo || '').toLowerCase()
+}
+
+function hasImageAttachment(item) {
+  return /\.(jpg|jpeg|png|webp)$/i.test(getAttachmentReference(item))
+}
+
+function hasPdfAttachment(item) {
+  return /\.pdf$/i.test(getAttachmentReference(item))
 }
 
 function getYearFromDate(dateString) {
@@ -611,10 +813,16 @@ function getAntecedentesForYear(year) {
   return antecedentes.value.filter((antecedente) => getYearFromAntecedente(antecedente) === Number(year))
 }
 
-function joinAntecedentesByTipo(year, tipos) {
-  return getAntecedentesForYear(year)
-    .filter((item) => tipos.includes(normalizeTipo(item.tipo)))
-    .map((item) => item.nombre)
+function getActivitiesForYear(year) {
+  return actividades.value.filter((actividad) => getYearFromDate(actividad.evento?.fecha_inicio) === Number(year))
+}
+
+function joinActivitiesByTipo(year, tipo) {
+  return getActivitiesForYear(year)
+    .filter((item) => isFormativeEvent(item.evento?.tipo))
+    .filter((item) => normalizeTipo(item.tipo) === tipo)
+    .filter((item) => item.pivot?.asistio !== false)
+    .map((item) => `${item.evento?.nombre || item.tipo} (${formatDate(item.evento?.fecha_inicio)})`)
     .filter(Boolean)
     .join('\n')
 }
@@ -636,19 +844,10 @@ function buildAnnualForm(year, annual = null) {
     porcentaje_asistencia: annual?.porcentaje_asistencia ?? '',
     labor_efectuada: annual?.labor_efectuada || '',
     observaciones_generales: annual?.observaciones_generales || '',
-    cursos: joinAntecedentesByTipo(targetYear, ['CURSO']),
-    talleres: joinAntecedentesByTipo(targetYear, ['TALLER']),
-    seminarios: joinAntecedentesByTipo(targetYear, ['SEMINARIO', 'CAPACITACION']),
-    titulos: joinAntecedentesByTipo(targetYear, ['TITULO']),
-    premios: joinAntecedentesByTipo(targetYear, ['PREMIO'])
+    cursos: joinActivitiesByTipo(targetYear, 'CURSO'),
+    talleres: joinActivitiesByTipo(targetYear, 'TALLER'),
+    seminarios: joinActivitiesByTipo(targetYear, 'SEMINARIO')
   }
-}
-
-function parseLineItems(text) {
-  return String(text || '')
-    .split(/\r?\n/)
-    .map((item) => item.trim())
-    .filter(Boolean)
 }
 
 function getSuggestedNewYear() {
@@ -667,19 +866,45 @@ function openBlankAnnualForm() {
   showAnnualForm.value = true
 }
 
+function openAchievementModal(achievement = null) {
+  if (achievement) {
+    achievementForm.value = {
+      id_antecedente: achievement.id_antecedente,
+      tipo: normalizeTipo(achievement.tipo) || 'TITULO',
+      nombre: achievement.nombre || '',
+      fecha_inicio: achievement.fecha_inicio ? achievement.fecha_inicio.slice(0, 10) : getTodayIsoDate(),
+      archivo: null,
+      archivo_url: achievement.archivo_url || ''
+    }
+  } else {
+    achievementForm.value = createEmptyAchievementForm(selectedYear.value)
+  }
+
+  showAchievementModal.value = true
+}
+
 function closeAnnualForm() {
   showAnnualForm.value = false
   annualForm.value = createEmptyAnnualForm(selectedYear.value)
+}
+
+function closeAchievementModal() {
+  showAchievementModal.value = false
+  achievementForm.value = createEmptyAchievementForm(selectedYear.value)
+}
+
+function resetObservationDraft() {
+  observationDraft.value = createObservationDraft(selectedHojaAnual.value)
 }
 
 function goBack() {
   router.back()
 }
 
-function getValidationMessage(error) {
+function getValidationMessage(error, fallbackMessage = 'No se pudo guardar la informacion.') {
   const responseErrors = error?.response?.data?.errors
   if (!responseErrors) {
-    return 'No se pudo guardar la hoja anual.'
+    return fallbackMessage
   }
 
   return Object.values(responseErrors)
@@ -724,16 +949,8 @@ async function saveAnnualRecord() {
     anio: year,
     cargo: annualForm.value.cargo.trim() || null,
     lista: annualForm.value.lista.trim() || null,
-    porcentaje_asistencia: annualForm.value.porcentaje_asistencia === '' ? null : Number(annualForm.value.porcentaje_asistencia),
     labor_efectuada: annualForm.value.labor_efectuada.trim() || null,
-    observaciones_generales: annualForm.value.observaciones_generales.trim() || null,
-    antecedentes: {
-      cursos: parseLineItems(annualForm.value.cursos),
-      talleres: parseLineItems(annualForm.value.talleres),
-      seminarios: parseLineItems(annualForm.value.seminarios),
-      titulos: parseLineItems(annualForm.value.titulos),
-      premios: parseLineItems(annualForm.value.premios)
-    }
+    observaciones_generales: annualForm.value.observaciones_generales.trim() || null
   }
 
   const request = annualForm.value.id_hoja
@@ -750,9 +967,134 @@ async function saveAnnualRecord() {
     annualForm.value = buildAnnualForm(year, selectedHojaAnual.value)
     show_alerta('Hoja anual guardada correctamente.', 'success')
   } catch (error) {
-    show_alerta(getValidationMessage(error), 'error')
+    show_alerta(getValidationMessage(error, 'No se pudo guardar la hoja anual.'), 'error')
   } finally {
     isSavingAnnual.value = false
+  }
+}
+
+async function saveObservationDraft() {
+  if (!hojaDeVida.value?.id_libro) {
+    show_alerta('No existe una hoja de vida asociada al voluntario.', 'error')
+    return
+  }
+
+  const payload = {
+    hoja_de_vida_id: hojaDeVida.value.id_libro,
+    anio: selectedYear.value,
+    cargo: selectedHojaAnual.value?.cargo || null,
+    lista: selectedHojaAnual.value?.lista || null,
+    labor_efectuada: observationDraft.value.labor_efectuada.trim() || null,
+    observaciones_generales: observationDraft.value.observaciones_generales.trim() || null
+  }
+
+  const request = selectedHojaAnual.value
+    ? axios.put(`${API_BASE}/hojas-anuales/${selectedHojaAnual.value.id_hoja}`, payload)
+    : axios.post(`${API_BASE}/hojas-anuales`, payload)
+  const wasEditing = Boolean(selectedHojaAnual.value)
+
+  isSavingObservation.value = true
+
+  try {
+    await request
+    await loadUser()
+    resetObservationDraft()
+    show_alerta(
+      wasEditing
+        ? 'Labor efectuada y observaciones actualizadas correctamente.'
+        : 'Labor efectuada y observaciones guardadas correctamente.',
+      'success'
+    )
+  } catch (error) {
+    show_alerta(getValidationMessage(error, 'No se pudo guardar la informacion del periodo.'), 'error')
+  } finally {
+    isSavingObservation.value = false
+  }
+}
+
+async function saveAchievement() {
+  if (!hojaDeVida.value?.id_libro) {
+    show_alerta('No existe una hoja de vida asociada al voluntario.', 'error')
+    return
+  }
+
+  if (!achievementForm.value.nombre.trim()) {
+    show_alerta('Debes indicar el nombre del titulo o premio.', 'warning')
+    return
+  }
+
+  if (!achievementForm.value.fecha_inicio) {
+    show_alerta('Debes indicar la fecha del titulo o premio.', 'warning')
+    return
+  }
+
+  const formData = new FormData()
+  formData.append('hoja_de_vida_id', hojaDeVida.value.id_libro)
+  formData.append('tipo', achievementForm.value.tipo)
+  formData.append('nombre', achievementForm.value.nombre.trim())
+  formData.append('fecha_inicio', achievementForm.value.fecha_inicio)
+
+  if (achievementForm.value.archivo) {
+    formData.append('archivo', achievementForm.value.archivo)
+  }
+
+  const isEditing = Boolean(achievementForm.value.id_antecedente)
+
+  const request = isEditing
+    ? axios.post(`${API_BASE}/antecedentes-voluntarios/${achievementForm.value.id_antecedente}`, (() => {
+        formData.append('_method', 'PUT')
+        return formData
+      })(), {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+    : axios.post(`${API_BASE}/antecedentes-voluntarios`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+
+  isUploadingAchievement.value = true
+
+  try {
+    await request
+
+    closeAchievementModal()
+    await loadUser()
+    show_alerta(
+      isEditing
+        ? 'Titulo o premio actualizado correctamente.'
+        : 'Titulo o premio guardado correctamente.',
+      'success'
+    )
+  } catch (error) {
+    show_alerta(getValidationMessage(error, 'No se pudo guardar el titulo o premio.'), 'error')
+  } finally {
+    isUploadingAchievement.value = false
+  }
+}
+
+async function deleteAchievement(antecedente) {
+  deletingAchievementId.value = antecedente.id_antecedente
+
+  try {
+    await axios.delete(`${API_BASE}/antecedentes-voluntarios/${antecedente.id_antecedente}`)
+    await loadUser()
+    show_alerta('Titulo o premio eliminado correctamente.', 'success')
+  } catch {
+    show_alerta('No se pudo eliminar el titulo o premio.', 'error')
+  } finally {
+    deletingAchievementId.value = null
+  }
+}
+
+function onAchievementFileSelected(event) {
+  const file = event.target.files?.[0] || null
+  event.target.value = ''
+  achievementForm.value = {
+    ...achievementForm.value,
+    archivo: file
   }
 }
 
@@ -784,6 +1126,23 @@ async function onProfilePhotoSelected(event) {
 
 onMounted(async () => {
   await loadUser()
+  annualForm.value = buildAnnualForm(selectedYear.value, selectedHojaAnual.value)
+  achievementForm.value = createEmptyAchievementForm(selectedYear.value)
+  resetObservationDraft()
+})
+
+watch(selectedYear, (year) => {
+  if (!showAnnualForm.value) {
+    annualForm.value = buildAnnualForm(year, selectedHojaAnual.value)
+  }
+
+  if (!showAchievementModal.value && !isUploadingAchievement.value) {
+    achievementForm.value = createEmptyAchievementForm(year)
+  }
+
+  if (!isSavingObservation.value) {
+    resetObservationDraft()
+  }
 })
 </script>
 
@@ -1155,6 +1514,15 @@ onMounted(async () => {
   gap: 1rem;
 }
 
+.achievement-form {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.achievement-modal {
+  width: min(640px, 100%);
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1198,6 +1566,15 @@ onMounted(async () => {
 
 .admin-textarea {
   resize: vertical;
+}
+
+.form-note {
+  border-radius: 18px;
+  border: 1px dashed #d8d0c6;
+  background: #faf7f3;
+  color: #7a6f5d;
+  padding: 1rem;
+  line-height: 1.5;
 }
 
 .form-actions {
@@ -1289,6 +1666,11 @@ onMounted(async () => {
   background: #eef4fb;
   color: #0f2f5f;
   font-weight: 700;
+}
+
+.award-upload-button {
+  padding: 0.72rem 1rem;
+  box-shadow: 0 12px 24px rgba(255, 49, 61, 0.14);
 }
 
 .activity-list {
@@ -1435,10 +1817,95 @@ onMounted(async () => {
   color: #6941c6;
 }
 
+.award-image {
+  width: 100%;
+  border-radius: 16px;
+  margin-top: 0.85rem;
+  border: 1px solid #edf0f4;
+  object-fit: cover;
+}
+
+.award-file-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.85rem;
+  padding: 1rem;
+  border-radius: 16px;
+  border: 1px solid #dbe4f0;
+  background: #eef4fb;
+  color: #0f2f5f;
+  font-weight: 700;
+}
+
+.award-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.6rem;
+}
+
+.award-link,
+.award-delete {
+  font-size: 0.82rem;
+}
+
+.award-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.45rem;
+}
+
+.award-delete {
+  color: #b42318;
+}
+
+.file-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.7rem 1rem;
+  border-radius: 14px;
+  background: #ff313d;
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(255, 49, 61, 0.18);
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.file-trigger:hover {
+  background: #e02834;
+  transform: translateY(-1px);
+}
+
+.achievement-file-help {
+  display: block;
+  margin-top: 0.7rem;
+  font-size: 0.96rem;
+  line-height: 1.45;
+}
+
+.achievement-submit-button {
+  background: #0f2f5f;
+  box-shadow: 0 14px 28px rgba(15, 47, 95, 0.18);
+}
+
+.achievement-submit-button:not(:disabled):hover {
+  background: #163a69;
+}
+
 .observation-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
+}
+
+.observation-box--summary {
+  grid-column: 1 / -1;
 }
 
 .observation-label {
@@ -1448,6 +1915,42 @@ onMounted(async () => {
   text-transform: uppercase;
   font-size: 0.78rem;
   letter-spacing: 0.06em;
+}
+
+.observation-editor {
+  width: 100%;
+  min-height: 148px;
+  border: 1px solid #d8e0ea;
+  border-radius: 18px;
+  background: #fff;
+  color: #163a69;
+  padding: 0.95rem 1rem;
+  resize: vertical;
+  line-height: 1.55;
+  outline: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.observation-editor:focus {
+  border-color: #0f2f5f;
+  box-shadow: 0 0 0 3px rgba(15, 47, 95, 0.08);
+}
+
+.observation-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.observation-save-button {
+  background: #0f2f5f;
+  box-shadow: 0 14px 28px rgba(15, 47, 95, 0.18);
+}
+
+.observation-save-button:not(:disabled):hover {
+  background: #163a69;
 }
 
 .empty-state {

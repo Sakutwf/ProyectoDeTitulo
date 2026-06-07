@@ -4,25 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Models\AntecedenteVoluntario;
 use App\Models\HojaAnual;
+use App\Services\AttendanceSheetService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class HojaAnualController extends Controller
 {
+    public function __construct(private AttendanceSheetService $attendanceSheetService)
+    {
+    }
+
     private const ANTECEDENTE_KEYS = [
-        'cursos' => 'CURSO',
-        'talleres' => 'TALLER',
-        'seminarios' => 'SEMINARIO',
         'titulos' => 'TITULO',
         'premios' => 'PREMIO',
     ];
 
     private const REMOVABLE_TYPES = [
-        'CURSO',
-        'TALLER',
-        'SEMINARIO',
-        'CAPACITACION',
         'TITULO',
         'PREMIO',
     ];
@@ -37,10 +35,14 @@ class HojaAnualController extends Controller
         $data = $this->validateHojaAnual($request);
         $hojaAnual = DB::transaction(function () use ($request, $data) {
             $hojaAnual = HojaAnual::create($data);
-            $this->syncYearlyAntecedentes($hojaAnual, $request->input('antecedentes', []));
+
+            if ($request->has('antecedentes')) {
+                $this->syncYearlyAntecedentes($hojaAnual, $request->input('antecedentes', []));
+            }
 
             return $hojaAnual;
         });
+        $this->syncAttendanceForAnnualSheet($hojaAnual, [(int) $hojaAnual->anio]);
 
         return response()->json($hojaAnual->load('hojaDeVida.voluntario.user'), 201);
     }
@@ -57,8 +59,12 @@ class HojaAnualController extends Controller
 
         DB::transaction(function () use ($request, $hojas_anuale, $data, $originalYear) {
             $hojas_anuale->update($data);
-            $this->syncYearlyAntecedentes($hojas_anuale, $request->input('antecedentes', []), [$originalYear]);
+
+            if ($request->has('antecedentes')) {
+                $this->syncYearlyAntecedentes($hojas_anuale, $request->input('antecedentes', []), [$originalYear]);
+            }
         });
+        $this->syncAttendanceForAnnualSheet($hojas_anuale, [$originalYear, (int) $hojas_anuale->anio]);
 
         return response()->json($hojas_anuale->load('hojaDeVida.voluntario.user'), 200);
     }
@@ -82,18 +88,11 @@ class HojaAnualController extends Controller
                     ->ignore($idHoja, 'id_hoja')
                     ->where(fn ($query) => $query->where('hoja_de_vida_id', $request->hoja_de_vida_id)),
             ],
-            'porcentaje_asistencia' => ['nullable', 'numeric', 'between:0,100'],
             'cargo' => ['nullable', 'string'],
             'lista' => ['nullable', 'string'],
             'labor_efectuada' => ['nullable', 'string'],
             'observaciones_generales' => ['nullable', 'string'],
             'antecedentes' => ['sometimes', 'array'],
-            'antecedentes.cursos' => ['sometimes', 'array'],
-            'antecedentes.cursos.*' => ['string'],
-            'antecedentes.talleres' => ['sometimes', 'array'],
-            'antecedentes.talleres.*' => ['string'],
-            'antecedentes.seminarios' => ['sometimes', 'array'],
-            'antecedentes.seminarios.*' => ['string'],
             'antecedentes.titulos' => ['sometimes', 'array'],
             'antecedentes.titulos.*' => ['string'],
             'antecedentes.premios' => ['sometimes', 'array'],
@@ -147,5 +146,16 @@ class HojaAnualController extends Controller
             ->unique()
             ->values()
             ->all();
+    }
+
+    private function syncAttendanceForAnnualSheet(HojaAnual $hojaAnual, array $years): void
+    {
+        $userId = $hojaAnual->loadMissing('hojaDeVida.voluntario')->hojaDeVida?->voluntario?->user_id;
+
+        if (! $userId) {
+            return;
+        }
+
+        $this->attendanceSheetService->syncForUsers([$userId], $years);
     }
 }

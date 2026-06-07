@@ -6,6 +6,7 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -31,7 +32,7 @@ class RolePermissionApiTest extends TestCase
 
     public function test_it_creates_a_user_with_multiple_roles_and_volunteer_profile(): void
     {
-        Storage::fake('public');
+        $this->preparePublicDisk();
         $voluntarioRole = Role::where('slug', 'voluntario')->firstOrFail();
         $secretarioRole = Role::where('slug', 'secretario-directiva')->firstOrFail();
 
@@ -48,13 +49,12 @@ class RolePermissionApiTest extends TestCase
             'factor_rh' => '+',
             'grupo_sanguineo' => 'B',
             'fecha_nacimiento' => '1999-08-15',
-            'foto_perfil' => UploadedFile::fake()->createWithContent(
-                'voluntaria.png',
-                base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9sOtTS4AAAAASUVORK5CYII=')
-            ),
+            'foto_perfil' => $this->fakePngUpload('voluntaria.png'),
         ];
 
-        $this->post('/api/user', $payload)
+        $this->call('POST', '/api/user', collect($payload)->except('foto_perfil')->all(), [], [
+            'foto_perfil' => $payload['foto_perfil'],
+        ])
             ->assertCreated()
             ->assertJsonPath('voluntario.n_registro', 'VOL-777')
             ->assertJsonFragment(['slug' => 'voluntario'])
@@ -96,14 +96,11 @@ class RolePermissionApiTest extends TestCase
 
     public function test_it_updates_the_volunteer_profile_photo_from_the_history_flow(): void
     {
-        Storage::fake('public');
+        $this->preparePublicDisk();
         $user = User::where('rut', '22.222.222-2')->firstOrFail();
 
-        $response = $this->post("/api/user/{$user->id}/foto-perfil", [
-            'foto_perfil' => UploadedFile::fake()->createWithContent(
-                'nueva-foto.png',
-                base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9sOtTS4AAAAASUVORK5CYII=')
-            ),
+        $response = $this->call('POST', "/api/user/{$user->id}/foto-perfil", [], [], [
+            'foto_perfil' => $this->fakePngUpload('nueva-foto.png'),
         ]);
 
         $response
@@ -168,5 +165,20 @@ class RolePermissionApiTest extends TestCase
             'roles' => [$finanzasRole->id, $voluntarioRole->id],
         ])->assertOk()
             ->assertJsonPath('voluntario.n_registro', 'VOL-001');
+    }
+
+    private function fakePngUpload(string $name): UploadedFile
+    {
+        $path = tempnam(sys_get_temp_dir(), 'png');
+        file_put_contents($path, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9sOtTS4AAAAASUVORK5CYII='));
+
+        return new UploadedFile($path, $name, 'image/png', null, true);
+    }
+
+    private function preparePublicDisk(): void
+    {
+        $root = sys_get_temp_dir().DIRECTORY_SEPARATOR.'cruz-roja-public-'.uniqid();
+        File::ensureDirectoryExists($root);
+        config(['filesystems.disks.public.root' => $root]);
     }
 }

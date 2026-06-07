@@ -18,7 +18,7 @@
           <div class="card-body">
             <div class="row mb-3">
               <div class="col-12 col-md-6">
-                <input v-model="search" @input="onSearch" type="text" class="form-control" placeholder="Buscar por evento, tipo de evento o tipo de actividad...">
+                <input v-model="search" @input="onSearch" type="text" class="form-control" placeholder="Buscar por nombre de actividad, evento, tipo de evento o tipo de actividad...">
               </div>
             </div>
             <div class="table-responsive">
@@ -27,6 +27,7 @@
                   <tr>
                     <th class="fw-semibold">#</th>
                     <th class="fw-semibold">Nombre Evento</th>
+                    <th class="fw-semibold">Nombre Actividad</th>
                     <th class="fw-semibold">Fecha Inicio</th>
                     <th class="fw-semibold">Fecha Término</th>
                     <th class="fw-semibold">Descripción</th>
@@ -41,6 +42,7 @@
                   <tr v-for="(actividad, i) in actividades" :key="actividad.id">
                     <td>{{ (meta.from || 1) + i }}</td>
                     <td>{{ actividad.evento?.nombre || '-' }}</td>
+                    <td>{{ actividad.nombre || actividad.nombre_actividad || '-' }}</td>
                     <td>{{ formatDate(actividad.evento?.fecha_inicio) }}</td>
                     <td>{{ formatDate(actividad.evento?.fecha_termino) }}</td>
                     <td>{{ actividad.evento?.descripcion || '-' }}</td>
@@ -72,7 +74,7 @@
                     </td>
                   </tr>
                   <tr v-if="!actividades || actividades.length === 0">
-                    <td colspan="10" class="text-center py-3">No hay actividades disponibles</td>
+                    <td colspan="11" class="text-center py-3">No hay actividades disponibles</td>
                   </tr>
                 </tbody>
               </table>

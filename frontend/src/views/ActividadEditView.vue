@@ -22,21 +22,46 @@
                 <label class="form-label">Nombre Evento</label>
                 <input type="text" class="form-control" v-model="evento_nombre" required>
               </div>
+              <div class="col-md-6">
+                <label class="form-label">Nombre Actividad</label>
+                <input type="text" class="form-control" v-model="nombre" required>
+              </div>
               <div class="col-md-3">
                 <label class="form-label">Fecha Inicio</label>
-                <input type="date" class="form-control" v-model="evento_fecha_inicio" required>
+                <input
+                  ref="fechaInicioInput"
+                  type="date"
+                  class="form-control"
+                  v-model="evento_fecha_inicio"
+                  required
+                  @focus="openDatePicker('fechaInicioInput')"
+                  @change="handleStartDateChange('fechaTerminoInput')"
+                >
               </div>
               <div class="col-md-3">
-                <label class="form-label">Fecha Término</label>
-                <input type="date" class="form-control" v-model="evento_fecha_termino" required>
+                <label class="form-label">Fecha Termino</label>
+                <input
+                  ref="fechaTerminoInput"
+                  type="date"
+                  class="form-control"
+                  v-model="evento_fecha_termino"
+                  :min="evento_fecha_inicio || null"
+                  required
+                  @focus="openDatePicker('fechaTerminoInput')"
+                >
               </div>
               <div class="col-md-12">
-                <label class="form-label">Descripción</label>
+                <label class="form-label">Descripcion</label>
                 <textarea class="form-control" v-model="evento_descripcion"></textarea>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Tipo Evento</label>
-                <input type="text" class="form-control" v-model="evento_tipo">
+                <select class="form-select" v-model="evento_tipo" required>
+                  <option value="">Seleccione un tipo</option>
+                  <option v-for="option in eventTypeOptions" :key="option.value" :value="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Planilla</label>
@@ -47,12 +72,17 @@
                   </option>
                 </select>
                 <small class="text-muted d-block mt-2">
-                  Los voluntarios nuevos quedarán con asistencia marcada por defecto. Las ausencias ya registradas se conservan.
+                  Los voluntarios nuevos quedaran con asistencia marcada por defecto. Las ausencias ya registradas se conservan.
                 </small>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Tipo Actividad</label>
-                <input type="text" class="form-control" v-model="tipo">
+                <select class="form-select" v-model="tipo" required>
+                  <option value="">Seleccione un tipo</option>
+                  <option v-for="option in filteredActivityTypeOptions" :key="option.value" :value="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
               </div>
               <div class="col-md-6">
                 <label class="form-label">N° Beneficiarios</label>
@@ -75,6 +105,14 @@
 <script>
 import axios from 'axios';
 import { Modal } from 'bootstrap';
+import {
+  ACTIVITY_TYPE_OPTIONS,
+  EVENT_TYPE_OPTIONS,
+  FORMATIVE_ACTIVITY_TYPES,
+  isFormativeEvent,
+  isServiceEvent,
+  normalizeCatalogValue
+} from '../constants/activityTypes';
 
 export default {
   name: 'ActividadEditView',
@@ -88,6 +126,7 @@ export default {
   data() {
     return {
       id: null,
+      nombre: '',
       tipo: '',
       N_beneficiarios: 0,
       evento_id: null,
@@ -99,7 +138,9 @@ export default {
       modalInstance: null,
       allUsers: [],
       selectedUserIds: [],
-      attendanceByUserId: {}
+      attendanceByUserId: {},
+      activityTypeOptions: ACTIVITY_TYPE_OPTIONS,
+      eventTypeOptions: EVENT_TYPE_OPTIONS
     };
   },
   watch: {
@@ -110,6 +151,13 @@ export default {
           this.id = newVal;
           this.getActividad();
         }
+      }
+    },
+    evento_tipo() {
+      const availableTypes = this.filteredActivityTypeOptions.map((option) => option.value);
+
+      if (!availableTypes.includes(this.tipo)) {
+        this.tipo = availableTypes[0] || '';
       }
     }
   },
@@ -124,7 +172,48 @@ export default {
       this.allUsers = [];
     });
   },
+  computed: {
+    filteredActivityTypeOptions() {
+      const tipoEvento = normalizeCatalogValue(this.evento_tipo);
+
+      if (isFormativeEvent(tipoEvento)) {
+        return this.activityTypeOptions.filter((option) => FORMATIVE_ACTIVITY_TYPES.includes(option.value));
+      }
+
+      if (isServiceEvent(tipoEvento)) {
+        return this.activityTypeOptions.filter((option) => !FORMATIVE_ACTIVITY_TYPES.includes(option.value));
+      }
+
+      return this.activityTypeOptions;
+    }
+  },
   methods: {
+    openDatePicker(refName) {
+      this.$nextTick(() => {
+        const input = this.$refs[refName];
+
+        if (input && typeof input.showPicker === 'function') {
+          input.showPicker();
+        }
+      });
+    },
+    handleStartDateChange(endRefName) {
+      if (this.evento_fecha_termino && this.evento_fecha_termino < this.evento_fecha_inicio) {
+        this.evento_fecha_termino = this.evento_fecha_inicio;
+      }
+
+      this.$nextTick(() => {
+        const input = this.$refs[endRefName];
+
+        if (input) {
+          input.focus();
+        }
+
+        if (input && typeof input.showPicker === 'function') {
+          input.showPicker();
+        }
+      });
+    },
     show() {
       this.getActividad();
     },
@@ -134,6 +223,7 @@ export default {
     async getActividad() {
       try {
         const res = await axios.get(`http://localhost:8000/api/actividad/${this.id}`);
+        this.nombre = res.data.nombre || res.data.nombre_actividad || '';
         this.tipo = res.data.tipo;
         this.N_beneficiarios = res.data.N_beneficiarios;
         this.evento_id = res.data.evento_id;
@@ -144,8 +234,8 @@ export default {
 
         if (res.data.evento) {
           this.evento_nombre = res.data.evento.nombre;
-          this.evento_fecha_inicio = res.data.evento.fecha_inicio;
-          this.evento_fecha_termino = res.data.evento.fecha_termino;
+          this.evento_fecha_inicio = res.data.evento.fecha_inicio?.slice(0, 10) || '';
+          this.evento_fecha_termino = res.data.evento.fecha_termino?.slice(0, 10) || '';
           this.evento_descripcion = res.data.evento.descripcion;
           this.evento_tipo = res.data.evento.tipo;
         }
@@ -157,6 +247,12 @@ export default {
     },
     async guardar() {
       try {
+        const availableTypes = this.filteredActivityTypeOptions.map((option) => option.value);
+
+        if (!availableTypes.includes(this.tipo)) {
+          this.tipo = availableTypes[0] || '';
+        }
+
         await axios.put(`http://localhost:8000/api/evento/${this.evento_id}`, {
           nombre: this.evento_nombre,
           fecha_inicio: this.evento_fecha_inicio,
@@ -170,6 +266,7 @@ export default {
             user_id: userId,
             asistio: this.attendanceByUserId[userId] ?? true
           })),
+          nombre: this.nombre,
           tipo: this.tipo,
           N_beneficiarios: this.N_beneficiarios,
           evento_id: this.evento_id

@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns='http://www.w3.org/2000/svg' width='1600' height='868' viewBox='0 0 1600 868'>
+  <rect width='100%' height='100%' rx='24' fill='#0f172a'/>
+  <rect x='12' y='12' width='1576' height='844' rx='18' fill='#111827' stroke='#334155'/>
+  <text font-family='Consolas, Courier New, monospace' font-size='18' xml:space='preserve'>
+    <tspan x='28' y='46' fill='#f5f7fa'>Respaldo de pruebas backend</tspan>
+    <tspan x='28' y='70' fill='#f5f7fa'>Comando: php artisan test</tspan>
+    <tspan x='28' y='94' fill='#f5f7fa'>Fecha: 2026-06-04</tspan>
+    <tspan x='28' y='118' fill='#f5f7fa'></tspan>
+    <tspan x='28' y='142' fill='#f5f7fa'></tspan>
+    <tspan x='28' y='166' fill='#b6f3c6'>   PASS  Tests\Unit\ExampleTest</tspan>
+    <tspan x='28' y='190' fill='#f5f7fa'>  ✓ that true is true</tspan>
+    <tspan x='28' y='214' fill='#f5f7fa'></tspan>
+    <tspan x='28' y='238' fill='#b6f3c6'>   PASS  Tests\Feature\AttendanceSyncApiTest</tspan>
+    <tspan x='28' y='262' fill='#f5f7fa'>  ✓ assigning and updating attendance recalculates the annual sheet                                              0.40s  </tspan>
+    <tspan x='28' y='286' fill='#f5f7fa'></tspan>
+    <tspan x='28' y='310' fill='#b6f3c6'>   PASS  Tests\Feature\ExampleTest</tspan>
+    <tspan x='28' y='334' fill='#f5f7fa'>  ✓ the application returns a successful response                                                                0.05s  </tspan>
+    <tspan x='28' y='358' fill='#f5f7fa'></tspan>
+    <tspan x='28' y='382' fill='#b6f3c6'>   PASS  Tests\Feature\NewResourcesApiTest</tspan>
+    <tspan x='28' y='406' fill='#f5f7fa'>  ✓ new resource indexes return successfully                                                                     0.05s  </tspan>
+    <tspan x='28' y='430' fill='#f5f7fa'>  ✓ it can create an annual sheet                                                                                0.05s  </tspan>
+    <tspan x='28' y='454' fill='#f5f7fa'>  ✓ it can create a title or award with image                                                                    0.07s  </tspan>
+    <tspan x='28' y='478' fill='#f5f7fa'></tspan>
+    <tspan x='28' y='502' fill='#ffd1b3'>Warning: file_put_contents(D:\Escritorio\Miscy\U\Proyecto de titulo\ProyectoDeTitulo\backend\.phpunit.result.cache): Failed to open stream: Permission denied in D:\Escritorio\Miscy\U\Proyecto de titulo\ProyectoDeTitulo\backend\vendor\phpunit\phpunit\src\Runner\ResultCache\DefaultResultCache.php on line 160</tspan>
+    <tspan x='28' y='526' fill='#f5f7fa'></tspan>
+    <tspan x='28' y='550' fill='#b6f3c6'>   PASS  Tests\Feature\RolePermissionApiTest</tspan>
+    <tspan x='28' y='574' fill='#f5f7fa'>  ✓ roles endpoint includes permissions                                                                          0.05s  </tspan>
+    <tspan x='28' y='598' fill='#f5f7fa'>  ✓ it creates a user with multiple roles and volunteer profile                                                  0.07s  </tspan>
+    <tspan x='28' y='622' fill='#f5f7fa'>  ✓ it allows creating a volunteer without a profile photo                                                       0.05s  </tspan>
+    <tspan x='28' y='646' fill='#f5f7fa'>  ✓ it updates the volunteer profile photo from the history flow                                                 0.06s  </tspan>
+    <tspan x='28' y='670' fill='#f5f7fa'>  ✓ it keeps volunteer profile archived when volunteer role is removed                                           0.07s  </tspan>
+    <tspan x='28' y='694' fill='#f5f7fa'>  ✓ it restores access to existing volunteer history when role is reassigned                                     0.06s  </tspan>
+    <tspan x='28' y='718' fill='#f5f7fa'></tspan>
+    <tspan x='28' y='742' fill='#b6f3c6'>  Tests:    12 passed (65 assertions)</tspan>
+    <tspan x='28' y='766' fill='#f5f7fa'>  Duration: 1.14s</tspan>
+    <tspan x='28' y='790' fill='#f5f7fa'></tspan>
+    <tspan x='28' y='814' fill='#ffd1b3'>PHP Warning:  file_put_contents(D:\Escritorio\Miscy\U\Proyecto de titulo\ProyectoDeTitulo\backend\.phpunit.result.cache): Failed to open stream: Permission denied in D:\Escritorio\Miscy\U\Proyecto de titulo\ProyectoDeTitulo\backend\vendor\phpunit\phpunit\src\Runner\ResultCache\DefaultResultCache.php on line 160</tspan>
+  </text>
+</svg>
+

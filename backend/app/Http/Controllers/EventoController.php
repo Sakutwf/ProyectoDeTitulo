@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\EventoTipo;
 use App\Models\Evento;
 use App\Services\AttendanceSheetService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class EventoController extends Controller
 {
@@ -46,13 +48,15 @@ class EventoController extends Controller
      */
     public function store(Request $request)
     {
+        $data = $this->validateEvento($request);
+
         try {
             $evento = new Evento();
-            $evento->nombre = $request->nombre;
-            $evento->fecha_inicio = $request->fecha_inicio;
-            $evento->fecha_termino = $request->fecha_termino;
-            $evento->descripcion = $request->descripcion;
-            $evento->tipo = $request->tipo;
+            $evento->nombre = $data['nombre'];
+            $evento->fecha_inicio = $data['fecha_inicio'];
+            $evento->fecha_termino = $data['fecha_termino'];
+            $evento->descripcion = $data['descripcion'];
+            $evento->tipo = EventoTipo::tryFromMixed($data['tipo']);
             $evento->save();
             return response()->json($evento, 201);
         } catch (\Exception $e) {
@@ -81,13 +85,14 @@ class EventoController extends Controller
      */
     public function update($id, Request $request)
     {
+        $data = $this->validateEvento($request);
         $evento = Evento::findOrFail($id);
         $affectedUserIds = $this->getAffectedUserIds($evento);
-        $evento->nombre = $request->nombre;
-        $evento->fecha_inicio = $request->fecha_inicio;
-        $evento->fecha_termino = $request->fecha_termino;
-        $evento->descripcion = $request->descripcion;
-        $evento->tipo = $request->tipo;
+        $evento->nombre = $data['nombre'];
+        $evento->fecha_inicio = $data['fecha_inicio'];
+        $evento->fecha_termino = $data['fecha_termino'];
+        $evento->descripcion = $data['descripcion'];
+        $evento->tipo = EventoTipo::tryFromMixed($data['tipo']);
         $evento->save();
         $this->attendanceSheetService->syncForUsers($affectedUserIds);
         return response()->json($evento, 200);
@@ -114,6 +119,17 @@ class EventoController extends Controller
             ->unique()
             ->values()
             ->all();
+    }
+
+    private function validateEvento(Request $request): array
+    {
+        return $request->validate([
+            'nombre' => ['required', 'string'],
+            'fecha_inicio' => ['required', 'date'],
+            'fecha_termino' => ['required', 'date', 'after_or_equal:fecha_inicio'],
+            'descripcion' => ['nullable', 'string'],
+            'tipo' => ['required', Rule::enum(EventoTipo::class)],
+        ]);
     }
 
 }

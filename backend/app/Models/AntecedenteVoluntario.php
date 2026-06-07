@@ -17,9 +17,18 @@ class AntecedenteVoluntario extends Model
         'OTRO',
     ];
 
+    public const TIPOS_LOGRO = [
+        'PREMIO',
+        'TITULO',
+    ];
+
     protected $table = 'antecedentes_voluntarios';
 
     protected $primaryKey = 'id_antecedente';
+
+    protected $appends = [
+        'archivo_url',
+    ];
 
     protected $fillable = [
         'hoja_de_vida_id',
@@ -29,10 +38,20 @@ class AntecedenteVoluntario extends Model
         'fecha_inicio',
         'fecha_termino',
         'duracion',
+        'archivo',
     ];
 
     public function hojaDeVida()
     {
         return $this->belongsTo(HojaDeVida::class, 'hoja_de_vida_id', 'id_libro');
+    }
+
+    public function getArchivoUrlAttribute(): ?string
+    {
+        if (! $this->archivo) {
+            return null;
+        }
+
+        return url('/storage/'.ltrim($this->archivo, '/'));
     }
 }

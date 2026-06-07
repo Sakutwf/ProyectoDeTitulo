@@ -30,26 +30,26 @@ class AttendanceSyncApiTest extends TestCase
             'fecha_inicio' => '2026-06-01',
             'fecha_termino' => '2026-06-01',
             'descripcion' => 'Primera salida del anio.',
-            'tipo' => 'Operativo',
+            'tipo' => 'SERVICIO',
         ]);
 
         $eventoDos = Evento::create([
-            'nombre' => 'Operativo Primavera',
+            'nombre' => 'Jornada de Formacion',
             'fecha_inicio' => '2026-09-10',
             'fecha_termino' => '2026-09-10',
-            'descripcion' => 'Segunda salida del anio.',
-            'tipo' => 'Operativo',
+            'descripcion' => 'Actividad formativa del anio.',
+            'tipo' => 'FORMATIVO',
         ]);
 
         $actividadUno = Actividad::create([
             'evento_id' => $eventoUno->id,
-            'tipo' => 'Terreno',
+            'tipo' => 'OPERATIVO',
             'N_beneficiarios' => 15,
         ]);
 
         $actividadDos = Actividad::create([
             'evento_id' => $eventoDos->id,
-            'tipo' => 'Capacitacion',
+            'tipo' => 'CURSO',
             'N_beneficiarios' => 20,
         ]);
 
@@ -80,12 +80,27 @@ class AttendanceSyncApiTest extends TestCase
             ->where('anio', 2026)
             ->value('porcentaje_asistencia');
 
-        $this->assertSame(50.0, $porcentajeActualizado);
+        $this->assertSame(100.0, $porcentajeActualizado);
+
+        $this->putJson("/api/actividad/{$actividadUno->id}", [
+            'planilla_detalle' => [
+                [
+                    'user_id' => $user->id,
+                    'asistio' => false,
+                ],
+            ],
+        ])->assertOk();
+
+        $porcentajeServicioAusente = (float) HojaAnual::where('hoja_de_vida_id', $hojaDeVidaId)
+            ->where('anio', 2026)
+            ->value('porcentaje_asistencia');
+
+        $this->assertSame(0.0, $porcentajeServicioAusente);
 
         $this->getJson("/api/user/{$user->id}")
             ->assertOk()
             ->assertJsonPath('actividades.0.id', $actividadUno->id)
-            ->assertJsonPath('actividades.0.pivot.asistio', 1)
+            ->assertJsonPath('actividades.0.pivot.asistio', 0)
             ->assertJsonPath('actividades.1.id', $actividadDos->id)
             ->assertJsonPath('actividades.1.pivot.asistio', 0)
             ->assertJsonPath('voluntario.foto_perfil_url', null);
