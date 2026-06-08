@@ -115,7 +115,6 @@
                                         >
                                         <div>
                                             <div class="fw-semibold">{{ role.name }}</div>
-                                            <small class="text-muted">{{ role.description || 'Sin descripcion' }}</small>
                                         </div>
                                     </label>
                                 </div>
@@ -197,7 +196,7 @@
                                     <label for="create-n_registro" class="form-label">N registro</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fa-solid fa-hashtag"></i></span>
-                                        <input id="create-n_registro" v-model="n_registro" type="text" class="form-control" placeholder="Ej: VOL-003">
+                                        <input id="create-n_registro" v-model="n_registro" type="text" class="form-control" placeholder="Ej: 00001">
                                     </div>
                                 </div>
                             </template>

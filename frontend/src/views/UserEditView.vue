@@ -72,7 +72,6 @@
                                         >
                                         <div>
                                             <div class="fw-semibold">{{ role.name }}</div>
-                                            <small class="text-muted">{{ role.description || 'Sin descripcion' }}</small>
                                         </div>
                                     </label>
                                 </div>

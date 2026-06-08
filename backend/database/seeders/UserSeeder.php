@@ -7,6 +7,7 @@ use App\Models\HojaAnual;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Voluntario;
+use Illuminate\Support\Carbon;
 use Illuminate\Database\Seeder;
 
 class UserSeeder extends Seeder
@@ -16,15 +17,18 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        $administrador = User::create([
-            "rut" => "11.111.111-1",
-            "nombre"=> "Sebastian Soto",
-            "email"=> "sebastian@gmail.com",
-            "telefono"=> "41232131",
-            "estado"=> "ACTIVO",
-            "password"=> "Sterek64",
-        ]);
+        $administrador = User::updateOrCreate(
+            ["rut" => "admin"],
+            [
+                "nombre"=> "Administrador",
+                "email"=> "admin@cruzroja.local",
+                "telefono"=> "admin",
+                "estado"=> "ACTIVO",
+                "password"=> "admin",
+            ]
+        );
         $administrador->roles()->sync($this->roleIds(['administrador']));
+        Voluntario::where('user_id', $administrador->id)->delete();
 
         $voluntaria = User::create([
             "rut" => "22.222.222-2",
@@ -32,14 +36,14 @@ class UserSeeder extends Seeder
             "email"=> "scarlet@gmail.com",
             "telefono"=> "41232131",
             "estado"=> "ACTIVO",
-            "password"=> "Sterek64",
+            "password"=> "cruzroja26",
         ]);
         $voluntaria->roles()->sync($this->roleIds(['voluntario']));
 
         $voluntariaRegistro = Voluntario::create([
             "user_id" => $voluntaria->id,
             "fecha_ingreso"=> "2022-02-04",
-            "n_registro"=> "VOL-001",
+            "n_registro"=> "00001",
             "grupo_sanguineo"=> "A",
             "factor_rh"=> "+",
             "fecha_nacimiento"=> "2000-02-03",
@@ -74,14 +78,14 @@ class UserSeeder extends Seeder
             "email"=> "miau@gmail.com",
             "telefono"=> "41232131",
             "estado"=> "ACTIVO",
-            "password"=> "Sterek64",
+            "password"=> "cruzroja26",
         ]);
         $voluntario->roles()->sync($this->roleIds(['voluntario', 'secretario-directiva']));
 
         $voluntarioRegistro = Voluntario::create([
             "user_id" => $voluntario->id,
             "fecha_ingreso"=> "2021-05-10",
-            "n_registro"=> "VOL-002",
+            "n_registro"=> "144301",
             "grupo_sanguineo"=> "O",
             "factor_rh"=> "-",
             "fecha_nacimiento"=> "1998-11-15",
@@ -116,13 +120,28 @@ class UserSeeder extends Seeder
             "email"=> "javiera@gmail.com",
             "telefono"=> "41232131",
             "estado"=> "ACTIVO",
-            "password"=> "Sterek64",
+            "password"=> "cruzroja26",
         ]);
         $finanzas->roles()->sync($this->roleIds(['encargada-finanzas']));
+        $this->upsertVolunteerLoginProfile($finanzas, '90002');
     }
 
     private function roleIds(array $slugs): array
     {
         return Role::whereIn('slug', $slugs)->pluck('id')->all();
+    }
+
+    private function upsertVolunteerLoginProfile(User $user, string $registro): void
+    {
+        Voluntario::updateOrCreate(
+            ['user_id' => $user->id],
+            [
+                'fecha_ingreso' => Carbon::create(2020, 1, 1)->toDateString(),
+                'n_registro' => $registro,
+                'factor_rh' => '+',
+                'grupo_sanguineo' => 'O',
+                'fecha_nacimiento' => Carbon::create(1990, 1, 1)->toDateString(),
+            ]
+        );
     }
 }

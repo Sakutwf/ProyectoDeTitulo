@@ -45,7 +45,7 @@ class RolePermissionApiTest extends TestCase
             'password' => 'Secreta123',
             'roles' => [$voluntarioRole->id, $secretarioRole->id],
             'fecha_ingreso' => '2024-03-01',
-            'n_registro' => 'VOL-777',
+            'n_registro' => '00777',
             'factor_rh' => '+',
             'grupo_sanguineo' => 'B',
             'fecha_nacimiento' => '1999-08-15',
@@ -56,7 +56,7 @@ class RolePermissionApiTest extends TestCase
             'foto_perfil' => $payload['foto_perfil'],
         ])
             ->assertCreated()
-            ->assertJsonPath('voluntario.n_registro', 'VOL-777')
+            ->assertJsonPath('voluntario.n_registro', '00777')
             ->assertJsonFragment(['slug' => 'voluntario'])
             ->assertJsonFragment(['slug' => 'secretario-directiva']);
 
@@ -83,7 +83,7 @@ class RolePermissionApiTest extends TestCase
             'password' => 'Secreta123',
             'roles' => [$voluntarioRole->id],
             'fecha_ingreso' => '2024-03-01',
-            'n_registro' => 'VOL-888',
+            'n_registro' => '00888',
             'factor_rh' => '+',
             'grupo_sanguineo' => 'A',
             'fecha_nacimiento' => '2000-01-01',
@@ -164,7 +164,7 @@ class RolePermissionApiTest extends TestCase
             'estado' => 'ACTIVO',
             'roles' => [$finanzasRole->id, $voluntarioRole->id],
         ])->assertOk()
-            ->assertJsonPath('voluntario.n_registro', 'VOL-001');
+            ->assertJsonPath('voluntario.n_registro', '00001');
     }
 
     private function fakePngUpload(string $name): UploadedFile

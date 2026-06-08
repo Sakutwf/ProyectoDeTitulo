@@ -28,8 +28,7 @@
                     <th class="fw-semibold">#</th>
                     <th class="fw-semibold">Nombre Evento</th>
                     <th class="fw-semibold">Nombre Actividad</th>
-                    <th class="fw-semibold">Fecha Inicio</th>
-                    <th class="fw-semibold">Fecha Término</th>
+                    <th class="fw-semibold">Horas por Actividad</th>
                     <th class="fw-semibold">Descripción</th>
                     <th class="fw-semibold">Tipo Evento</th>
                     <th class="fw-semibold">Planilla</th>
@@ -43,8 +42,7 @@
                     <td>{{ (meta.from || 1) + i }}</td>
                     <td>{{ actividad.evento?.nombre || '-' }}</td>
                     <td>{{ actividad.nombre || actividad.nombre_actividad || '-' }}</td>
-                    <td>{{ formatDate(actividad.evento?.fecha_inicio) }}</td>
-                    <td>{{ formatDate(actividad.evento?.fecha_termino) }}</td>
+                    <td>{{ formatHours(actividad.horas_participacion) }}</td>
                     <td>{{ actividad.evento?.descripcion || '-' }}</td>
                     <td>
                       <span class="badge bg-cruz-roja">{{ actividad.evento?.tipo || '-' }}</span>
@@ -74,7 +72,7 @@
                     </td>
                   </tr>
                   <tr v-if="!actividades || actividades.length === 0">
-                    <td colspan="11" class="text-center py-3">No hay actividades disponibles</td>
+                    <td colspan="10" class="text-center py-3">No hay actividades disponibles</td>
                   </tr>
                 </tbody>
               </table>
@@ -198,6 +196,12 @@ function formatDate(dateString) {
   if (!dateString) return '-'
   const date = new Date(dateString)
   return date.toLocaleDateString()
+}
+
+function formatHours(value) {
+  const numericValue = Number(value ?? 0)
+  if (!Number.isFinite(numericValue)) return '-'
+  return `${numericValue % 1 === 0 ? numericValue.toFixed(0) : numericValue.toFixed(2)} h`
 }
 
 async function fetchActividades(page = 1) {

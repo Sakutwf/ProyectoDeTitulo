@@ -16,7 +16,7 @@
               >
               <span v-else class="hero-photo-placeholder">Foto</span>
             </div>
-            <div class="hero-photo-actions">
+            <div v-if="canManageHistory" class="hero-photo-actions">
               <label class="photo-upload-trigger" :class="{ disabled: isUploadingPhoto }">
                 {{ user?.voluntario?.foto_perfil_url ? 'Cambiar foto' : 'Subir foto' }}
                 <input
@@ -39,9 +39,17 @@
               <p class="eyebrow">Nombre</p>
               <h1>{{ user?.nombre || 'Hoja de vida' }}</h1>
             </div>
-            <div class="hero-brand-badge" aria-label="Cruz Roja">
-              <span class="hero-brand-mark">+</span>
-              <span class="hero-brand-text">Cruz Roja</span>
+            <div class="hero-actions">
+              <button type="button" class="session-action" @click="goHome">
+                Inicio
+              </button>
+              <button type="button" class="session-action session-action--danger" @click="logout">
+                Cerrar sesion
+              </button>
+              <div class="hero-brand-badge" aria-label="Cruz Roja">
+                <span class="hero-brand-mark">+</span>
+                <span class="hero-brand-text">Cruz Roja</span>
+              </div>
             </div>
           </div>
 
@@ -134,7 +142,7 @@
               </div>
               <div class="panel-header-actions">
                 <span class="counter-chip">{{ formatHours(totalFilialHoursForYear) }}</span>
-                <button type="button" class="action-button" @click="openFilialRecordModal()">
+                <button v-if="canManageHistory" type="button" class="action-button" @click="openFilialRecordModal()">
                   Registrar horas
                 </button>
               </div>
@@ -153,7 +161,7 @@
                   </div>
                   <span class="mini-tag">{{ formatHours(record.horas_totales) }}</span>
                 </div>
-                <div class="filial-record-card__footer">
+                <div v-if="canManageHistory" class="filial-record-card__footer">
                   <button type="button" class="text-button award-link" @click="openFilialRecordModal(record)">
                     Editar
                   </button>
@@ -247,7 +255,7 @@
                     </a>
                   </div>
                   <small v-if="item.duracion">Duracion: {{ item.duracion }}</small>
-                  <div class="award-footer">
+                  <div v-if="canManageHistory" class="award-footer">
                     <button type="button" class="text-button award-link" @click="openAchievementModal(item)">
                       Editar
                     </button>
@@ -276,20 +284,28 @@
               <div class="observation-box">
                 <span class="observation-label">Labor efectuada</span>
                 <textarea
+                  v-if="canManageHistory"
                   v-model="observationDraft.labor_efectuada"
                   class="observation-editor"
                   rows="5"
                   placeholder="Escribe la labor efectuada durante este periodo."
                 ></textarea>
+                <p v-else class="observation-static">
+                  {{ selectedHojaAnual?.labor_efectuada || 'Sin labor efectuada registrada para este periodo.' }}
+                </p>
               </div>
               <div class="observation-box">
                 <span class="observation-label">Observaciones del periodo</span>
                 <textarea
+                  v-if="canManageHistory"
                   v-model="observationDraft.observaciones_generales"
                   class="observation-editor"
                   rows="5"
                   placeholder="Escribe observaciones relevantes para este periodo."
                 ></textarea>
+                <p v-else class="observation-static">
+                  {{ selectedHojaAnual?.observaciones_generales || 'Sin observaciones registradas para este periodo.' }}
+                </p>
               </div>
               <div class="observation-box observation-box--summary">
                 <span class="observation-label">Resumen anual</span>
@@ -298,7 +314,7 @@
                 </p>
               </div>
             </div>
-            <div v-if="hasObservationDraftChanges" class="observation-actions">
+            <div v-if="canManageHistory && hasObservationDraftChanges" class="observation-actions">
               <button
                 type="button"
                 class="action-button secondary"
@@ -320,7 +336,7 @@
         </main>
 
         <aside class="sidebar-column">
-          <section class="panel sidebar-panel sidebar-admin-panel">
+          <section v-if="canManageHistory" class="panel sidebar-panel sidebar-admin-panel">
             <button type="button" class="action-button sidebar-add-button" @click="openBlankAnnualForm">
               Agregar hoja anual
             </button>
@@ -603,9 +619,11 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useStore } from 'vuex'
 import axios from 'axios'
 import { show_alerta } from '../funciones'
 import HistorialAnualCard from '../components/HistorialAnualCard.vue'
+import { defaultRouteForUser } from '../utils/auth'
 import {
   FORMATIVE_ACTIVITY_TYPES,
   isFormativeEvent,
@@ -617,6 +635,7 @@ const API_BASE = 'http://localhost:8000/api'
 
 const route = useRoute()
 const router = useRouter()
+const store = useStore()
 const currentYear = new Date().getFullYear()
 
 const user = ref(null)
@@ -648,6 +667,8 @@ const achievementTypeOptions = [
 
 const isEditingAchievement = computed(() => Boolean(achievementForm.value.id_antecedente))
 const isEditingFilialRecord = computed(() => Boolean(filialRecordForm.value.id))
+const authUser = computed(() => store.getters.authUser)
+const canManageHistory = computed(() => store.getters.isAdministratorExperience)
 
 const achievementAttachmentHelpText = computed(() => {
   if (achievementForm.value.archivo) {
@@ -1095,6 +1116,20 @@ function resetObservationDraft() {
 
 function goBack() {
   router.back()
+}
+
+function goHome() {
+  if (!authUser.value) {
+    router.push('/login')
+    return
+  }
+
+  router.push(defaultRouteForUser(authUser.value, store.getters.accessMode))
+}
+
+function logout() {
+  store.dispatch('logout')
+  router.push('/login')
 }
 
 function getValidationMessage(error, fallbackMessage = 'No se pudo guardar la informacion.') {
@@ -1570,6 +1605,14 @@ watch(selectedYear, (year) => {
   flex-wrap: wrap;
 }
 
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .eyebrow {
   margin: 0 0 0.25rem;
   text-transform: uppercase;
@@ -1734,6 +1777,21 @@ watch(selectedYear, (year) => {
   border-radius: 999px;
   font-weight: 700;
   transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.session-action {
+  border: none;
+  border-radius: 999px;
+  background: #eef4fb;
+  color: #0f2f5f;
+  padding: 0.72rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.session-action--danger {
+  background: #fee4e2;
+  color: #b42318;
 }
 
 .action-button {
@@ -2246,6 +2304,18 @@ watch(selectedYear, (year) => {
 .observation-editor:focus {
   border-color: #0f2f5f;
   box-shadow: 0 0 0 3px rgba(15, 47, 95, 0.08);
+}
+
+.observation-static {
+  min-height: 148px;
+  margin: 0;
+  border: 1px solid #d8e0ea;
+  border-radius: 18px;
+  background: #f9fbfd;
+  color: #163a69;
+  padding: 0.95rem 1rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
 }
 
 .observation-actions {
