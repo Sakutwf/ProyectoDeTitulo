@@ -18,6 +18,10 @@ class HojaAnual extends Model
         'lista',
         'labor_efectuada',
         'observaciones_generales',
+        'cursos',
+        'talleres',
+        'seminarios',
+        'titulos_premios',
     ];
 
     public function hojaDeVida()

@@ -112,7 +112,7 @@ class RolePermissionApiTest extends TestCase
         Storage::disk('public')->assertExists($user->voluntario->foto_perfil);
     }
 
-    public function test_it_keeps_volunteer_profile_archived_when_volunteer_role_is_removed(): void
+    public function test_it_keeps_volunteer_profile_visible_for_admin_flows_when_volunteer_role_is_removed(): void
     {
         $user = User::where('rut', '22.222.222-2')->firstOrFail()->load('roles.permissions', 'voluntario');
         $finanzasRole = Role::where('slug', 'encargada-finanzas')->firstOrFail();
@@ -128,7 +128,7 @@ class RolePermissionApiTest extends TestCase
 
         $this->putJson("/api/user/{$user->id}", $payload)
             ->assertOk()
-            ->assertJsonPath('voluntario', null)
+            ->assertJsonPath('voluntario.user_id', $user->id)
             ->assertJsonFragment(['slug' => 'encargada-finanzas']);
 
         $user->refresh()->load('roles.permissions', 'voluntario');
@@ -136,6 +136,12 @@ class RolePermissionApiTest extends TestCase
         $this->assertFalse($user->hasRole('voluntario'));
         $this->assertTrue($user->hasPermission('ver_reportes_boletas'));
         $this->assertDatabaseHas('voluntarios', ['user_id' => $user->id]);
+        $this->getJson('/api/user')
+            ->assertOk()
+            ->assertJsonFragment(['user_id' => $user->id]);
+        $this->getJson("/api/user/{$user->id}")
+            ->assertOk()
+            ->assertJsonPath('voluntario.user_id', $user->id);
         $this->getJson('/api/voluntarios')
             ->assertOk()
             ->assertJsonMissing(['user_id' => $user->id]);

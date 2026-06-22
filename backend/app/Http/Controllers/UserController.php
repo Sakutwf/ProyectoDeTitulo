@@ -38,7 +38,7 @@ class UserController extends Controller
         }
 
         $users = $query->orderBy('id')->paginate(8);
-        $users->through(fn (User $user) => $this->prepareUserResponse($user));
+        $users->through(fn (User $user) => $this->prepareUserResponse($user, true));
 
         return response()->json($users, 200);
     }
@@ -51,7 +51,7 @@ class UserController extends Controller
         $users = User::with(self::USER_RELATIONS)
                 ->where('rut', $request->rut)
                 ->get()
-                ->map(fn (User $user) => $this->prepareUserResponse($user));
+                ->map(fn (User $user) => $this->prepareUserResponse($user, true));
 
         return response()->json($users, 200);
     }
@@ -68,7 +68,7 @@ class UserController extends Controller
             $this->syncRoles($user, $request);
             $this->syncVoluntario($user, $request);
 
-            return $this->prepareUserResponse($user->load(self::USER_RELATIONS));
+            return $this->prepareUserResponse($user->load(self::USER_RELATIONS), true);
         });
 
         return response()->json($user, 201);
@@ -80,7 +80,7 @@ class UserController extends Controller
     public function show(User $user)
     {
         return response()->json(
-            $this->prepareUserResponse($user->load(self::USER_RELATIONS)),
+            $this->prepareUserResponse($user->load(self::USER_RELATIONS), true),
             200
         );
     }
@@ -97,7 +97,7 @@ class UserController extends Controller
             $this->syncRoles($user, $request);
             $this->syncVoluntario($user, $request);
 
-            return $this->prepareUserResponse($user->load(self::USER_RELATIONS));
+            return $this->prepareUserResponse($user->load(self::USER_RELATIONS), true);
         });
 
         return response()->json($user, 200);
@@ -120,7 +120,7 @@ class UserController extends Controller
         $this->syncVoluntarioPhoto($request, $voluntario);
 
         return response()->json(
-            $this->prepareUserResponse($user->fresh()->load(self::USER_RELATIONS)),
+            $this->prepareUserResponse($user->fresh()->load(self::USER_RELATIONS), true),
             200
         );
     }
@@ -261,9 +261,9 @@ class UserController extends Controller
         return $user->roles->contains(fn (Role $role) => $role->slug === 'voluntario');
     }
 
-    private function prepareUserResponse(User $user): User
+    private function prepareUserResponse(User $user, bool $includeArchivedVolunteerProfile = false): User
     {
-        if (! $user->hasRole('voluntario')) {
+        if (! $includeArchivedVolunteerProfile && ! $user->hasRole('voluntario')) {
             $user->setRelation('voluntario', null);
         }
 

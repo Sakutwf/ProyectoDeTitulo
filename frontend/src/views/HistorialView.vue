@@ -36,15 +36,12 @@
         <div class="hero-main">
           <div class="hero-header">
             <div>
-              <p class="eyebrow">Nombre</p>
+              <p class="eyebrow">N. Registro {{ user?.voluntario?.n_registro || 'Sin registro' }}</p>
               <h1>{{ user?.nombre || 'Hoja de vida' }}</h1>
             </div>
             <div class="hero-actions">
-              <button type="button" class="session-action" @click="goHome">
-                Inicio
-              </button>
-              <button type="button" class="session-action session-action--danger" @click="logout">
-                Cerrar sesion
+              <button type="button" class="session-action" @click="openPdfExport">
+                Exportar PDF
               </button>
               <div class="hero-brand-badge" aria-label="Cruz Roja">
                 <span class="hero-brand-mark">+</span>
@@ -69,10 +66,6 @@
             <article class="summary-pill outline compact summary-ingreso">
               <span class="summary-label dark">Ingreso</span>
               <strong>{{ formatDate(user?.voluntario?.fecha_ingreso || hojaDeVida.fecha_creacion) }}</strong>
-            </article>
-            <article class="summary-pill compact summary-registro">
-              <span class="summary-label">N. Registro</span>
-              <strong>{{ user?.voluntario?.n_registro || 'Sin registro' }}</strong>
             </article>
           </div>
         </div>
@@ -192,7 +185,7 @@
                   <h3>Cursos</h3>
                   <ul v-if="groupedFormacion.cursos.length" class="bullet-list">
                     <li v-for="item in groupedFormacion.cursos" :key="item.id">
-                      {{ item.evento?.nombre || item.tipo }} - {{ formatDate(item.evento?.fecha_inicio) }}
+                      {{ item.label }}
                     </li>
                   </ul>
                   <p v-else class="empty-inline">Sin cursos registrados en este ano.</p>
@@ -202,7 +195,7 @@
                   <h3>Talleres</h3>
                   <ul v-if="groupedFormacion.talleres.length" class="bullet-list">
                     <li v-for="item in groupedFormacion.talleres" :key="item.id">
-                      {{ item.evento?.nombre || item.tipo }} - {{ formatDate(item.evento?.fecha_inicio) }}
+                      {{ item.label }}
                     </li>
                   </ul>
                   <p v-else class="empty-inline">Sin talleres registrados en este ano.</p>
@@ -212,7 +205,7 @@
                   <h3>Seminarios</h3>
                   <ul v-if="groupedFormacion.seminarios.length" class="bullet-list">
                     <li v-for="item in groupedFormacion.seminarios" :key="item.id">
-                      {{ item.evento?.nombre || item.tipo }} - {{ formatDate(item.evento?.fecha_inicio) }}
+                      {{ item.label }}
                     </li>
                   </ul>
                   <p v-else class="empty-inline">Sin seminarios registrados en este ano.</p>
@@ -270,7 +263,15 @@
                   </div>
                 </article>
               </div>
-              <div v-else class="empty-state small">
+              <div v-if="manualTitulosPremiosLines.length" class="category-card manual-awards-card">
+                <h3>Registro anual</h3>
+                <ul class="bullet-list">
+                  <li v-for="(item, index) in manualTitulosPremiosLines" :key="`manual-award-${index}`">
+                    {{ item }}
+                  </li>
+                </ul>
+              </div>
+              <div v-if="!groupedLogros.length && !manualTitulosPremiosLines.length" class="empty-state small">
                 No hay titulos ni premios cargados para {{ selectedYear }}.
               </div>
             </section>
@@ -438,43 +439,43 @@
 
             <div class="form-grid categories-grid">
               <label class="form-group">
-                <span class="form-label">Cursos (automatico)</span>
+                <span class="form-label">Cursos</span>
                 <textarea
                   v-model="annualForm.cursos"
                   rows="5"
                   class="admin-textarea"
-                  readonly
-                  placeholder="Se completa desde actividades FORMATIVAS de tipo curso"
+                  placeholder="Cursos registrados para el ano."
                 ></textarea>
               </label>
 
               <label class="form-group">
-                <span class="form-label">Talleres (automatico)</span>
+                <span class="form-label">Talleres</span>
                 <textarea
                   v-model="annualForm.talleres"
                   rows="5"
                   class="admin-textarea"
-                  readonly
-                  placeholder="Se completa desde actividades FORMATIVAS de tipo taller"
+                  placeholder="Talleres registrados para el ano."
                 ></textarea>
               </label>
 
               <label class="form-group">
-                <span class="form-label">Seminarios (automatico)</span>
+                <span class="form-label">Seminarios</span>
                 <textarea
                   v-model="annualForm.seminarios"
                   rows="5"
                   class="admin-textarea"
-                  readonly
-                  placeholder="Se completa desde actividades FORMATIVAS de tipo seminario"
+                  placeholder="Seminarios registrados para el ano."
                 ></textarea>
               </label>
 
               <label class="form-group form-span-2">
                 <span class="form-label">Titulos y premios</span>
-                <div class="form-note">
-                  Esta seccion se administra desde el apartado de titulos y premios. Cada registro se reflejara automaticamente en la hoja de vida anual segun su fecha.
-                </div>
+                <textarea
+                  v-model="annualForm.titulos_premios"
+                  rows="5"
+                  class="admin-textarea"
+                  placeholder="Titulos y premios registrados para el ano."
+                ></textarea>
               </label>
             </div>
 
@@ -794,14 +795,43 @@ const filteredAntecedentes = computed(() => {
   )
 })
 
-const groupedFormacion = computed(() => ({
-  cursos: filteredFormativeActivities.value.filter((item) => normalizeTipo(item.tipo) === 'CURSO'),
-  talleres: filteredFormativeActivities.value.filter((item) => normalizeTipo(item.tipo) === 'TALLER'),
-  seminarios: filteredFormativeActivities.value.filter((item) => normalizeTipo(item.tipo) === 'SEMINARIO')
-}))
+const groupedFormacion = computed(() => {
+  if (selectedHojaAnual.value) {
+    return {
+      cursos: buildSectionItemsWithFallback(
+        selectedHojaAnual.value.cursos,
+        filteredFormativeActivities.value.filter((item) => normalizeTipo(item.tipo) === 'CURSO')
+      ),
+      talleres: buildSectionItemsWithFallback(
+        selectedHojaAnual.value.talleres,
+        filteredFormativeActivities.value.filter((item) => normalizeTipo(item.tipo) === 'TALLER')
+      ),
+      seminarios: buildSectionItemsWithFallback(
+        selectedHojaAnual.value.seminarios,
+        filteredFormativeActivities.value.filter((item) => normalizeTipo(item.tipo) === 'SEMINARIO')
+      )
+    }
+  }
+
+  return {
+    cursos: filteredFormativeActivities.value
+      .filter((item) => normalizeTipo(item.tipo) === 'CURSO')
+      .map(mapActivityToSectionItem),
+    talleres: filteredFormativeActivities.value
+      .filter((item) => normalizeTipo(item.tipo) === 'TALLER')
+      .map(mapActivityToSectionItem),
+    seminarios: filteredFormativeActivities.value
+      .filter((item) => normalizeTipo(item.tipo) === 'SEMINARIO')
+      .map(mapActivityToSectionItem)
+  }
+})
 
 const groupedLogros = computed(() =>
   filteredAntecedentes.value.filter((item) => ['TITULO', 'PREMIO'].includes(normalizeTipo(item.tipo)))
+)
+
+const manualTitulosPremiosLines = computed(() =>
+  selectedHojaAnual.value ? parseMultilineField(selectedHojaAnual.value.titulos_premios) : []
 )
 
 const filialRecordsForYear = computed(() =>
@@ -891,7 +921,8 @@ function createEmptyAnnualForm(year) {
     observaciones_generales: '',
     cursos: '',
     talleres: '',
-    seminarios: ''
+    seminarios: '',
+    titulos_premios: ''
   }
 }
 
@@ -1010,6 +1041,39 @@ function getAntecedentesForYear(year) {
   return antecedentes.value.filter((antecedente) => getYearFromAntecedente(antecedente) === Number(year))
 }
 
+function parseMultilineField(value) {
+  return String(value || '')
+    .split(/\r?\n/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+function buildManualSectionItems(value) {
+  return parseMultilineField(value).map((label, index) => ({
+    id: `manual-${index}-${label}`,
+    label
+  }))
+}
+
+function hasStoredAnnualSectionValue(value) {
+  return value !== null && value !== undefined
+}
+
+function buildSectionItemsWithFallback(value, fallbackItems) {
+  if (hasStoredAnnualSectionValue(value)) {
+    return buildManualSectionItems(value)
+  }
+
+  return fallbackItems.map(mapActivityToSectionItem)
+}
+
+function mapActivityToSectionItem(item) {
+  return {
+    id: item.id,
+    label: `${item.evento?.nombre || item.tipo}${item.evento?.fecha_inicio ? ` - ${formatDate(item.evento?.fecha_inicio)}` : ''}`
+  }
+}
+
 function getActivitiesForYear(year) {
   return actividades.value.filter((actividad) => getYearFromDate(actividad.evento?.fecha_inicio) === Number(year))
 }
@@ -1021,6 +1085,13 @@ function joinActivitiesByTipo(year, tipo) {
     .filter((item) => item.pivot?.asistio !== false)
     .map((item) => `${item.evento?.nombre || item.tipo} (${formatDate(item.evento?.fecha_inicio)})`)
     .filter(Boolean)
+    .join('\n')
+}
+
+function joinAchievementsByYear(year) {
+  return getAntecedentesForYear(year)
+    .filter((item) => ['TITULO', 'PREMIO'].includes(normalizeTipo(item.tipo)))
+    .map((item) => `${prettyTipo(item.tipo)}: ${item.nombre}`)
     .join('\n')
 }
 
@@ -1041,9 +1112,10 @@ function buildAnnualForm(year, annual = null) {
     porcentaje_asistencia: annual?.porcentaje_asistencia ?? '',
     labor_efectuada: annual?.labor_efectuada || '',
     observaciones_generales: annual?.observaciones_generales || '',
-    cursos: joinActivitiesByTipo(targetYear, 'CURSO'),
-    talleres: joinActivitiesByTipo(targetYear, 'TALLER'),
-    seminarios: joinActivitiesByTipo(targetYear, 'SEMINARIO')
+    cursos: annual ? (annual.cursos ?? joinActivitiesByTipo(targetYear, 'CURSO')) : joinActivitiesByTipo(targetYear, 'CURSO'),
+    talleres: annual ? (annual.talleres ?? joinActivitiesByTipo(targetYear, 'TALLER')) : joinActivitiesByTipo(targetYear, 'TALLER'),
+    seminarios: annual ? (annual.seminarios ?? joinActivitiesByTipo(targetYear, 'SEMINARIO')) : joinActivitiesByTipo(targetYear, 'SEMINARIO'),
+    titulos_premios: annual ? (annual.titulos_premios ?? joinAchievementsByYear(targetYear)) : joinAchievementsByYear(targetYear)
   }
 }
 
@@ -1115,7 +1187,32 @@ function resetObservationDraft() {
 }
 
 function goBack() {
-  router.back()
+  router.push('/inicio')
+}
+
+function openPdfExport() {
+  const targetUserId = user.value?.id || route.params.id
+
+  if (!targetUserId) {
+    show_alerta('No existe un usuario valido para exportar.', 'error')
+    return
+  }
+
+  const targetRoute = router.resolve({
+    name: 'HistorialPdfView',
+    params: { id: targetUserId },
+    query: { autoprint: 1 }
+  })
+
+  const openedWindow = window.open(targetRoute.href, '_blank', 'noopener')
+
+  if (!openedWindow) {
+    router.push({
+      name: 'HistorialPdfView',
+      params: { id: targetUserId },
+      query: { autoprint: 1 }
+    })
+  }
 }
 
 function goHome() {
@@ -1125,11 +1222,6 @@ function goHome() {
   }
 
   router.push(defaultRouteForUser(authUser.value, store.getters.accessMode))
-}
-
-function logout() {
-  store.dispatch('logout')
-  router.push('/login')
 }
 
 function getValidationMessage(error, fallbackMessage = 'No se pudo guardar la informacion.') {
@@ -1183,7 +1275,11 @@ async function saveAnnualRecord() {
     cargo: annualForm.value.cargo.trim() || null,
     lista: annualForm.value.lista.trim() || null,
     labor_efectuada: annualForm.value.labor_efectuada.trim() || null,
-    observaciones_generales: annualForm.value.observaciones_generales.trim() || null
+    observaciones_generales: annualForm.value.observaciones_generales.trim() || null,
+    cursos: annualForm.value.cursos.trim(),
+    talleres: annualForm.value.talleres.trim(),
+    seminarios: annualForm.value.seminarios.trim(),
+    titulos_premios: annualForm.value.titulos_premios.trim()
   }
 
   const request = annualForm.value.id_hoja
@@ -1441,24 +1537,32 @@ watch(selectedYear, (year) => {
 
 <style scoped>
 .historial-page {
+  --historial-fluid-gap: clamp(1rem, 1.35vw, 1.6rem);
+  --historial-fluid-panel-padding: clamp(1rem, 1.45vw, 1.55rem);
+  --historial-fluid-body: clamp(0.98rem, 0.3vw + 0.92rem, 1.12rem);
+  --historial-fluid-label: clamp(0.76rem, 0.18vw + 0.73rem, 0.9rem);
+  --historial-fluid-title: clamp(1.2rem, 0.95vw + 0.98rem, 1.75rem);
   padding: 1.5rem;
   background:
     radial-gradient(circle at top left, rgba(255, 49, 61, 0.1), transparent 24%),
     linear-gradient(180deg, #f2efe9 0%, #f8f5ef 100%);
   min-height: 100vh;
+  padding: clamp(1rem, 1.6vw, 1.75rem) clamp(1rem, 5vw, 10vw) clamp(1.5rem, 2vw, 2rem);
 }
 
 .historial-shell {
-  max-width: 1380px;
+  width: 100%;
+  max-width: none;
   margin: 0 auto;
+  font-size: var(--historial-fluid-body);
 }
 
 .hero-card {
   display: grid;
-  grid-template-columns: 228px 1fr;
-  gap: 1.2rem;
+  grid-template-columns: minmax(240px, 17vw) minmax(0, 1fr);
+  gap: var(--historial-fluid-gap);
   align-items: stretch;
-  margin-bottom: 1rem;
+  margin-bottom: clamp(1rem, 1.4vw, 1.4rem);
 }
 
 .hero-rail {
@@ -1508,20 +1612,20 @@ watch(selectedYear, (year) => {
 
 .hero-photo-card {
   grid-area: photo;
-  min-height: 236px;
+  min-height: clamp(236px, 22vw, 320px);
   flex-direction: column;
   justify-content: flex-start;
   background: #ffffff;
   border: 1px solid rgba(15, 47, 95, 0.08);
   color: #163a69;
   box-shadow: 0 16px 30px rgba(15, 47, 95, 0.08);
-  padding: 0.65rem 0.65rem 0.55rem;
+  padding: clamp(0.65rem, 0.9vw, 0.95rem) clamp(0.65rem, 0.9vw, 0.95rem) clamp(0.55rem, 0.8vw, 0.8rem);
 }
 
 .hero-photo-frame {
   width: 100%;
   flex: 1;
-  min-height: 168px;
+  min-height: clamp(168px, 15vw, 248px);
   border-radius: 16px;
   background: linear-gradient(180deg, #ffffff 0%, #f5f7fa 100%);
   border: 1px dashed #d4dbe5;
@@ -1534,7 +1638,7 @@ watch(selectedYear, (year) => {
 .hero-photo-placeholder {
   color: #7f8da3;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: clamp(0.95rem, 0.35vw + 0.88rem, 1.12rem);
 }
 
 .hero-photo-image {
@@ -1546,7 +1650,7 @@ watch(selectedYear, (year) => {
 .hero-photo-text {
   text-align: center;
   color: #7a8799;
-  font-size: 0.72rem;
+  font-size: clamp(0.78rem, 0.2vw + 0.74rem, 0.9rem);
   line-height: 1.25;
 }
 
@@ -1566,9 +1670,9 @@ watch(selectedYear, (year) => {
   border-radius: 999px;
   background: #0f2f5f;
   color: #fff;
-  font-size: 0.74rem;
+  font-size: clamp(0.82rem, 0.22vw + 0.78rem, 0.96rem);
   font-weight: 700;
-  padding: 0.45rem 0.75rem;
+  padding: clamp(0.5rem, 0.65vw, 0.7rem) clamp(0.75rem, 1vw, 1rem);
   cursor: pointer;
 }
 
@@ -1579,10 +1683,10 @@ watch(selectedYear, (year) => {
 
 .hero-year-card {
   grid-area: year;
-  min-height: 58px;
+  min-height: clamp(58px, 5.4vw, 90px);
   background: #ff313d;
   color: #fff;
-  font-size: 2rem;
+  font-size: clamp(2rem, 1.5vw + 1.55rem, 3rem);
   font-weight: 800;
   box-shadow: 0 16px 28px rgba(255, 49, 61, 0.18);
 }
@@ -1591,7 +1695,7 @@ watch(selectedYear, (year) => {
   background: rgba(255, 255, 255, 1);
   border: 1px solid rgba(15, 47, 95, 0.08);
   border-radius: 22px;
-  padding: 2rem 2rem 1rem;
+  padding: clamp(1.45rem, 1.9vw, 2.4rem) clamp(1.45rem, 1.9vw, 2.4rem) clamp(1rem, 1.25vw, 1.4rem);
   box-shadow: 0 22px 50px rgba(15, 47, 95, 0.08);
   backdrop-filter: blur(10px);
 }
@@ -1617,21 +1721,21 @@ watch(selectedYear, (year) => {
   margin: 0 0 0.25rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-size: 0.76rem;
+  font-size: clamp(0.8rem, 0.2vw + 0.76rem, 0.94rem);
   color: #73839a;
 }
 
 .hero-header h1 {
   margin: 0;
   color: #0f2f5f;
-  font-size: clamp(2rem, 4vw, 3rem);
+  font-size: clamp(2.2rem, 2.2vw + 1.45rem, 4rem);
   font-weight: 800;
   line-height: 1;
 }
 
 .hero-brand-badge {
-  min-width: 110px;
-  min-height: 88px;
+  min-width: clamp(110px, 9vw, 148px);
+  min-height: clamp(88px, 7vw, 118px);
   border-radius: 18px;
   background: #ffffff;
   border: 1px solid rgba(15, 47, 95, 0.08);
@@ -1645,14 +1749,14 @@ watch(selectedYear, (year) => {
 
 .hero-brand-mark {
   color: #ff313d;
-  font-size: 5rem;
+  font-size: clamp(4rem, 2.5vw + 3.2rem, 6rem);
   line-height: 0.8;
   font-weight: 800;
 }
 
 .hero-brand-text {
   color: #163a69;
-  font-size: 1rem;
+  font-size: clamp(1rem, 0.35vw + 0.92rem, 1.18rem);
   font-weight: 700;
 }
 
@@ -1667,28 +1771,30 @@ watch(selectedYear, (year) => {
   display: inline-flex;
   align-items: center;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: clamp(0.94rem, 0.35vw + 0.88rem, 1.08rem);
 }
 
 .status-chip.is-active {
-  background: #d9d9d9;
-  color: #0f2f5f;
+  background: #dff3e5;
+  color: #1f7a3d;
 }
 
 .status-chip.is-inactive {
-  background: #f0d9dc;
-  color: #8b1e2c;
+  background: #e3e6ea;
+  color: #5e6670;
 }
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-template-areas:
-    "cargo cargo cargo cargo cargo cargo lista lista lista lista lista lista"
-    "asistencia asistencia asistencia asistencia ingreso ingreso ingreso ingreso registro registro registro registro";
-  gap: 0.85rem;
+  grid-template-columns:
+    minmax(220px, 1.7fr)
+    minmax(190px, 1.25fr)
+    minmax(175px, 1fr)
+    minmax(175px, 1fr);
+  grid-template-areas: "cargo lista asistencia ingreso";
+  gap: clamp(0.7rem, 0.85vw, 1rem);
   align-items: stretch;
-  margin-top: 0.45rem;
+  margin-top: 0.7rem;
 }
 
 .summary-pill {
@@ -1697,7 +1803,9 @@ watch(selectedYear, (year) => {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: 62px;
+  min-height: clamp(52px, 4vw, 70px);
+  padding: clamp(0.55rem, 0.75vw, 0.8rem) clamp(0.85rem, 1vw, 1.1rem);
+  overflow: hidden;
 }
 
 .summary-cargo {
@@ -1716,14 +1824,10 @@ watch(selectedYear, (year) => {
   grid-area: ingreso;
 }
 
-.summary-registro {
-  grid-area: registro;
-}
-
 .summary-pill.outline {
   background: #fff;
   color: #0f2f5f;
-  border: 3px solid #0f2f5f;
+  border: 2px solid #0f2f5f;
 }
 
 .summary-pill.compact {
@@ -1733,11 +1837,12 @@ watch(selectedYear, (year) => {
 
 .summary-label {
   display: block;
-  margin-bottom: 0.12rem;
-  font-size: 0.72rem;
+  margin-bottom: 0.08rem;
+  font-size: clamp(0.68rem, 0.16vw + 0.65rem, 0.82rem);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   opacity: 0.8;
+  line-height: 1.1;
 }
 
 .summary-label.dark {
@@ -1746,24 +1851,30 @@ watch(selectedYear, (year) => {
 }
 
 .summary-pill strong {
-  font-size: 0.96rem;
-  line-height: 1.15;
+  font-size: clamp(0.95rem, 0.4vw + 0.87rem, 1.12rem);
+  line-height: 1.1;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .toolbar {
-  margin: 1rem 0 1.2rem;
+  margin: clamp(1rem, 1.2vw, 1.3rem) 0 clamp(1.1rem, 1.4vw, 1.45rem);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--historial-fluid-gap);
   flex-wrap: wrap;
 }
 
 .search-box {
-  max-width: 580px;
+  flex: 1 1 min(720px, 100%);
+  max-width: none;
   border-radius: 999px;
   border: 1px solid #dfe5ec;
-  padding: 0.85rem 1rem;
+  padding: clamp(0.9rem, 0.9vw, 1.05rem) clamp(1rem, 1.2vw, 1.25rem);
+  font-size: var(--historial-fluid-body);
   box-shadow: 0 8px 24px rgba(15, 47, 95, 0.05);
 }
 
@@ -1775,6 +1886,7 @@ watch(selectedYear, (year) => {
 .text-button {
   border: none;
   border-radius: 999px;
+  font-size: clamp(0.92rem, 0.24vw + 0.87rem, 1.02rem);
   font-weight: 700;
   transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
@@ -1855,7 +1967,7 @@ watch(selectedYear, (year) => {
 }
 
 .form-label {
-  font-size: 0.82rem;
+  font-size: clamp(0.82rem, 0.18vw + 0.79rem, 0.94rem);
   font-weight: 700;
   color: #3f526f;
   text-transform: uppercase;
@@ -1870,6 +1982,7 @@ watch(selectedYear, (year) => {
   background: #fff;
   color: #163a69;
   padding: 0.9rem 1rem;
+  font-size: var(--historial-fluid-body);
   outline: none;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
@@ -1932,29 +2045,29 @@ watch(selectedYear, (year) => {
 
 .content-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.9fr);
-  gap: 1.2rem;
+  grid-template-columns: minmax(0, 2.15fr) minmax(320px, 0.92fr);
+  gap: var(--historial-fluid-gap);
   align-items: start;
 }
 
 .main-column,
 .sidebar-column {
   display: grid;
-  gap: 1.2rem;
+  gap: var(--historial-fluid-gap);
 }
 
 .panel {
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(15, 47, 95, 0.08);
   border-radius: 28px;
-  padding: 1.2rem;
+  padding: var(--historial-fluid-panel-padding);
   box-shadow: 0 18px 40px rgba(15, 47, 95, 0.07);
 }
 
 .panel-header {
   display: flex;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--historial-fluid-gap);
   align-items: center;
   margin-bottom: 1rem;
 }
@@ -1965,7 +2078,7 @@ watch(selectedYear, (year) => {
 
 .panel-kicker {
   margin: 0 0 0.2rem;
-  font-size: 0.76rem;
+  font-size: var(--historial-fluid-label);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #7a8799;
@@ -1974,13 +2087,14 @@ watch(selectedYear, (year) => {
 .panel-header h2 {
   margin: 0;
   color: #0f2f5f;
-  font-size: 1.45rem;
+  font-size: var(--historial-fluid-title);
   font-weight: 800;
 }
 
 .counter-chip {
   background: #eef4fb;
   color: #0f2f5f;
+  font-size: clamp(0.88rem, 0.2vw + 0.84rem, 1rem);
   font-weight: 700;
 }
 
@@ -1996,9 +2110,9 @@ watch(selectedYear, (year) => {
 
 .activity-item {
   display: grid;
-  grid-template-columns: 104px 1fr;
-  gap: 1rem;
-  padding: 1rem;
+  grid-template-columns: minmax(116px, 10.5vw) 1fr;
+  gap: clamp(1rem, 1vw, 1.2rem);
+  padding: clamp(1rem, 1vw, 1.2rem);
   border-radius: 22px;
   background: #fbfbfc;
   border: 1px solid #edf0f4;
@@ -2012,6 +2126,7 @@ watch(selectedYear, (year) => {
   border-radius: 20px;
   background: #0f2f5f;
   color: #fff;
+  font-size: clamp(0.94rem, 0.28vw + 0.9rem, 1.06rem);
   font-weight: 700;
   text-align: center;
 }
@@ -2030,7 +2145,7 @@ watch(selectedYear, (year) => {
 .award-card h3 {
   margin: 0;
   color: #102d56;
-  font-size: 1.05rem;
+  font-size: clamp(1.05rem, 0.45vw + 0.96rem, 1.3rem);
   font-weight: 800;
 }
 
@@ -2048,7 +2163,7 @@ watch(selectedYear, (year) => {
   align-items: center;
   border-radius: 999px;
   padding: 0.28rem 0.65rem;
-  font-size: 0.8rem;
+  font-size: clamp(0.8rem, 0.2vw + 0.76rem, 0.92rem);
   font-weight: 700;
 }
 
@@ -2078,13 +2193,14 @@ watch(selectedYear, (year) => {
 .empty-inline {
   margin: 0;
   color: #5f6f82;
+  font-size: var(--historial-fluid-body);
   line-height: 1.55;
 }
 
 .detail-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.95fr);
-  gap: 1.2rem;
+  gap: var(--historial-fluid-gap);
 }
 
 .category-stack,
@@ -2100,13 +2216,14 @@ watch(selectedYear, (year) => {
   border-radius: 22px;
   background: #fbfbfc;
   border: 1px solid #edf0f4;
-  padding: 1rem;
+  padding: clamp(1rem, 1vw, 1.2rem);
 }
 
 .bullet-list {
   margin: 0;
   padding-left: 1.1rem;
   color: #163a69;
+  font-size: var(--historial-fluid-body);
 }
 
 .bullet-list li + li {
@@ -2163,7 +2280,7 @@ watch(selectedYear, (year) => {
 
 .award-link,
 .award-delete {
-  font-size: 0.82rem;
+  font-size: clamp(0.84rem, 0.16vw + 0.81rem, 0.95rem);
 }
 
 .award-footer {
@@ -2225,7 +2342,7 @@ watch(selectedYear, (year) => {
   border-radius: 14px;
   background: #ff313d;
   color: #fff;
-  font-size: 0.92rem;
+  font-size: clamp(0.92rem, 0.2vw + 0.88rem, 1.02rem);
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 12px 24px rgba(255, 49, 61, 0.18);
@@ -2240,7 +2357,7 @@ watch(selectedYear, (year) => {
 .achievement-file-help {
   display: block;
   margin-top: 0.7rem;
-  font-size: 0.96rem;
+  font-size: var(--historial-fluid-body);
   line-height: 1.45;
 }
 
@@ -2283,7 +2400,7 @@ watch(selectedYear, (year) => {
   margin-bottom: 0.45rem;
   color: #73839a;
   text-transform: uppercase;
-  font-size: 0.78rem;
+  font-size: var(--historial-fluid-label);
   letter-spacing: 0.06em;
 }
 
@@ -2295,6 +2412,7 @@ watch(selectedYear, (year) => {
   background: #fff;
   color: #163a69;
   padding: 0.95rem 1rem;
+  font-size: var(--historial-fluid-body);
   resize: vertical;
   line-height: 1.55;
   outline: none;
@@ -2314,6 +2432,7 @@ watch(selectedYear, (year) => {
   background: #f9fbfd;
   color: #163a69;
   padding: 0.95rem 1rem;
+  font-size: var(--historial-fluid-body);
   line-height: 1.6;
   white-space: pre-wrap;
 }
@@ -2344,12 +2463,12 @@ watch(selectedYear, (year) => {
 }
 
 .empty-state.small {
-  font-size: 0.95rem;
+  font-size: clamp(0.95rem, 0.18vw + 0.92rem, 1.02rem);
 }
 
 .sidebar-panel {
   position: sticky;
-  top: 1rem;
+  top: clamp(1rem, 1.2vw, 1.35rem);
 }
 
 .sidebar-admin-panel {
@@ -2414,6 +2533,13 @@ watch(selectedYear, (year) => {
   .summary-grid {
     grid-template-columns: 1fr;
     grid-template-areas: none;
+  }
+
+  .summary-cargo,
+  .summary-lista,
+  .summary-asistencia,
+  .summary-ingreso {
+    grid-area: auto;
   }
 
   .form-actions {

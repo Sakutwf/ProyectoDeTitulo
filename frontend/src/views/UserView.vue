@@ -51,7 +51,7 @@
                                                 <div class="ms-3">
                                                     <h6 class="mb-0">
                                                         <router-link
-                                                            v-if="user.voluntario"
+                                                            v-if="hasVolunteerHistory(user)"
                                                             :to="{ name: 'HistorialView', params: { id: user.id } }"
                                                             class="text-decoration-none text-dark"
                                                             style="cursor: pointer;"
@@ -91,14 +91,14 @@
                                         <td>{{ formatDate(user.voluntario?.fecha_ingreso) }}</td>
                                         <td class="text-center">
                                             <router-link
-                                                v-if="user.voluntario"
+                                                v-if="hasVolunteerHistory(user)"
                                                 :to="{ name: 'HistorialView', params: { id: user.id } }"
-                                                class="btn btn-sm btn-danger"
-                                                style="color: #fff;"
+                                                class="btn btn-sm history-button"
+                                                :class="hasActiveVolunteerRole(user) ? 'btn-danger' : 'btn-secondary history-button--archived'"
                                             >
                                                 Ver Historial
                                             </router-link>
-                                            <span v-else class="text-muted small">No aplica</span>
+                                            <span v-else class="text-muted small">{{ getHistoryLabel(user) }}</span>
                                         </td>
                                         <td>
                                             <div class="d-flex justify-content-center">
@@ -244,6 +244,18 @@ export default {
         },
         getStatusBadgeClass(status) {
             return status === 'ACTIVO' ? 'bg-danger' : 'bg-secondary';
+        },
+        hasVolunteerHistory(user) {
+            return Boolean(user?.voluntario?.hoja_de_vida || user?.voluntario?.id || user?.voluntario?.user_id);
+        },
+        hasActiveVolunteerRole(user) {
+            return (user?.roles || []).some((role) => role.slug === 'voluntario');
+        },
+        isAdministratorType(user) {
+            return (user?.roles || []).some((role) => ['administrador', 'secretario-directiva'].includes(role.slug));
+        },
+        getHistoryLabel(user) {
+            return this.isAdministratorType(user) ? 'Sin Historial' : 'No aplica';
         }
     }
 };
@@ -317,6 +329,18 @@ export default {
 .btn-outline-danger:hover {
     background-color: #f44336;
     color: white;
+}
+
+.history-button {
+    color: #fff;
+}
+
+.history-button--archived,
+.history-button--archived:hover,
+.history-button--archived:focus {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: #fff;
 }
 
 .card {

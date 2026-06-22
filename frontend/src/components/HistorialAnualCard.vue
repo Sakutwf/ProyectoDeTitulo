@@ -46,13 +46,13 @@ function formatAttendance(value) {
 <style scoped>
 .annual-card {
   display: grid;
-  grid-template-columns: 76px 1fr;
-  gap: 0.85rem;
+  grid-template-columns: clamp(78px, 5.2vw, 104px) 1fr;
+  gap: clamp(0.85rem, 0.75vw, 1rem);
   align-items: stretch;
   background: #ffffff;
   border: 1px solid #ece8e2;
   border-radius: 18px;
-  padding: 0.8rem;
+  padding: clamp(0.8rem, 0.8vw, 1rem);
   color: #0f2f5f;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
@@ -72,11 +72,11 @@ function formatAttendance(value) {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 76px;
+  min-height: clamp(76px, 5vw, 104px);
   border-radius: 22px;
   background: #ff313d;
   color: #fff;
-  font-size: 1.35rem;
+  font-size: clamp(1.35rem, 0.8vw + 1.18rem, 1.8rem);
   font-weight: 800;
   letter-spacing: 0.04em;
 }
@@ -93,20 +93,24 @@ function formatAttendance(value) {
   margin-bottom: 0.4rem;
 }
 
+.annual-card__header strong {
+  font-size: clamp(0.96rem, 0.25vw + 0.91rem, 1.08rem);
+}
+
 .annual-card__attendance {
   white-space: nowrap;
   padding: 0.2rem 0.55rem;
   border-radius: 999px;
   background: #eef4fb;
   color: #0f2f5f;
-  font-size: 0.82rem;
+  font-size: clamp(0.82rem, 0.18vw + 0.79rem, 0.92rem);
   font-weight: 700;
 }
 
 .annual-card__text {
   margin: 0;
   color: #5f6f82;
-  font-size: 0.92rem;
+  font-size: clamp(0.94rem, 0.22vw + 0.89rem, 1.02rem);
   line-height: 1.4;
 }
 </style>

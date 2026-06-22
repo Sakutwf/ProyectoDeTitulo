@@ -4,6 +4,7 @@ import UserView from '../views/UserView.vue'
 import ActividadView from '../views/ActividadView.vue'
 import EventoView from '@/views/EventoView.vue'
 import HistorialView from '../views/HistorialView.vue'
+import HistorialPdfView from '../views/HistorialPdfView.vue'
 import LoginView from '../views/LoginView.vue'
 import AccessSelectionView from '../views/AccessSelectionView.vue'
 import VolunteerActivitiesView from '../views/VolunteerActivitiesView.vue'
@@ -69,7 +70,13 @@ const routes = [
     path: '/historial/:id',
     name: 'HistorialView',
     component: HistorialView,
-    meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva', 'voluntario'], experience: 'volunteer' }
+    meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva', 'voluntario'] }
+  },
+  {
+    path: '/historial/:id/pdf',
+    name: 'HistorialPdfView',
+    component: HistorialPdfView,
+    meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva', 'voluntario'] }
   }
 ]
 
@@ -124,11 +131,11 @@ router.beforeEach((to, from, next) => {
     return
   }
 
-  if (to.name === 'HistorialView' && (store.getters.isVolunteerOnly || store.getters.isVolunteerExperience)) {
+  if (['HistorialView', 'HistorialPdfView'].includes(to.name) && (store.getters.isVolunteerOnly || store.getters.isVolunteerExperience)) {
     const requestedUserId = Number(to.params.id)
 
     if (requestedUserId !== authUser?.id) {
-      next({ name: 'HistorialView', params: { id: authUser.id } })
+      next({ name: to.name, params: { id: authUser.id }, query: to.query })
       return
     }
   }
