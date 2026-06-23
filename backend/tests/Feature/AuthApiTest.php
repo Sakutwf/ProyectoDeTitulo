@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Role;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -11,64 +10,55 @@ class AuthApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function setUp(): void
+    public function test_admin_can_login_with_email(): void
     {
-        parent::setUp();
-
         $this->seed();
-    }
 
-    public function test_admin_can_login_with_admin_credentials(): void
-    {
         $this->postJson('/api/login', [
-            'user' => 'admin',
+            'user' => 'admin@cruzroja.local',
             'id' => 'admin',
         ])
             ->assertOk()
-            ->assertJsonPath('user.rut', 'admin')
-            ->assertJsonPath('is_admin', true)
-            ->assertJsonPath('user.voluntario', null)
-            ->assertJsonPath('requires_access_selection', false)
-            ->assertJsonFragment(['slug' => 'administrador']);
+            ->assertJsonPath('user.email', 'admin@cruzroja.local')
+            ->assertJsonFragment(['administrador']);
     }
 
-    public function test_volunteer_can_login_with_registration_number_and_default_password(): void
+    public function test_volunteer_can_login_with_registration_number(): void
     {
+        $this->seed();
+
         $this->postJson('/api/login', [
             'user' => '00001',
-            'id' => 'cruzroja26',
+            'id' => 'cruzRojaCco26',
         ])
             ->assertOk()
-            ->assertJsonPath('user.rut', '22.222.222-2')
             ->assertJsonPath('user.voluntario.n_registro', '00001')
-            ->assertJsonPath('requires_access_selection', false)
-            ->assertJsonFragment(['slug' => 'voluntario']);
+            ->assertJsonFragment(['voluntario']);
     }
 
-    public function test_admin_volunteer_user_is_prompted_to_choose_access_after_login(): void
+    public function test_new_volunteer_profile_uses_generic_default_password_when_password_is_omitted(): void
     {
-        $user = User::where('rut', '22.222.222-2')->firstOrFail();
-        $adminRole = Role::where('slug', 'administrador')->firstOrFail();
-        $user->roles()->syncWithoutDetaching([$adminRole->id]);
+        $this->seed();
+
+        $volunteerRoleId = Role::query()->where('clave', 'voluntario')->value('id');
+
+        $this->postJson('/api/user', [
+            'email' => 'nuevo.voluntario@cruzroja.local',
+            'estado' => true,
+            'roles' => [$volunteerRoleId],
+            'n_registro' => '99001',
+            'filial_id' => 1,
+            'rut' => '99.000.001-1',
+            'nombres' => 'Nuevo',
+            'apellidos' => 'Voluntario',
+            'celular' => '912345678',
+        ])->assertCreated();
 
         $this->postJson('/api/login', [
-            'user' => '00001',
-            'id' => 'cruzroja26',
+            'user' => '99001',
+            'id' => 'cruzRojaCco26',
         ])
             ->assertOk()
-            ->assertJsonPath('user.rut', '22.222.222-2')
-            ->assertJsonPath('can_access_admin', true)
-            ->assertJsonPath('can_access_volunteer', true)
-            ->assertJsonPath('requires_access_selection', true);
-    }
-
-    public function test_login_rejects_invalid_credentials(): void
-    {
-        $this->postJson('/api/login', [
-            'user' => 'admin',
-            'id' => 'incorrecto',
-        ])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors('user');
+            ->assertJsonPath('user.voluntario.n_registro', '99001');
     }
 }

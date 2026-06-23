@@ -1,513 +1,383 @@
 <template>
-    <div class="modal fade" id="newUserModal" tabindex="-1" aria-labelledby="newUserModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title" id="newUserModalLabel">
-                        <i class="fa-solid fa-user-plus me-2"></i>Nuevo Registro
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form @submit.prevent="guardar">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label for="create-nombre" class="form-label">Nombre</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
-                                    <input
-                                        id="create-nombre"
-                                        v-model="nombre"
-                                        type="text"
-                                        class="form-control"
-                                        required
-                                        placeholder="Nombre completo"
-                                        :class="{ 'is-invalid': nombre && !isNameValid }"
-                                    >
-                                </div>
-                                <div v-if="nombre && !isNameValid" class="invalid-feedback d-block">
-                                    El nombre solo debe contener letras y espacios.
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label for="create-rut" class="form-label">RUT</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fa-solid fa-id-card"></i></span>
-                                    <input
-                                        id="create-rut"
-                                        v-model="rut"
-                                        type="text"
-                                        class="form-control"
-                                        required
-                                        placeholder="Ej: 12345678-9"
-                                        :class="{ 'is-invalid': rut && !isRutValid }"
-                                    >
-                                </div>
-                                <div v-if="rut && !isRutValid" class="invalid-feedback d-block">
-                                    RUT invalido.
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label for="create-correo" class="form-label">Correo electronico</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fa-solid fa-at"></i></span>
-                                    <input
-                                        id="create-correo"
-                                        v-model="correo"
-                                        type="email"
-                                        class="form-control"
-                                        required
-                                        placeholder="correo@ejemplo.com"
-                                        :class="{ 'is-invalid': correo && !isEmailValid }"
-                                    >
-                                </div>
-                                <div v-if="correo && !isEmailValid" class="invalid-feedback d-block">
-                                    Correo electronico invalido.
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label for="create-telefono" class="form-label">Telefono</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fa-solid fa-phone"></i></span>
-                                    <input
-                                        id="create-telefono"
-                                        v-model="telefono"
-                                        type="text"
-                                        class="form-control"
-                                        placeholder="Numero de telefono"
-                                        :class="{ 'is-invalid': telefono && !isPhoneValid }"
-                                    >
-                                </div>
-                                <div v-if="telefono && !isPhoneValid" class="invalid-feedback d-block">
-                                    El telefono solo debe contener numeros.
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label for="create-estado" class="form-label">Estado</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fa-solid fa-circle-check"></i></span>
-                                    <select id="create-estado" v-model="estado" class="form-select" required>
-                                        <option value="ACTIVO">ACTIVO</option>
-                                        <option value="INACTIVO">INACTIVO</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-md-12">
-                                <label class="form-label">Roles</label>
-                                <div class="role-grid">
-                                    <label
-                                        v-for="role in rolesOptions"
-                                        :key="role.id"
-                                        class="role-card"
-                                        :class="{ selected: selectedRoles.includes(role.id) }"
-                                    >
-                                        <input
-                                            :id="`create-role-${role.id}`"
-                                            v-model="selectedRoles"
-                                            class="form-check-input"
-                                            type="checkbox"
-                                            :value="role.id"
-                                        >
-                                        <div>
-                                            <div class="fw-semibold">{{ role.name }}</div>
-                                        </div>
-                                    </label>
-                                </div>
-                                <div v-if="rolesOptions.length === 0" class="text-muted small mt-2">
-                                    No hay roles disponibles.
-                                </div>
-                                <div class="form-text">
-                                    Si asignas el rol Voluntario, se habilitara su ficha.
-                                </div>
-                            </div>
-
-                            <template v-if="esVoluntario">
-                                <div class="col-md-12">
-                                    <label for="create-foto_perfil" class="form-label">Foto de perfil</label>
-                                    <div class="photo-upload-card">
-                                        <div class="photo-preview">
-                                            <img v-if="fotoPreview" :src="fotoPreview" alt="Vista previa de foto de perfil">
-                                            <span v-else>Sin foto</span>
-                                        </div>
-                                        <div class="photo-upload-fields">
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class="fa-solid fa-image"></i></span>
-                                                <input
-                                                    id="create-foto_perfil"
-                                                    type="file"
-                                                    class="form-control"
-                                                    accept=".jpg,.jpeg,.png,.webp"
-                                                    @change="onPhotoSelected"
-                                                >
-                                            </div>
-                                            <small class="text-muted">
-                                                Opcional. Puedes subirla ahora o más adelante desde la hoja de vida. Formatos: JPG, PNG o WEBP.
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <label for="create-fecha_nacimiento" class="form-label">Fecha de nacimiento</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fa-solid fa-calendar"></i></span>
-                                        <input id="create-fecha_nacimiento" v-model="fecha_nacimiento" type="date" class="form-control">
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <label for="create-fecha_ingreso" class="form-label">Fecha de ingreso</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fa-solid fa-calendar-check"></i></span>
-                                        <input id="create-fecha_ingreso" v-model="fecha_ingreso" type="date" class="form-control">
-                                    </div>
-                                </div>
-
-                                <div class="col-md-4">
-                                    <label for="create-grupo_sanguineo" class="form-label">Grupo sanguineo</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fa-solid fa-tint"></i></span>
-                                        <select id="create-grupo_sanguineo" v-model="grupo_sanguineo" class="form-select">
-                                            <option value="A">A</option>
-                                            <option value="B">B</option>
-                                            <option value="AB">AB</option>
-                                            <option value="O">O</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-4">
-                                    <label for="create-factor_rh" class="form-label">Factor RH</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fa-solid fa-tint"></i></span>
-                                        <select id="create-factor_rh" v-model="factor_rh" class="form-select">
-                                            <option value="+">+</option>
-                                            <option value="-">-</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-4">
-                                    <label for="create-n_registro" class="form-label">N registro</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fa-solid fa-hashtag"></i></span>
-                                        <input id="create-n_registro" v-model="n_registro" type="text" class="form-control" placeholder="Ej: 00001">
-                                    </div>
-                                </div>
-                            </template>
-
-                            <div class="col-md-12">
-                                <label for="create-password" class="form-label">Contrasena</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fa-solid fa-key"></i></span>
-                                    <input id="create-password" v-model="password" type="password" class="form-control" required placeholder="Contrasena">
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-danger" @click="guardar" :disabled="!isFormValid">
-                        <i class="fa-solid fa-save me-1"></i>Guardar Registro
-                    </button>
-                </div>
-            </div>
+  <div class="modal fade" id="newUserModal" tabindex="-1" aria-labelledby="newUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title" id="newUserModalLabel">
+            <i class="fa-solid fa-user-plus me-2"></i>Nuevo perfil
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+
+        <div class="modal-body">
+          <form @submit.prevent="guardar">
+            <div class="row g-3">
+              <div class="col-md-6" v-if="!esVoluntario">
+                <label for="create-name" class="form-label">Nombre</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
+                  <input
+                    id="create-name"
+                    v-model.trim="name"
+                    type="text"
+                    class="form-control"
+                    required
+                    placeholder="Nombre visible del usuario"
+                  >
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label for="create-email" class="form-label">Correo electrónico</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fa-solid fa-at"></i></span>
+                  <input
+                    id="create-email"
+                    v-model.trim="email"
+                    type="email"
+                    class="form-control"
+                    required
+                    placeholder="correo@ejemplo.com"
+                  >
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label for="create-estado" class="form-label">Estado</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fa-solid fa-circle-check"></i></span>
+                  <select id="create-estado" v-model="estado" class="form-select" required>
+                    <option :value="true">Activo</option>
+                    <option :value="false">Inactivo</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="col-md-12">
+                <label class="form-label">Roles</label>
+                <div class="role-grid">
+                  <label
+                    v-for="role in rolesOptions"
+                    :key="role.id"
+                    class="role-card"
+                    :class="{ selected: selectedRoles.includes(role.id) }"
+                  >
+                    <input
+                      :id="`create-role-${role.id}`"
+                      v-model="selectedRoles"
+                      class="form-check-input"
+                      type="checkbox"
+                      :value="role.id"
+                    >
+                    <div>
+                      <div class="fw-semibold">{{ role.nombre }}</div>
+                      <small class="text-muted">{{ role.clave }}</small>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div class="col-12">
+                <div class="alert alert-warning mb-0">
+                  <strong>Clave inicial:</strong> al crear el perfil se asignará
+                  <code>cruzRojaCco26</code>. Luego podrás cambiarla desde la edición del usuario.
+                </div>
+              </div>
+
+              <template v-if="esVoluntario">
+                <div class="col-12">
+                  <div class="volunteer-section-title">Datos del voluntario</div>
+                </div>
+
+                <div class="col-md-4">
+                  <label for="create-n-registro" class="form-label">N° de registro</label>
+                  <input id="create-n-registro" v-model.trim="n_registro" type="text" class="form-control" placeholder="Ej: 00001" required>
+                </div>
+
+                <div class="col-md-4">
+                  <label for="create-rut" class="form-label">RUT</label>
+                  <input id="create-rut" v-model.trim="rut" type="text" class="form-control" placeholder="Ej: 12.345.678-9" required>
+                </div>
+
+                <div class="col-md-4">
+                  <label for="create-filial" class="form-label">Filial</label>
+                  <select id="create-filial" v-model="filial_id" class="form-select" required>
+                    <option value="">Selecciona una filial</option>
+                    <option v-for="filial in filialesOptions" :key="filial.id" :value="filial.id">
+                      {{ filial.nombre }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="create-nombres" class="form-label">Nombres</label>
+                  <input id="create-nombres" v-model.trim="nombres" type="text" class="form-control" required>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="create-apellidos" class="form-label">Apellidos</label>
+                  <input id="create-apellidos" v-model.trim="apellidos" type="text" class="form-control" required>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="create-celular" class="form-label">Celular</label>
+                  <input id="create-celular" v-model.trim="celular" type="text" class="form-control" placeholder="Ej: 912345678">
+                </div>
+
+                <div class="col-md-6">
+                  <label for="create-nacionalidad" class="form-label">Nacionalidad</label>
+                  <input id="create-nacionalidad" v-model.trim="nacionalidad" type="text" class="form-control" placeholder="Ej: Chilena">
+                </div>
+
+                <div class="col-md-6">
+                  <label for="create-fecha-nacimiento" class="form-label">Fecha de nacimiento</label>
+                  <input id="create-fecha-nacimiento" v-model="fecha_nacimiento" type="date" class="form-control">
+                </div>
+
+                <div class="col-md-6">
+                  <label for="create-fecha-incorporacion" class="form-label">Fecha de incorporación</label>
+                  <input id="create-fecha-incorporacion" v-model="fecha_incorporacion" type="date" class="form-control">
+                </div>
+
+                <div class="col-md-6">
+                  <label for="create-domicilio" class="form-label">Domicilio</label>
+                  <input id="create-domicilio" v-model.trim="domicilio" type="text" class="form-control">
+                </div>
+
+                <div class="col-md-6">
+                  <label for="create-contacto-emergencia-nombre" class="form-label">Contacto de emergencia</label>
+                  <input id="create-contacto-emergencia-nombre" v-model.trim="contacto_emergencia_nombre" type="text" class="form-control">
+                </div>
+
+                <div class="col-md-6">
+                  <label for="create-contacto-emergencia-numero" class="form-label">Número de emergencia</label>
+                  <input id="create-contacto-emergencia-numero" v-model.trim="contacto_emergencia_numero" type="text" class="form-control">
+                </div>
+
+                <div class="col-md-6">
+                  <label for="create-foto-perfil" class="form-label">Foto de perfil</label>
+                  <input
+                    id="create-foto-perfil"
+                    type="file"
+                    class="form-control"
+                    accept=".jpg,.jpeg,.png,.webp"
+                    @change="onPhotoSelected"
+                  >
+                </div>
+              </template>
+            </div>
+          </form>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-danger" @click="guardar">
+            <i class="fa-solid fa-save me-1"></i>Guardar perfil
+          </button>
+        </div>
+      </div>
     </div>
+  </div>
 </template>
 
 <script>
-import axios from 'axios';
-import { show_alerta } from '../funciones';
-import { Modal } from 'bootstrap';
+import axios from 'axios'
+import { show_alerta } from '../funciones'
+import { Modal } from 'bootstrap'
+
+const DEFAULT_PASSWORD = 'cruzRojaCco26'
 
 export default {
-    name: 'UserCreateView',
-    data() {
-        return {
-            nombre: '',
-            rut: '',
-            telefono: '',
-            correo: '',
-            estado: 'ACTIVO',
-            fecha_nacimiento: '',
-            grupo_sanguineo: 'O',
-            factor_rh: '+',
-            fecha_ingreso: '',
-            n_registro: '',
-            foto_perfil: null,
-            fotoPreview: '',
-            password: '',
-            rolesOptions: [],
-            selectedRoles: [],
-            url: 'http://localhost:8000/api/user',
-            rolesUrl: 'http://localhost:8000/api/role',
-            modalInstance: null
-        };
-    },
-    computed: {
-        isNameValid() {
-            return this.nombre.trim() !== '' && /^[a-zA-ZÀ-ÿ\s]+$/.test(this.nombre);
-        },
-        isRutValid() {
-            return this.validaRut(this.rut.trim());
-        },
-        isEmailValid() {
-            return this.correo.trim() !== '' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.correo);
-        },
-        isPhoneValid() {
-            return this.telefono.trim() !== '' && /^[0-9]+$/.test(this.telefono);
-        },
-        isFormValid() {
-            return this.isNameValid && this.isRutValid && this.isEmailValid && this.isPhoneValid;
-        },
-        esVoluntario() {
-            return this.selectedRoleDetails.some((role) => role.slug === 'voluntario');
-        },
-        selectedRoleDetails() {
-            return this.rolesOptions.filter((role) => this.selectedRoles.includes(role.id));
-        }
-    },
-    mounted() {
-        this.modalInstance = new Modal(document.getElementById('newUserModal'));
-        this.fetchRoles();
-    },
-    methods: {
-        async fetchRoles() {
-            try {
-                const response = await axios.get(this.rolesUrl);
-                this.rolesOptions = response.data;
-            } catch (error) {
-                show_alerta('No se pudieron cargar los roles', 'error');
-            }
-        },
-        validaRut(rutCompleto) {
-            rutCompleto = rutCompleto.replace('‐', '-');
-            if (!/^[0-9]+[-|‐]{1}[0-9kK]{1}$/.test(rutCompleto)) return false;
-            const tmp = rutCompleto.split('-');
-            let digv = tmp[1];
-            const rut = tmp[0];
-            if (digv === 'K') digv = 'k';
-
-            return this.dv(rut) === digv;
-        },
-        dv(T) {
-            let M = 0;
-            let S = 1;
-            for (; T; T = Math.floor(T / 10)) {
-                S = (S + T % 10 * (9 - M++ % 6)) % 11;
-            }
-            return S ? S - 1 : 'k';
-        },
-        show() {
-            this.resetForm();
-            this.modalInstance.show();
-        },
-        hide() {
-            this.modalInstance.hide();
-        },
-        clearVoluntarioFields() {
-            this.fecha_nacimiento = '';
-            this.grupo_sanguineo = 'O';
-            this.factor_rh = '+';
-            this.fecha_ingreso = '';
-            this.n_registro = '';
-            this.clearPhotoSelection();
-        },
-        clearPhotoSelection() {
-            this.foto_perfil = null;
-            this.fotoPreview = '';
-        },
-        onPhotoSelected(event) {
-            const file = event.target.files?.[0] || null;
-            this.foto_perfil = file;
-            this.fotoPreview = file ? URL.createObjectURL(file) : '';
-        },
-        buildFormData() {
-            const formData = new FormData();
-
-            formData.append('nombre', this.nombre);
-            formData.append('rut', this.rut);
-            formData.append('telefono', this.telefono);
-            formData.append('email', this.correo);
-            formData.append('estado', this.estado);
-            formData.append('password', this.password);
-            this.selectedRoles.forEach((roleId) => formData.append('roles[]', roleId));
-
-            if (this.esVoluntario) {
-                formData.append('fecha_nacimiento', this.fecha_nacimiento);
-                formData.append('grupo_sanguineo', this.grupo_sanguineo);
-                formData.append('factor_rh', this.factor_rh);
-                formData.append('fecha_ingreso', this.fecha_ingreso);
-                formData.append('n_registro', this.n_registro);
-
-                if (this.foto_perfil) {
-                    formData.append('foto_perfil', this.foto_perfil);
-                }
-            }
-
-            return formData;
-        },
-        resetForm() {
-            this.nombre = '';
-            this.rut = '';
-            this.telefono = '';
-            this.correo = '';
-            this.estado = 'ACTIVO';
-            this.password = '';
-            this.selectedRoles = [];
-            this.clearVoluntarioFields();
-        },
-        async guardar() {
-            if (this.nombre.trim() === '') {
-                show_alerta('Escribe el nombre', 'warning', 'create-nombre');
-                return;
-            }
-            if (this.rut.trim() === '') {
-                show_alerta('Escribe el rut', 'warning', 'create-rut');
-                return;
-            }
-            if (this.telefono.trim() === '') {
-                show_alerta('Escribe el telefono', 'warning', 'create-telefono');
-                return;
-            }
-            if (this.correo.trim() === '') {
-                show_alerta('Escribe el correo', 'warning', 'create-correo');
-                return;
-            }
-            if (this.esVoluntario && this.fecha_nacimiento.trim() === '') {
-                show_alerta('Escribe la fecha de nacimiento', 'warning', 'create-fecha_nacimiento');
-                return;
-            }
-            if (this.esVoluntario && this.fecha_ingreso.trim() === '') {
-                show_alerta('Escribe la fecha de ingreso', 'warning', 'create-fecha_ingreso');
-                return;
-            }
-            if (this.esVoluntario && this.n_registro.trim() === '') {
-                show_alerta('Escribe el numero de registro', 'warning', 'create-n_registro');
-                return;
-            }
-            if (this.password.trim() === '') {
-                show_alerta('Escribe la contrasena', 'warning', 'create-password');
-                return;
-            }
-
-            try {
-                const respuesta = await axios.post(this.url, this.buildFormData(), {
-                    headers: {
-                        'Content-Type': 'multipart/form-data'
-                    }
-                });
-
-                if (respuesta.status === 201 || respuesta.status === 200) {
-                    show_alerta('Registro creado correctamente', 'success');
-                    this.hide();
-                    this.$emit('user-created');
-                    this.resetForm();
-                    return;
-                }
-
-                show_alerta('No se pudo crear el registro', 'error');
-            } catch (error) {
-                if (error.response && error.response.data) {
-                    const errores = error.response.data.errors || {};
-                    let listado = '';
-                    Object.keys(errores).forEach((key) => {
-                        listado += `${errores[key][0]}. `;
-                    });
-                    show_alerta(listado || 'Error al crear el registro', 'error');
-                } else {
-                    show_alerta('Error al crear el registro', 'error');
-                }
-            }
-        }
+  name: 'UserCreateView',
+  data() {
+    return {
+      name: '',
+      email: '',
+      estado: true,
+      selectedRoles: [],
+      rolesOptions: [],
+      filialesOptions: [],
+      n_registro: '',
+      filial_id: '',
+      rut: '',
+      nombres: '',
+      apellidos: '',
+      nacionalidad: '',
+      fecha_nacimiento: '',
+      fecha_incorporacion: '',
+      celular: '',
+      domicilio: '',
+      contacto_emergencia_nombre: '',
+      contacto_emergencia_numero: '',
+      foto_perfil: null,
+      url: 'http://localhost:8000/api/user',
+      rolesUrl: 'http://localhost:8000/api/role',
+      filialesUrl: 'http://localhost:8000/api/filiales',
+      modalInstance: null
     }
-};
+  },
+  computed: {
+    selectedRoleDetails() {
+      return this.rolesOptions.filter((role) => this.selectedRoles.includes(role.id))
+    },
+    esVoluntario() {
+      return this.selectedRoleDetails.some((role) => role.clave === 'voluntario')
+    },
+    computedDisplayName() {
+      return `${this.nombres} ${this.apellidos}`.trim()
+    }
+  },
+  async mounted() {
+    this.modalInstance = new Modal(document.getElementById('newUserModal'))
+    await Promise.all([this.fetchRoles(), this.fetchFiliales()])
+  },
+  methods: {
+    async fetchRoles() {
+      const response = await axios.get(this.rolesUrl)
+      this.rolesOptions = response.data
+    },
+    async fetchFiliales() {
+      const response = await axios.get(this.filialesUrl)
+      this.filialesOptions = response.data
+    },
+    show() {
+      this.resetForm()
+      this.modalInstance.show()
+    },
+    hide() {
+      this.modalInstance.hide()
+    },
+    onPhotoSelected(event) {
+      this.foto_perfil = event.target.files?.[0] || null
+    },
+    buildFormData() {
+      const formData = new FormData()
+
+      formData.append('name', this.esVoluntario ? this.computedDisplayName : this.name.trim())
+      formData.append('email', this.email.trim())
+      formData.append('estado', this.estado ? '1' : '0')
+      this.selectedRoles.forEach((roleId) => formData.append('roles[]', roleId))
+
+      if (this.esVoluntario) {
+        formData.append('n_registro', this.n_registro.trim())
+        formData.append('filial_id', String(this.filial_id))
+        formData.append('rut', this.rut.trim())
+        formData.append('nombres', this.nombres.trim())
+        formData.append('apellidos', this.apellidos.trim())
+        formData.append('nacionalidad', this.nacionalidad.trim())
+        formData.append('fecha_nacimiento', this.fecha_nacimiento)
+        formData.append('fecha_incorporacion', this.fecha_incorporacion)
+        formData.append('celular', this.celular.trim())
+        formData.append('domicilio', this.domicilio.trim())
+        formData.append('contacto_emergencia_nombre', this.contacto_emergencia_nombre.trim())
+        formData.append('contacto_emergencia_numero', this.contacto_emergencia_numero.trim())
+
+        if (this.foto_perfil) {
+          formData.append('foto_perfil', this.foto_perfil)
+        }
+      }
+
+      return formData
+    },
+    resetForm() {
+      this.name = ''
+      this.email = ''
+      this.estado = true
+      this.selectedRoles = []
+      this.n_registro = ''
+      this.filial_id = ''
+      this.rut = ''
+      this.nombres = ''
+      this.apellidos = ''
+      this.nacionalidad = ''
+      this.fecha_nacimiento = ''
+      this.fecha_incorporacion = ''
+      this.celular = ''
+      this.domicilio = ''
+      this.contacto_emergencia_nombre = ''
+      this.contacto_emergencia_numero = ''
+      this.foto_perfil = null
+    },
+    validateForm() {
+      if (!this.email.trim()) {
+        show_alerta('Debes ingresar el correo electrónico.', 'warning', 'create-email')
+        return false
+      }
+
+      if (!this.esVoluntario && !this.name.trim()) {
+        show_alerta('Debes ingresar el nombre del usuario.', 'warning', 'create-name')
+        return false
+      }
+
+      if (this.esVoluntario) {
+        if (!this.n_registro.trim()) {
+          show_alerta('Debes ingresar el N° de registro.', 'warning', 'create-n-registro')
+          return false
+        }
+        if (!this.filial_id) {
+          show_alerta('Debes seleccionar una filial.', 'warning', 'create-filial')
+          return false
+        }
+        if (!this.rut.trim() || !this.nombres.trim() || !this.apellidos.trim()) {
+          show_alerta('Completa RUT, nombres y apellidos del voluntario.', 'warning')
+          return false
+        }
+      }
+
+      return true
+    },
+    async guardar() {
+      if (!this.validateForm()) {
+        return
+      }
+
+      try {
+        const response = await axios.post(this.url, this.buildFormData(), {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
+
+        if (response.status === 201) {
+          show_alerta(`Perfil creado. Clave inicial: ${DEFAULT_PASSWORD}`, 'success')
+          this.hide()
+          this.$emit('user-created')
+          this.resetForm()
+        }
+      } catch (error) {
+        const errores = error.response?.data?.errors || {}
+        const listado = Object.values(errores).flat().join(' ')
+        show_alerta(listado || 'No se pudo crear el perfil.', 'error')
+      }
+    }
+  }
+}
 </script>
 
 <style scoped>
-.modal-header {
-    border-bottom: 0;
-}
-
-.modal-footer {
-    border-top: 0;
-}
-
-.modal-content {
-    border-radius: 8px;
-    border: none;
-}
-
-.modal-body {
-    padding: 20px 30px;
-}
-
-.is-invalid {
-    border-color: #dc3545 !important;
-}
-
 .role-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
 }
 
 .role-card {
-    display: flex;
-    gap: 10px;
-    padding: 12px;
-    border: 1px solid #d9d9d9;
-    border-radius: 8px;
-    background: #fff;
-    cursor: pointer;
-    transition: border-color 0.2s, box-shadow 0.2s;
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
 }
 
 .role-card.selected {
-    border-color: #dc3545;
-    box-shadow: 0 0 0 0.15rem rgba(220, 53, 69, 0.15);
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.15rem rgba(220, 53, 69, 0.15);
 }
 
-.photo-upload-card {
-    display: grid;
-    grid-template-columns: 120px 1fr;
-    gap: 16px;
-    align-items: center;
-    padding: 12px;
-    border: 1px solid #d9d9d9;
-    border-radius: 10px;
-    background: #fafafa;
-}
-
-.photo-preview {
-    width: 120px;
-    height: 120px;
-    border-radius: 16px;
-    background: #f0f2f5;
-    border: 2px dashed #c9d2dd;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #7a8699;
-    font-weight: 600;
-}
-
-.photo-preview img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.photo-upload-fields {
-    display: grid;
-    gap: 8px;
+.volunteer-section-title {
+  font-weight: 700;
+  color: #dc3545;
+  border-bottom: 1px solid #f1d7d7;
+  padding-bottom: 0.35rem;
 }
 </style>

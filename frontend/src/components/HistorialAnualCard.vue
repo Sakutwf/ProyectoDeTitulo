@@ -1,17 +1,17 @@
 <template>
   <RouterLink
     class="annual-card text-decoration-none"
-    :class="{ active: active }"
+    :class="{ active }"
     :to="to"
   >
     <div class="annual-card__year">{{ yearLabel }}</div>
     <div class="annual-card__body">
       <div class="annual-card__header">
-        <strong>{{ historial.cargo || 'Sin cargo' }}</strong>
-        <span class="annual-card__attendance">{{ formatAttendance(historial.porcentaje_asistencia) }}</span>
+        <strong>{{ attendanceLabel }}</strong>
+        <span class="annual-card__badge">{{ secondaryLabel }}</span>
       </div>
       <p class="annual-card__text">
-        {{ historial.observaciones_generales || 'Ver detalle del periodo anual.' }}
+        {{ summaryText }}
       </p>
     </div>
   </RouterLink>
@@ -35,18 +35,47 @@ const props = defineProps({
   }
 })
 
-const yearLabel = computed(() => String(props.historial.anio || '----'))
+const yearLabel = computed(() => String(props.historial?.anio || '----'))
 
-function formatAttendance(value) {
-  if (value === null || value === undefined || value === '') return 'Sin %'
-  return `${value}%`
-}
+const attendanceLabel = computed(() => {
+  const percentage = props.historial?.asistencia_anual_porcentaje
+
+  if (percentage === null || percentage === undefined || percentage === '') {
+    return 'Asistencia sin registrar'
+  }
+
+  return `${Number(percentage)}% de asistencia`
+})
+
+const secondaryLabel = computed(() => {
+  const hours = props.historial?.asistencia_anual_horas
+
+  if (hours === null || hours === undefined || hours === '') {
+    return 'Sin horas'
+  }
+
+  return `${Number(hours)} h`
+})
+
+const summaryText = computed(() => {
+  const comments = props.historial?.comentarios?.trim()
+
+  if (comments) {
+    return comments
+  }
+
+  const titles = props.historial?.titulos?.length || 0
+  const courses = props.historial?.cursos?.length || 0
+  const sanctions = props.historial?.sanciones?.length || 0
+
+  return `${titles} titulo(s) · ${courses} curso(s) · ${sanctions} sancion(es)`
+})
 </script>
 
 <style scoped>
 .annual-card {
   display: grid;
-  grid-template-columns: clamp(78px, 5.2vw, 104px) 1fr;
+  grid-template-columns: clamp(80px, 5.4vw, 106px) 1fr;
   gap: clamp(0.85rem, 0.75vw, 1rem);
   align-items: stretch;
   background: #ffffff;
@@ -72,7 +101,7 @@ function formatAttendance(value) {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: clamp(76px, 5vw, 104px);
+  min-height: clamp(80px, 5vw, 106px);
   border-radius: 22px;
   background: #ff313d;
   color: #fff;
@@ -90,14 +119,14 @@ function formatAttendance(value) {
   justify-content: space-between;
   gap: 0.75rem;
   align-items: center;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.45rem;
 }
 
 .annual-card__header strong {
-  font-size: clamp(0.96rem, 0.25vw + 0.91rem, 1.08rem);
+  font-size: clamp(0.95rem, 0.25vw + 0.9rem, 1.05rem);
 }
 
-.annual-card__attendance {
+.annual-card__badge {
   white-space: nowrap;
   padding: 0.2rem 0.55rem;
   border-radius: 999px;

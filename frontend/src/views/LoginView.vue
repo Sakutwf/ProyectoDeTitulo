@@ -6,14 +6,15 @@
       </div>
 
       <label class="login-field">
-        <span>Usuario</span>
+        <span>ID de acceso</span>
         <input
           v-model.trim="form.user"
           type="text"
           autocomplete="username"
-          placeholder="Ingresa tu usuario"
+          placeholder="Ingresa tu N° de registro"
           required
         >
+        <small class="login-help">Los voluntarios ingresan con su N° de registro.</small>
       </label>
 
       <label class="login-field">
@@ -153,6 +154,11 @@ export default {
 .login-field input:focus {
   border-color: #0f2f5f;
   box-shadow: 0 0 0 3px rgba(15, 47, 95, 0.08);
+}
+
+.login-help {
+  color: #5d6d84;
+  font-size: 0.82rem;
 }
 
 .login-submit {

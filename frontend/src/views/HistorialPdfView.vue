@@ -4,871 +4,635 @@
       <button type="button" class="pdf-toolbar__button" @click="goBack">
         Volver
       </button>
-      <button type="button" class="pdf-toolbar__button pdf-toolbar__button--primary" @click="printNow">
+      <button
+        type="button"
+        class="pdf-toolbar__button pdf-toolbar__button--primary"
+        :disabled="!readyToPrint"
+        @click="printNow"
+      >
         Guardar como PDF
       </button>
-      <span class="pdf-toolbar__hint">Formato sugerido: tamano legal, orientacion vertical.</span>
+      <span class="pdf-toolbar__hint">Formato sugerido: carta, orientación vertical.</span>
     </div>
 
     <div v-if="isLoading" class="pdf-state">
-      Preparando hoja de vida...
+      Cargando hoja de vida...
     </div>
 
     <div v-else-if="errorMessage" class="pdf-state pdf-state--error">
       {{ errorMessage }}
     </div>
 
-    <div v-else-if="user && hojaDeVida" class="pdf-document">
-      <section
-        v-for="(rows, pageIndex) in signatureYearChunks"
-        :key="`cover-${pageIndex}`"
-        class="pdf-sheet"
-      >
-        <div class="sheet-header">
-          <div class="sheet-header__cross" aria-hidden="true">
-            <span class="cross cross--vertical"></span>
-            <span class="cross cross--horizontal"></span>
-          </div>
-          <div class="sheet-header__content">
-            <h1>CRUZ ROJA CHILENA</h1>
-            <p>Hoja de Vida Voluntario/a Activo/a</p>
-            <p>Entidad: {{ entityLabel }}</p>
-          </div>
-        </div>
+    <div v-else-if="volunteer && selectedAnnual" class="pdf-document">
+      <article class="pdf-sheet pdf-sheet--page1">
+        <header class="page-header">
+          <img :src="logoSrc" alt="Cruz Roja Chilena" class="page-logo">
+          <h1>HOJA DE VIDA DEL VOLUNTARIO/A</h1>
+        </header>
 
-        <div class="identity-photo identity-photo--cover">
-          <img
-            v-if="volunteer?.foto_perfil_url"
-            :src="volunteer.foto_perfil_url"
-            :alt="`Foto de ${user.nombre}`"
-          >
-        </div>
+        <section class="top-grid">
+          <table class="sheet-table sheet-table--institutional">
+            <tbody>
+              <tr class="section-bar">
+                <th colspan="2">Datos Institucionales</th>
+              </tr>
+              <tr>
+                <td class="label-cell">Filial</td>
+                <td>{{ volunteer.filial?.nombre || '' }}</td>
+              </tr>
+              <tr>
+                <td class="label-cell">Comité regional</td>
+                <td>{{ volunteer.filial?.comite_regional || '' }}</td>
+              </tr>
+              <tr>
+                <td class="label-cell">Año</td>
+                <td>{{ selectedAnnual.anio || '' }}</td>
+              </tr>
+              <tr>
+                <td class="label-cell">Asistencia Anual</td>
+                <td>{{ attendanceLabel }}</td>
+              </tr>
+            </tbody>
+          </table>
 
-        <div class="identity-layout">
-          <div class="identity-fields">
-            <div class="identity-line">
-              <span class="identity-label">Nombre:</span>
-              <span class="identity-value">{{ user.nombre || '' }}</span>
-            </div>
-            <div class="identity-line">
-              <span class="identity-label">Fecha de Nacimiento:</span>
-              <span class="identity-value">{{ formatDate(volunteer?.fecha_nacimiento) }}</span>
-            </div>
-            <div class="identity-line">
-              <span class="identity-label">Cedula de Identidad:</span>
-              <span class="identity-value">{{ user.rut || '' }}</span>
-            </div>
-            <div class="identity-line">
-              <span class="identity-label">Estudios Anteriores:</span>
-              <span class="identity-value">{{ previousStudies }}</span>
-            </div>
-            <div class="identity-line">
-              <span class="identity-label">Fecha de Ingreso:</span>
-              <span class="identity-value">{{ formatDate(volunteer?.fecha_ingreso || hojaDeVida.fecha_creacion) }}</span>
-            </div>
-            <div class="identity-line">
-              <span class="identity-label">N&deg; de Registro:</span>
-              <span class="identity-value">{{ volunteer?.n_registro || '' }}</span>
-            </div>
-            <div class="identity-line identity-line--split">
-              <div class="identity-split-field">
-                <span class="identity-label">Grupo Sanguineo:</span>
-                <span class="identity-value">{{ volunteer?.grupo_sanguineo || '' }}</span>
-              </div>
-              <div class="identity-split-field">
-                <span class="identity-label">Factor Rh:</span>
-                <span class="identity-value">{{ volunteer?.factor_rh || '' }}</span>
-              </div>
-            </div>
+          <div class="photo-box">
+            <img
+              v-if="volunteer.foto_perfil_url"
+              :src="volunteer.foto_perfil_url"
+              :alt="`Foto de ${displayName}`"
+            >
+            <span v-else>Foto</span>
           </div>
-        </div>
+        </section>
 
-        <table class="signature-table">
-          <thead>
-            <tr>
-              <th>Ano</th>
-              <th>Firma del Vicepresidente/a</th>
-            </tr>
-          </thead>
+        <table class="sheet-table personal-table">
           <tbody>
-            <tr v-for="(row, rowIndex) in rows" :key="`signature-${pageIndex}-${rowIndex}`">
-              <td>{{ row?.anio || '' }}</td>
+            <tr class="section-bar section-bar--short">
+              <th colspan="8">Datos Personales</th>
+            </tr>
+            <tr>
+              <td class="label-cell" colspan="2">Nombres</td>
+              <td colspan="3">{{ volunteer.nombres || '' }}</td>
+              <td class="label-cell">RUT</td>
+              <td colspan="2">{{ volunteer.rut || '' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell" colspan="2">Apellidos</td>
+              <td colspan="3">{{ volunteer.apellidos || '' }}</td>
+              <td class="label-cell">Celular</td>
+              <td colspan="2">{{ volunteer.celular || '' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell" colspan="2">Nacionalidad</td>
+              <td colspan="3">{{ volunteer.nacionalidad || '' }}</td>
+              <td class="label-cell">Edad</td>
+              <td colspan="2">{{ ageValue }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell" colspan="2">Fecha de nacimiento</td>
+              <td colspan="3">{{ formatDate(volunteer.fecha_nacimiento) }}</td>
+              <td class="label-cell">Alergia</td>
+              <td colspan="2">{{ volunteer.alergias || '' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell" colspan="2">Fecha incorporación</td>
+              <td colspan="6">{{ formatDate(volunteer.fecha_incorporacion) }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell" colspan="2">Enfermedades</td>
+              <td colspan="6">{{ volunteer.enfermedades || '' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell" colspan="2">Correo electrónico</td>
+              <td colspan="6">{{ user?.email || '' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell" colspan="2">Domicilio</td>
+              <td colspan="6">{{ volunteer.domicilio || '' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell" colspan="3">Estuvo en comisión de servicio</td>
+              <td class="choice-cell">Si</td>
+              <td class="check-cell">{{ mark(selectedAnnual.estuvo_comision_servicio) }}</td>
+              <td class="choice-cell">No</td>
+              <td class="check-cell">{{ mark(!selectedAnnual.estuvo_comision_servicio) }}</td>
               <td></td>
             </tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section
-        v-for="(rows, pageIndex) in annualRowChunks"
-        :key="`annual-${pageIndex}`"
-        class="pdf-sheet pdf-sheet--table"
-      >
-        <table class="annual-table">
-          <colgroup>
-            <col class="annual-table__col--year">
-            <col class="annual-table__col--cargo">
-            <col class="annual-table__col--lista">
-            <col class="annual-table__col--attendance">
-            <col class="annual-table__col--formation">
-            <col class="annual-table__col--titles">
-            <col class="annual-table__col--awards">
-          </colgroup>
-          <thead>
             <tr>
-              <th>A&Ntilde;O</th>
-              <th>CARGO</th>
-              <th>LISTA</th>
-              <th>% DE<br>ASISTENCIA</th>
-              <th>CURSOS - TALLERES - SEMINARIOS<br>A LOS QUE CONCURRIO</th>
-              <th>TITULOS<br>OBTENIDOS EN EL A&Ntilde;O</th>
-              <th>PREMIOS<br>OBTENIDOS EN EL A&Ntilde;O</th>
+              <td class="label-cell" colspan="3">Inicio de la comisión de servicio</td>
+              <td colspan="5">{{ formatDate(selectedAnnual.comision_fecha_inicio) }}</td>
             </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(row, rowIndex) in rows" :key="`annual-row-${pageIndex}-${rowIndex}`">
-              <td>{{ row?.anio || '' }}</td>
-              <td class="cell-preline">{{ row?.cargo || '' }}</td>
-              <td class="cell-preline">{{ row?.lista || '' }}</td>
-              <td>{{ row?.asistencia || '' }}</td>
-              <td class="cell-preline">{{ row?.formacion || '' }}</td>
-              <td class="cell-preline">{{ row?.titulos || '' }}</td>
-              <td class="cell-preline">{{ row?.premios || '' }}</td>
+            <tr>
+              <td class="label-cell" colspan="3">Término de la comisión de servicio</td>
+              <td colspan="5">{{ formatDate(selectedAnnual.comision_fecha_termino) }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell" colspan="3">Lugar de Comisión de servicio</td>
+              <td colspan="5">{{ selectedAnnual.comision_lugar || '' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell" colspan="3">Actividad de comisión de servicio</td>
+              <td colspan="5">{{ selectedAnnual.comision_actividad || '' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell" colspan="3">Nombre de contacto en emergencia</td>
+              <td colspan="5">{{ volunteer.contacto_emergencia_nombre || '' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell" colspan="3">Numero de contacto</td>
+              <td colspan="5">{{ volunteer.contacto_emergencia_numero || '' }}</td>
             </tr>
           </tbody>
         </table>
 
-        <div class="annual-note">
-          <strong>NOTA:</strong> La calificacion corresponde a: Lista 1 = Excelente, Lista 2 = Bueno, Lista 3 = Regular
-        </div>
-      </section>
-
-      <section
-        v-for="(rows, pageIndex) in annualRowChunks"
-        :key="`observations-${pageIndex}`"
-        class="pdf-sheet pdf-sheet--observations"
-      >
-        <div class="observations-header">Labor Efectuada y Observaciones</div>
-        <table class="observations-table">
+        <table class="sheet-table">
           <tbody>
-            <tr v-for="(row, rowIndex) in rows" :key="`observation-row-${pageIndex}-${rowIndex}`">
-              <td class="observations-cell">
-                <template v-if="row">
-                  <strong>{{ row.anio }}</strong>
-                  <span v-if="row.laborObservaciones"> - {{ row.laborObservaciones }}</span>
-                </template>
-              </td>
+            <tr class="section-bar section-bar--title-block">
+              <th>Títulos aprobados</th>
+              <th class="filler-cell" colspan="2"></th>
+            </tr>
+            <tr>
+              <td class="label-cell">Título</td>
+              <td class="label-cell">Entregado por</td>
+              <td class="label-cell">Código del titulo</td>
+            </tr>
+            <tr v-for="(row, index) in titleRows" :key="`title-${index}`">
+              <td>{{ row.titulo }}</td>
+              <td>{{ row.entregado_por }}</td>
+              <td>{{ row.codigo_titulo }}</td>
             </tr>
           </tbody>
         </table>
-      </section>
+
+        <table class="sheet-table">
+          <tbody>
+            <tr class="section-bar section-bar--title-block">
+              <th>Cursos aprobados</th>
+              <th class="filler-cell" colspan="2"></th>
+            </tr>
+            <tr>
+              <td class="label-cell">Nombre del curso</td>
+              <td class="label-cell">Entregado por</td>
+              <td class="label-cell">Código del curso</td>
+            </tr>
+            <tr v-for="(row, index) in courseRows" :key="`course-${index}`">
+              <td>{{ row.nombre_curso }}</td>
+              <td>{{ row.entregado_por }}</td>
+              <td>{{ row.codigo_curso }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="pdf-sheet pdf-sheet--page2">
+        <table class="sheet-table">
+          <tbody>
+            <tr class="section-bar section-bar--title-block section-bar--narrow">
+              <th>Sanciones</th>
+              <th class="filler-cell" colspan="3"></th>
+            </tr>
+            <tr>
+              <td class="label-cell">Tipo de Sanción</td>
+              <td>{{ mainSanction?.tipo_sancion || '' }}</td>
+              <td class="label-cell">Firma de voluntario</td>
+              <td></td>
+            </tr>
+            <tr>
+              <td class="label-cell">Fecha</td>
+              <td>{{ formatDate(mainSanction?.fecha) }}</td>
+              <td class="label-cell">Firma de voluntario</td>
+              <td></td>
+            </tr>
+            <tr class="sanction-summary-row">
+              <td class="label-cell">Resumen de sanción</td>
+              <td colspan="3" class="top-cell">{{ sanctionSummary }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Apelación</td>
+              <td>{{ mainSanction?.apelacion || '' }}</td>
+              <td class="label-cell">Fecha apelación</td>
+              <td>{{ formatDate(mainSanction?.fecha_apelacion) }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Decisión CIG</td>
+              <td colspan="3">{{ mainSanction?.decision_cig || '' }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="sheet-table recognition-table">
+          <tbody>
+            <tr class="section-bar section-bar--title-block section-bar--medium">
+              <th>Reconocimiento anual</th>
+              <th class="filler-cell" colspan="3"></th>
+            </tr>
+            <tr>
+              <td class="label-cell">Servicios Extraordinario</td>
+              <td class="check-cell">{{ mark(recognition.servicio_extraordinario) }}</td>
+              <td class="label-cell">Abnegación</td>
+              <td class="check-cell">{{ mark(recognition.abnegacion) }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">3 medalla de honor</td>
+              <td class="check-cell">{{ mark(recognition.medalla_honor_3) }}</td>
+              <td class="label-cell">2 medalla de honor</td>
+              <td class="check-cell">{{ mark(recognition.medalla_honor_2) }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">1 medalla de honor</td>
+              <td class="check-cell">{{ mark(recognition.medalla_honor_1) }}</td>
+              <td class="label-cell">Vittorio cucchini</td>
+              <td class="check-cell">{{ mark(recognition.vittorio_cucchini) }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Promesa</td>
+              <td class="check-cell">{{ mark(recognition.promesa) }}</td>
+              <td class="label-cell">Juramento</td>
+              <td class="check-cell">{{ mark(recognition.juramento) }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="sheet-table comments-table">
+          <tbody>
+            <tr class="section-bar section-bar--title-block section-bar--small">
+              <th>Comentarios</th>
+              <th class="filler-cell"></th>
+            </tr>
+            <tr>
+              <td colspan="2" class="comments-cell">{{ commentText }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <section class="signatures">
+          <div class="signature-slot">
+            <div class="signature-line"></div>
+            <span>Firma voluntario/a</span>
+          </div>
+          <div class="signature-slot">
+            <div class="signature-line"></div>
+            <span>Firma secretario/a</span>
+          </div>
+        </section>
+
+        <ul class="statement-list">
+          <li>El/la voluntario/a acepta la información proporcionada en esta hoja de vida anual que elaboro la Directiva de la Filial.</li>
+          <li>La Directiva de la Filial, mediante el/la secretario/a da fe que la información proporcionada en la hija de vida del voluntario es fehaciente y recopila el actuar del año mencionado en dicho documento</li>
+        </ul>
+      </article>
     </div>
   </div>
 </template>
 
 <script setup>
 import axios from 'axios'
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import {
-  FORMATIVE_ACTIVITY_TYPES,
-  isFormativeEvent,
-  isServiceEvent,
-  normalizeCatalogValue
-} from '../constants/activityTypes'
+import logoSrc from '../assets/LogoVertical.svg'
 
-const API_BASE = 'http://localhost:8000/api'
-const ROWS_PER_PAGE = 10
-const DEFAULT_ENTITY_LABEL = 'Cruz Roja Filial Curicó'
+const API_BASE = 'http://127.0.0.1:8000/api'
 
 const route = useRoute()
 const router = useRouter()
-const currentYear = new Date().getFullYear()
 
-const user = ref(null)
-const hojaDeVida = ref(null)
-const hojasAnuales = ref([])
-const antecedentes = ref([])
-const actividades = ref([])
-const registrosHorasFilial = ref([])
 const isLoading = ref(true)
 const errorMessage = ref('')
-const hasTriggeredPrint = ref(false)
+const user = ref(null)
 
 const volunteer = computed(() => user.value?.voluntario || null)
-const entityLabel = computed(() => DEFAULT_ENTITY_LABEL)
-const previousStudies = computed(() => '')
 
-const exportYears = computed(() => {
-  const years = new Set()
-
-  hojasAnuales.value.forEach((historial) => {
-    if (historial?.anio) years.add(Number(historial.anio))
-  })
-
-  actividades.value.forEach((actividad) => {
-    const year = getYearFromDate(actividad.evento?.fecha_inicio)
-    if (year) years.add(year)
-  })
-
-  antecedentes.value.forEach((antecedente) => {
-    const year = getYearFromAntecedente(antecedente)
-    if (year) years.add(year)
-  })
-
-  registrosHorasFilial.value.forEach((registro) => {
-    const year = getYearFromDate(registro.fecha)
-    if (year) years.add(year)
-  })
-
-  const orderedYears = [...years].sort((a, b) => a - b)
-
-  return orderedYears.length ? orderedYears : [currentYear]
-})
-
-const annualRowMap = computed(() =>
-  new Map(hojasAnuales.value.map((historial) => [Number(historial.anio), historial]))
+const annualRecords = computed(() =>
+  [...(volunteer.value?.hojas_vida_anuales || [])].sort((left, right) => Number(right.anio) - Number(left.anio))
 )
 
-const annualRows = computed(() =>
-  exportYears.value.map((year) => {
-    const annual = annualRowMap.value.get(year) || null
-
-    return {
-      anio: year,
-      cargo: annual?.cargo || '',
-      lista: annual?.lista || findLegacyListForYear(year),
-      asistencia: buildAttendanceLabel(year, annual),
-      formacion: buildFormationSummary(year, annual),
-      titulos: buildAchievementColumn(year, annual, 'TITULO'),
-      premios: buildAchievementColumn(year, annual, 'PREMIO'),
-      laborObservaciones: buildLaborObservaciones(year, annual)
-    }
-  })
-)
-
-const signatureYearChunks = computed(() =>
-  chunkWithBlanks(exportYears.value.map((anio) => ({ anio })), ROWS_PER_PAGE)
-)
-
-const annualRowChunks = computed(() =>
-  chunkWithBlanks(annualRows.value, ROWS_PER_PAGE)
-)
-
-const readyToPrint = computed(() => Boolean(user.value && hojaDeVida.value && !isLoading.value))
-
-watch(readyToPrint, async (ready) => {
-  if (!ready || hasTriggeredPrint.value || route.query.autoprint === '0') {
-    return
+const selectedAnnual = computed(() => {
+  const requestedYear = Number(route.query.anio)
+  if (requestedYear) {
+    return annualRecords.value.find((record) => Number(record.anio) === requestedYear) || null
   }
-
-  hasTriggeredPrint.value = true
-  await nextTick()
-  await waitForImages()
-  window.print()
+  return annualRecords.value[0] || null
 })
 
-watch(user, (currentUser) => {
-  if (!currentUser?.nombre) {
-    return
-  }
+const displayName = computed(() => [volunteer.value?.nombres, volunteer.value?.apellidos].filter(Boolean).join(' ') || user.value?.name || 'Voluntario')
 
-  document.title = `Hoja de Vida - ${currentUser.nombre}`
+const ageValue = computed(() => {
+  const dateValue = volunteer.value?.fecha_nacimiento
+  if (!dateValue) return ''
+  const birthDate = new Date(`${dateValue}T00:00:00`)
+  if (Number.isNaN(birthDate.getTime())) return ''
+  const today = new Date()
+  let age = today.getFullYear() - birthDate.getFullYear()
+  const monthDelta = today.getMonth() - birthDate.getMonth()
+  if (monthDelta < 0 || (monthDelta === 0 && today.getDate() < birthDate.getDate())) age -= 1
+  return String(age)
 })
 
-onMounted(async () => {
-  await loadUser()
+const attendanceLabel = computed(() => {
+  if (!selectedAnnual.value) return ''
+  const hours = selectedAnnual.value.asistencia_anual_horas
+  const percentage = selectedAnnual.value.asistencia_anual_porcentaje
+  if (hours && percentage) return `${Number(hours)} horas / ${Number(percentage)}%`
+  if (percentage) return `${Number(percentage)}%`
+  if (hours) return `${Number(hours)} horas`
+  return ''
 })
 
-async function loadUser() {
+const titleRows = computed(() => padRows(selectedAnnual.value?.titulos || [], 3, () => ({ titulo: '', entregado_por: '', codigo_titulo: '' })))
+const courseRows = computed(() => padRows(selectedAnnual.value?.cursos || [], 5, () => ({ nombre_curso: '', entregado_por: '', codigo_curso: '' })))
+const mainSanction = computed(() => selectedAnnual.value?.sanciones?.[0] || null)
+const recognition = computed(() => selectedAnnual.value?.reconocimiento || {})
+
+const sanctionSummary = computed(() => {
+  if (!mainSanction.value) return ''
+  const base = mainSanction.value.resumen_sancion || ''
+  const extraCount = Math.max((selectedAnnual.value?.sanciones?.length || 0) - 1, 0)
+  if (!extraCount) return base
+  return [base, `Además existen ${extraCount} sanción(es) adicional(es) registradas en este periodo.`].filter(Boolean).join(' ')
+})
+
+const commentText = computed(() => selectedAnnual.value?.comentarios || '')
+const readyToPrint = computed(() => Boolean(volunteer.value && selectedAnnual.value))
+
+onMounted(() => {
+  fetchUser()
+})
+
+async function fetchUser() {
   isLoading.value = true
   errorMessage.value = ''
-
   try {
-    const userId = route.params.id
-    const response = await axios.get(`${API_BASE}/user/${userId}`)
-
+    const response = await axios.get(`${API_BASE}/user/${route.params.id}`)
     user.value = response.data
-    hojaDeVida.value = response.data?.voluntario?.hoja_de_vida || null
-    hojasAnuales.value = [...(hojaDeVida.value?.hojas_anuales || [])]
-      .sort((a, b) => Number(a.anio) - Number(b.anio))
-    antecedentes.value = hojaDeVida.value?.antecedentes || []
-    registrosHorasFilial.value = [...(response.data?.registros_horas_filial || [])]
-      .sort((a, b) => `${a.fecha || ''} ${a.hora_entrada || ''}`.localeCompare(`${b.fecha || ''} ${b.hora_entrada || ''}`))
-    actividades.value = response.data?.actividades || []
-
-    if (!hojaDeVida.value) {
-      errorMessage.value = 'No existe una hoja de vida asociada al voluntario.'
+    if (!response.data?.voluntario) {
+      errorMessage.value = 'El usuario no tiene una ficha de voluntario asociada.'
+      return
     }
-  } catch (error) {
+    if (!selectedAnnual.value) {
+      errorMessage.value = 'No existe una hoja de vida anual para exportar.'
+    }
+  } catch {
     errorMessage.value = 'No se pudo cargar la hoja de vida para exportar.'
   } finally {
     isLoading.value = false
   }
 }
 
+function formatDate(value) {
+  if (!value) return ''
+  const parsed = new Date(`${value}T00:00:00`)
+  if (Number.isNaN(parsed.getTime())) return value
+  return parsed.toLocaleDateString('es-CL')
+}
+
+function padRows(items, minimumRows, createEmptyRow) {
+  const rows = [...items]
+  while (rows.length < minimumRows) rows.push(createEmptyRow())
+  return rows.slice(0, minimumRows)
+}
+
+function mark(value) {
+  return value ? 'X' : ''
+}
+
 function goBack() {
   router.push({
     name: 'HistorialView',
-    params: { id: route.params.id }
+    params: { id: route.params.id },
+    query: route.query
   })
 }
 
 function printNow() {
+  if (!readyToPrint.value) return
   window.print()
-}
-
-function chunkWithBlanks(items, size) {
-  const source = items.length ? [...items] : [null]
-  const chunks = []
-
-  for (let index = 0; index < source.length; index += size) {
-    chunks.push(source.slice(index, index + size))
-  }
-
-  if (!chunks.length) {
-    chunks.push([])
-  }
-
-  return chunks.map((chunk) => {
-    const missingItems = Math.max(0, size - chunk.length)
-    return [...chunk, ...Array(missingItems).fill(null)]
-  })
-}
-
-function normalizeTipo(tipo) {
-  return normalizeCatalogValue(tipo)
-}
-
-function formatDate(dateString) {
-  if (!dateString) return ''
-  return String(dateString).slice(0, 10).split('-').reverse().join('-')
-}
-
-function formatAttendanceValue(value) {
-  const numericValue = Number(value)
-
-  if (!Number.isFinite(numericValue)) {
-    return ''
-  }
-
-  return new Intl.NumberFormat('es-CL', {
-    minimumFractionDigits: numericValue % 1 === 0 ? 0 : 2,
-    maximumFractionDigits: 2
-  }).format(numericValue)
-}
-
-function formatHours(value) {
-  const numericValue = Number(value || 0)
-
-  if (!numericValue) {
-    return ''
-  }
-
-  return `${new Intl.NumberFormat('es-CL', {
-    minimumFractionDigits: numericValue % 1 === 0 ? 0 : 2,
-    maximumFractionDigits: 2
-  }).format(numericValue)} h`
-}
-
-function getYearFromDate(dateString) {
-  if (!dateString) return null
-  return Number(String(dateString).slice(0, 4))
-}
-
-function getYearFromAntecedente(antecedente) {
-  return getYearFromDate(antecedente?.fecha_inicio) || getYearFromDate(antecedente?.fecha_termino)
-}
-
-function hasStoredAnnualValue(value) {
-  return value !== null && value !== undefined
-}
-
-function parseMultilineField(value) {
-  return String(value || '')
-    .split(/\r?\n/)
-    .map((item) => item.trim())
-    .filter(Boolean)
-}
-
-function getAntecedentesForYear(year) {
-  return antecedentes.value.filter((antecedente) => getYearFromAntecedente(antecedente) === Number(year))
-}
-
-function getActivitiesForYear(year) {
-  return actividades.value.filter((actividad) => getYearFromDate(actividad.evento?.fecha_inicio) === Number(year))
-}
-
-function getFormativeActivityLines(year, tipo) {
-  return getActivitiesForYear(year)
-    .filter((actividad) => isFormativeEvent(actividad.evento?.tipo))
-    .filter((actividad) => FORMATIVE_ACTIVITY_TYPES.includes(normalizeTipo(actividad.tipo)))
-    .filter((actividad) => normalizeTipo(actividad.tipo) === tipo)
-    .filter((actividad) => actividad.pivot?.asistio !== false)
-    .map((actividad) =>
-      `${actividad.evento?.nombre || actividad.tipo}${actividad.evento?.fecha_inicio ? ` (${formatDate(actividad.evento.fecha_inicio)})` : ''}`
-    )
-    .filter(Boolean)
-}
-
-function getStoredOrDerivedLines(annual, fieldName, fallbackFactory) {
-  if (annual && hasStoredAnnualValue(annual[fieldName])) {
-    return parseMultilineField(annual[fieldName])
-  }
-
-  return fallbackFactory()
-}
-
-function splitAchievementLines(value) {
-  const grouped = {
-    TITULO: [],
-    PREMIO: [],
-  }
-
-  parseMultilineField(value).forEach((line) => {
-    const normalizedLine = normalizeCatalogValue(line)
-
-    if (normalizedLine.startsWith('TITULO:') || normalizedLine.startsWith('TITULOS:')) {
-      grouped.TITULO.push(line.replace(/^titulos?:\s*/i, '').trim())
-      return
-    }
-
-    if (normalizedLine.startsWith('PREMIO:') || normalizedLine.startsWith('PREMIOS:')) {
-      grouped.PREMIO.push(line.replace(/^premios?:\s*/i, '').trim())
-      return
-    }
-
-    grouped.TITULO.push(line)
-  })
-
-  return grouped
-}
-
-function buildAchievementColumn(year, annual, tipo) {
-  const lines = getAntecedentesForYear(year)
-    .filter((antecedente) => normalizeTipo(antecedente.tipo) === tipo)
-    .map((antecedente) => antecedente.nombre?.trim())
-    .filter(Boolean)
-
-  if (lines.length) {
-    return lines.join('\n')
-  }
-
-  if (annual && hasStoredAnnualValue(annual.titulos_premios)) {
-    return splitAchievementLines(annual.titulos_premios)[tipo].join('\n')
-  }
-
-  return ''
-}
-
-function buildFormationSummary(year, annual) {
-  const cursos = getStoredOrDerivedLines(annual, 'cursos', () => getFormativeActivityLines(year, 'CURSO'))
-  const talleres = getStoredOrDerivedLines(annual, 'talleres', () => getFormativeActivityLines(year, 'TALLER'))
-  const seminarios = getStoredOrDerivedLines(annual, 'seminarios', () => getFormativeActivityLines(year, 'SEMINARIO'))
-
-  return [
-    cursos.length ? `Cursos: ${cursos.join('; ')}` : '',
-    talleres.length ? `Talleres: ${talleres.join('; ')}` : '',
-    seminarios.length ? `Seminarios: ${seminarios.join('; ')}` : ''
-  ]
-    .filter(Boolean)
-    .join('\n')
-}
-
-function buildAttendanceLabel(year, annual) {
-  if (annual?.porcentaje_asistencia !== null && annual?.porcentaje_asistencia !== undefined && annual?.porcentaje_asistencia !== '') {
-    return `${formatAttendanceValue(annual.porcentaje_asistencia)}%`
-  }
-
-  const serviceActivities = getActivitiesForYear(year)
-    .filter((actividad) => isServiceEvent(actividad.evento?.tipo))
-
-  if (!serviceActivities.length) {
-    return ''
-  }
-
-  const attendedActivities = serviceActivities.filter((actividad) => actividad.pivot?.asistio !== false).length
-  return `${formatAttendanceValue((attendedActivities / serviceActivities.length) * 100)}%`
-}
-
-function getFilialHoursForYear(year) {
-  return registrosHorasFilial.value
-    .filter((registro) => getYearFromDate(registro.fecha) === Number(year))
-    .reduce((total, registro) => total + Number(registro.horas_totales || 0), 0)
-}
-
-function findLegacyListForYear(year) {
-  return getAntecedentesForYear(year)
-    .find((antecedente) => normalizeTipo(antecedente.tipo) === 'CARGO')
-    ?.nombre || ''
-}
-
-function buildLaborObservaciones(year, annual) {
-  const lines = []
-
-  if (annual?.labor_efectuada) {
-    lines.push(`Labor: ${annual.labor_efectuada}`)
-  }
-
-  if (annual?.observaciones_generales) {
-    lines.push(`Observaciones: ${annual.observaciones_generales}`)
-  }
-
-  const filialHours = formatHours(getFilialHoursForYear(year))
-  if (filialHours) {
-    lines.push(`Horas en filial: ${filialHours}`)
-  }
-
-  return lines.join('\n')
-}
-
-async function waitForImages() {
-  const pendingImages = [...document.images].filter((image) => !image.complete)
-
-  if (!pendingImages.length) {
-    return
-  }
-
-  await Promise.all(
-    pendingImages.map((image) =>
-      new Promise((resolve) => {
-        image.addEventListener('load', resolve, { once: true })
-        image.addEventListener('error', resolve, { once: true })
-      })
-    )
-  )
 }
 </script>
 
 <style scoped>
 .pdf-export-page {
   min-height: 100vh;
-  background: #eef1f5;
-  padding: 1.25rem;
-  color: #111827;
-  font-family: Arial, Helvetica, sans-serif;
+  padding: 1.5rem;
+  background: #eef2f7;
 }
 
 .pdf-toolbar {
-  position: sticky;
-  top: 0;
-  z-index: 20;
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  flex-wrap: wrap;
-  margin: 0 auto 1rem;
-  width: min(8.5in, 100%);
+  margin-bottom: 1rem;
 }
 
 .pdf-toolbar__button {
-  border: 1px solid #cbd5e1;
+  border: none;
   border-radius: 999px;
-  background: #ffffff;
-  color: #0f172a;
-  padding: 0.7rem 1rem;
-  font-size: 0.95rem;
+  padding: 0.75rem 1.15rem;
+  background: #d7deea;
+  color: #173763;
   font-weight: 700;
 }
 
 .pdf-toolbar__button--primary {
-  background: #d72638;
-  border-color: #d72638;
-  color: #ffffff;
+  background: #e01e1e;
+  color: #fff;
+}
+
+.pdf-toolbar__button:disabled {
+  opacity: 0.7;
 }
 
 .pdf-toolbar__hint {
-  color: #475569;
-  font-size: 0.9rem;
+  color: #5f7085;
+  font-size: 0.92rem;
 }
 
 .pdf-state {
-  width: min(8.5in, 100%);
-  margin: 2rem auto 0;
-  border-radius: 18px;
-  background: #ffffff;
-  padding: 2rem;
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+  display: grid;
+  place-items: center;
+  min-height: 60vh;
+  color: #4d617d;
 }
 
 .pdf-state--error {
-  color: #991b1b;
+  color: #a3212b;
 }
 
 .pdf-document {
   display: grid;
   gap: 1.25rem;
+  justify-content: center;
 }
 
 .pdf-sheet {
   width: 8.5in;
-  min-height: 14in;
-  margin: 0 auto;
-  background: #ffffff;
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
-  padding: 0.32in 0.42in 0.38in;
-  box-sizing: border-box;
-  break-after: page;
-  page-break-after: always;
+  min-height: 11in;
+  padding: 0.72in 0.55in 0.58in;
+  background: #fff;
+  color: #111;
+  box-shadow: 0 18px 40px rgba(15, 47, 95, 0.15);
 }
 
-.sheet-header {
+.page-header {
   display: grid;
-  justify-items: center;
-  gap: 0.08in;
-  margin-bottom: 0.14in;
-}
-
-.sheet-header__cross {
-  position: relative;
-  width: 0.62in;
-  height: 0.62in;
-  margin: 0 auto;
-}
-
-.cross {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  background: #e11d2e;
-}
-
-.cross--vertical {
-  width: 0.18in;
-  height: 0.62in;
-}
-
-.cross--horizontal {
-  width: 0.62in;
-  height: 0.18in;
-}
-
-.sheet-header__content {
-  text-align: center;
-}
-
-.sheet-header__content h1 {
-  margin: 0;
-  font-size: 0.25in;
-  font-weight: 800;
-  letter-spacing: 0.01in;
-}
-
-.sheet-header__content p {
-  margin: 0.03in 0 0;
-  font-size: 0.14in;
-}
-
-.identity-layout {
+  grid-template-columns: 1.1in 1fr;
+  align-items: center;
   margin-bottom: 0.18in;
 }
 
-.identity-photo {
-  aspect-ratio: 1 / 1.14;
-  border: 2px solid #111827;
-  background: #f8fafc;
+.page-logo {
+  width: 0.72in;
+}
+
+.page-header h1 {
+  margin: 0;
+  text-align: center;
+  font-size: 0.26in;
+  font-weight: 800;
+}
+
+.top-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.55in;
+  gap: 0.24in;
+  align-items: start;
+}
+
+.photo-box {
+  height: 1.55in;
+  border: 1px solid #1a1a1a;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 0.04in;
+  font-size: 0.16in;
   overflow: hidden;
 }
 
-.identity-photo--cover {
-  width: 1.35in;
-  margin: 0 auto 0.18in;
-}
-
-.identity-photo img {
+.photo-box img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.identity-fields {
-  display: grid;
-  gap: 0.12in;
-}
-
-.identity-line {
-  min-height: 0.27in;
-  border-bottom: 1px dotted #111827;
-  display: flex;
-  align-items: flex-end;
-  gap: 0.12in;
-  font-size: 0.13in;
-  padding-bottom: 0.03in;
-}
-
-.identity-line--split {
-  border-bottom: none;
-  gap: 0.2in;
-}
-
-.identity-split-field {
-  flex: 1;
-  min-height: 0.27in;
-  border-bottom: 1px dotted #111827;
-  display: flex;
-  align-items: flex-end;
-  gap: 0.12in;
-  padding-bottom: 0.03in;
-}
-
-.identity-label {
-  white-space: nowrap;
-}
-
-.identity-value {
-  display: inline-flex;
-  align-items: flex-end;
-  min-height: 100%;
-}
-
-.signature-table,
-.annual-table,
-.observations-table {
+.sheet-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
-  border: 2px solid #111827;
+  margin-top: 0.18in;
 }
 
-.signature-table th,
-.signature-table td,
-.annual-table th,
-.annual-table td,
-.observations-table td {
-  border: 1px solid #111827;
-  vertical-align: top;
-}
-
-.signature-table th,
-.annual-table th {
-  text-align: center;
-  font-size: 0.13in;
-  font-weight: 700;
-}
-
-.signature-table th {
-  height: 0.34in;
-}
-
-.signature-table td {
-  height: 0.39in;
-  font-size: 0.13in;
-  padding: 0.08in 0.1in;
-}
-
-.signature-table th:first-child,
-.signature-table td:first-child {
-  width: 34%;
-  text-align: center;
-}
-
-.annual-table thead th {
-  height: 0.52in;
-  padding: 0.06in;
+.sheet-table th,
+.sheet-table td {
+  border: 1px solid #1a1a1a;
+  padding: 0.035in 0.06in;
+  font-size: 0.135in;
   line-height: 1.15;
+  vertical-align: middle;
+  word-break: break-word;
 }
 
-.annual-table tbody td {
-  height: 0.93in;
-  padding: 0.06in 0.07in;
-  font-size: 0.105in;
+.sheet-table--institutional {
+  margin-top: 0;
+}
+
+.section-bar th {
+  background: #f10808;
+  color: #fff;
+  font-weight: 800;
+  text-align: center;
+  font-size: 0.16in;
+  padding: 0.035in 0.05in;
+}
+
+.section-bar--short th {
+  width: 2.15in;
+}
+
+.section-bar--title-block th:first-child {
+  width: 2.7in;
+}
+
+.section-bar--narrow th:first-child {
+  width: 1.55in;
+}
+
+.section-bar--medium th:first-child {
+  width: 2.45in;
+}
+
+.section-bar--small th:first-child {
+  width: 2.4in;
+}
+
+.filler-cell {
+  background: transparent !important;
+  color: transparent !important;
+}
+
+.label-cell {
+  font-weight: 400;
+}
+
+.choice-cell,
+.check-cell {
   text-align: center;
 }
 
-.annual-table__col--year {
-  width: 7.5%;
+.check-cell {
+  font-weight: 800;
 }
 
-.annual-table__col--cargo {
-  width: 13%;
+.top-cell {
+  vertical-align: top !important;
 }
 
-.annual-table__col--lista {
-  width: 8%;
+.sanction-summary-row td {
+  height: 0.75in;
 }
 
-.annual-table__col--attendance {
-  width: 13%;
-}
-
-.annual-table__col--formation {
-  width: 23%;
-}
-
-.annual-table__col--titles {
-  width: 17%;
-}
-
-.annual-table__col--awards {
-  width: 18.5%;
-}
-
-.cell-preline {
-  text-align: left !important;
+.comments-cell {
+  height: 2.25in;
+  vertical-align: top !important;
   white-space: pre-line;
-  line-height: 1.22;
 }
 
-.annual-note {
-  margin-top: 0.1in;
-  font-size: 0.12in;
+.signatures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.4in;
+  margin: 0.85in 0 0.6in;
+}
+
+.signature-slot {
+  text-align: center;
+  font-size: 0.14in;
+}
+
+.signature-line {
+  border-top: 1px solid #111;
+  margin-bottom: 0.06in;
+}
+
+.statement-list {
+  margin: 0;
+  padding-left: 0.34in;
+  font-size: 0.13in;
   line-height: 1.35;
 }
 
-.pdf-sheet--observations {
-  padding-top: 0.5in;
-}
-
-.observations-header {
-  border: 2px solid #111827;
-  border-bottom: none;
-  text-align: center;
-  font-size: 0.16in;
-  font-weight: 700;
-  padding: 0.12in 0.16in;
-}
-
-.observations-table td {
-  height: 0.93in;
-  padding: 0.08in 0.12in;
-  font-size: 0.12in;
-}
-
-.observations-cell {
-  white-space: pre-line;
-  line-height: 1.3;
-}
-
-@media (max-width: 900px) {
-  .pdf-export-page {
-    padding: 0.75rem;
-  }
-
-  .pdf-sheet {
-    width: 100%;
-    min-height: auto;
-    padding: 1rem;
-  }
-
-  .sheet-header {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-  }
-
-  .identity-layout {
-    grid-template-columns: 1fr;
-  }
+.statement-list li + li {
+  margin-top: 0.28in;
 }
 
 @media print {
-  :global(body) {
-    background: #ffffff;
+  @page {
+    size: letter;
+    margin: 0;
   }
 
   .pdf-export-page {
-    background: #ffffff;
     padding: 0;
+    background: #fff;
   }
 
   .no-print {
@@ -880,8 +644,15 @@ async function waitForImages() {
   }
 
   .pdf-sheet {
-    margin: 0;
     box-shadow: none;
+    margin: 0;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .pdf-sheet:last-child {
+    break-after: auto;
+    page-break-after: auto;
   }
 }
 </style>

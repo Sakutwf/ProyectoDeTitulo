@@ -69,7 +69,7 @@
             },
             welcomeText() {
                 if (this.canManagePlatform) {
-                    return 'Has iniciado sesion correctamente en el sistema de gestion. Desde aqui puedes administrar voluntarios, actividades y eventos.';
+                    return 'Has iniciado sesion correctamente en el sistema de gestion. Desde aqui puedes administrar voluntarios y actividades.';
                 }
 
                 return 'Has iniciado sesion correctamente como voluntario. Para obtener tu hoja de vida puedes dirigirte a la seccion Hoja de vida.';

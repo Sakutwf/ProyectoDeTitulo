@@ -1,145 +1,130 @@
 <template>
   <div class="modal fade" id="newActividadModal" tabindex="-1" aria-labelledby="newActividadModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
       <div class="modal-content">
         <div class="modal-header bg-danger text-white">
           <h5 class="modal-title" id="newActividadModalLabel">
-            <i class="fa-solid fa-calendar-plus me-2"></i>Nueva Actividad
-          </h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <form @submit.prevent="guardar">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label for="create-evento_id" class="form-label">Evento</label>
-                <div class="input-group">
-                  <span class="input-group-text"><i class="fa-solid fa-list"></i></span>
-                  <select class="form-select" id="create-evento_id" v-model="evento_id" required>
-                    <option value="">Seleccione un evento</option>
-                    <option v-for="evento in eventos" :key="evento.id" :value="evento.id">{{ evento.nombre }}</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <label for="create-nombre" class="form-label">Nombre Actividad</label>
-                <div class="input-group">
-                  <span class="input-group-text"><i class="fa-solid fa-pen-to-square"></i></span>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="create-nombre"
-                    v-model="nombre"
-                    placeholder="Ej: Puesto de primeros auxilios"
-                    required
-                  >
-                </div>
-              </div>
-              <div class="col-md-6">
-                <label for="create-tipo" class="form-label">Tipo de Actividad</label>
-                <div class="input-group">
-                  <span class="input-group-text"><i class="fa-solid fa-tag"></i></span>
-                  <select class="form-select" id="create-tipo" v-model="tipo" required>
-                    <option value="">Seleccione un tipo</option>
-                    <option v-for="option in filteredActivityTypeOptions" :key="option.value" :value="option.value">
-                      {{ option.label }}
-                    </option>
-                  </select>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <label for="create-N_beneficiarios" class="form-label">N° Beneficiarios</label>
-                <div class="input-group">
-                  <span class="input-group-text"><i class="fa-solid fa-users"></i></span>
-                  <input
-                    type="number"
-                    class="form-control"
-                    id="create-N_beneficiarios"
-                    v-model="N_beneficiarios"
-                    min="0"
-                    placeholder="Cantidad de beneficiarios"
-                  >
-                </div>
-              </div>
-              <div class="col-md-6">
-                <label for="create-horas_participacion" class="form-label">Horas de Participacion</label>
-                <div class="input-group">
-                  <span class="input-group-text"><i class="fa-solid fa-clock"></i></span>
-                  <input
-                    type="number"
-                    class="form-control"
-                    id="create-horas_participacion"
-                    v-model="horas_participacion"
-                    min="0"
-                    step="0.25"
-                    placeholder="Ej: 4"
-                  >
-                </div>
-              </div>
-            </div>
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="button" class="btn btn-danger" @click="guardar" :disabled="!isFormValid">
-            <i class="fa-solid fa-save me-1"></i>Guardar Actividad
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal fade" id="selectVoluntariosModal" tabindex="-1" aria-labelledby="selectVoluntariosModalLabel" aria-hidden="true" ref="selectVoluntariosModal">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header bg-danger text-white">
-          <h5 class="modal-title" id="selectVoluntariosModalLabel">
-            <i class="fa-solid fa-user-plus me-2"></i>Asociar voluntarios a la actividad
+            <i class="fa-solid fa-calendar-plus me-2"></i>Nueva actividad
           </h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
+
         <div class="modal-body">
-          <div v-if="voluntariosDisponibles.length === 0">
-            No hay voluntarios disponibles.
-          </div>
-          <div v-else>
-            <div class="mb-2">Seleccione voluntarios y ajuste la asistencia si hace falta:</div>
-            <ul class="list-group">
-              <li v-for="user in voluntariosDisponibles" :key="user.id" class="list-group-item">
-                <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
-                  <div class="d-flex align-items-center">
-                    <input
-                      class="form-check-input me-2"
-                      type="checkbox"
-                      :id="'voluntario-' + user.id"
-                      :value="user.id"
-                      v-model="voluntariosSeleccionados"
-                      @change="asegurarAsistencia(user.id)"
-                    >
-                    <label class="form-check-label" :for="'voluntario-' + user.id">
-                      {{ user.nombre || user.name || user.email }}
-                    </label>
-                  </div>
-                  <div v-if="voluntariosSeleccionados.includes(user.id)" class="form-check form-switch attendance-switch">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      :id="'asistencia-' + user.id"
-                      v-model="asistenciaPorUsuario[user.id]"
-                    >
-                    <label class="form-check-label" :for="'asistencia-' + user.id">
-                      {{ asistenciaPorUsuario[user.id] ? 'Asistio' : 'Ausente' }}
-                    </label>
-                  </div>
+          <form @submit.prevent="saveActivity">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Filial</label>
+                <select v-model="form.filial_id" class="form-select" required>
+                  <option value="">Seleccione una filial</option>
+                  <option v-for="filial in filiales" :key="filial.id" :value="filial.id">
+                    {{ filial.nombre }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Tipo</label>
+                <select v-model="form.tipo" class="form-select" required>
+                  <option value="">Seleccione un tipo</option>
+                  <option v-for="option in ACTIVITY_TYPE_OPTIONS" :key="option.value" :value="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="col-md-8">
+                <label class="form-label">Nombre</label>
+                <input v-model.trim="form.nombre" type="text" class="form-control" required>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Horas totales</label>
+                <input v-model="form.horas_totales" type="number" min="0" step="0.25" class="form-control">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Fecha inicio</label>
+                <input v-model="form.fecha_inicio" type="date" class="form-control" required>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Fecha término</label>
+                <input v-model="form.fecha_termino" type="date" class="form-control" :min="form.fecha_inicio || null">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Hora inicio</label>
+                <input v-model="form.hora_inicio" type="time" class="form-control">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Hora término</label>
+                <input v-model="form.hora_termino" type="time" class="form-control">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Lugar</label>
+                <input v-model.trim="form.lugar" type="text" class="form-control">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Colaborador externo</label>
+                <input v-model.trim="form.colaborador_externo" type="text" class="form-control">
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">Objetivo</label>
+                <textarea v-model.trim="form.objetivo" class="form-control" rows="3"></textarea>
+              </div>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+              <div>
+                <h6 class="mb-1">Voluntarios asociados</h6>
+                <small class="text-muted">Puedes dejarlo vacío y asociarlos después.</small>
+              </div>
+            </div>
+
+            <div v-if="volunteers.length" class="volunteer-grid">
+              <article v-for="volunteer in volunteers" :key="volunteer.n_registro" class="volunteer-card">
+                <label class="form-check d-flex align-items-start gap-2">
+                  <input
+                    :checked="isSelected(volunteer.n_registro)"
+                    class="form-check-input mt-1"
+                    type="checkbox"
+                    @change="toggleVolunteer(volunteer.n_registro)"
+                  >
+                  <span>
+                    <strong>{{ fullVolunteerName(volunteer) }}</strong>
+                    <small class="d-block text-muted">N. Registro {{ volunteer.n_registro }}</small>
+                  </span>
+                </label>
+
+                <div v-if="isSelected(volunteer.n_registro)" class="mt-3">
+                  <label class="form-label">Horas asistidas</label>
+                  <input
+                    v-model="volunteerHours[volunteer.n_registro]"
+                    type="number"
+                    min="0"
+                    step="0.25"
+                    class="form-control"
+                  >
                 </div>
-              </li>
-            </ul>
-          </div>
+              </article>
+            </div>
+
+            <div v-else class="empty-state">
+              No hay voluntarios disponibles para asociar.
+            </div>
+          </form>
         </div>
+
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" @click="cerrarModalVoluntarios">Asociar en otro momento</button>
-          <button type="button" class="btn btn-danger" @click="asociarVoluntarios">
-            <i class="fa-solid fa-save me-1"></i>Guardar Planilla
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-danger" :disabled="isSubmitting || !isFormValid" @click="saveActivity">
+            <i class="fa-solid fa-save me-1"></i>{{ isSubmitting ? 'Guardando...' : 'Guardar actividad' }}
           </button>
         </div>
       </div>
@@ -148,225 +133,151 @@
 </template>
 
 <script>
-import axios from 'axios';
-import { Modal } from 'bootstrap';
-import { show_alerta } from '../funciones';
-import Swal from 'sweetalert2';
-import {
-  ACTIVITY_TYPE_OPTIONS,
-  FORMATIVE_ACTIVITY_TYPES,
-  isFormativeEvent,
-  isServiceEvent,
-  normalizeCatalogValue
-} from '../constants/activityTypes';
+import axios from 'axios'
+import { Modal } from 'bootstrap'
+import { ACTIVITY_TYPE_OPTIONS } from '../constants/activityTypes'
+import { show_alerta } from '../funciones'
+
+const API_BASE = 'http://localhost:8000/api'
 
 export default {
   name: 'ActividadCreateView',
   emits: ['actividad-created'],
   data() {
     return {
-      evento_id: '',
-        nombre: '',
-        tipo: '',
-        N_beneficiarios: '',
-        horas_participacion: 1,
-        eventos: [],
-      url: 'http://localhost:8000/api/actividad',
+      ACTIVITY_TYPE_OPTIONS,
       modalInstance: null,
-      nuevaActividadId: null,
-      voluntariosDisponibles: [],
-      voluntariosSeleccionados: [],
-      asistenciaPorUsuario: {},
-      activityTypeOptions: ACTIVITY_TYPE_OPTIONS
-    };
+      isSubmitting: false,
+      filiales: [],
+      volunteers: [],
+      selectedVolunteers: [],
+      volunteerHours: {},
+      form: this.defaultForm()
+    }
   },
   computed: {
     isFormValid() {
-      return this.evento_id && this.nombre.trim() !== '' && this.tipo.trim() !== '';
-    },
-    selectedEvento() {
-      return this.eventos.find((evento) => Number(evento.id) === Number(this.evento_id)) || null;
-    },
-    filteredActivityTypeOptions() {
-      const tipoEvento = normalizeCatalogValue(this.selectedEvento?.tipo);
-
-      if (isFormativeEvent(tipoEvento)) {
-        return this.activityTypeOptions.filter((option) => FORMATIVE_ACTIVITY_TYPES.includes(option.value));
-      }
-
-      if (isServiceEvent(tipoEvento)) {
-        return this.activityTypeOptions.filter((option) => !FORMATIVE_ACTIVITY_TYPES.includes(option.value));
-      }
-
-      return this.activityTypeOptions;
+      return Boolean(this.form.filial_id && this.form.tipo && this.form.nombre && this.form.fecha_inicio)
     }
   },
   mounted() {
-    this.modalInstance = new Modal(document.getElementById('newActividadModal'));
-    this.getEventos();
+    this.modalInstance = new Modal(document.getElementById('newActividadModal'))
+    this.loadCatalogs()
   },
   methods: {
+    defaultForm() {
+      return {
+        filial_id: '',
+        nombre: '',
+        tipo: '',
+        objetivo: '',
+        fecha_inicio: '',
+        fecha_termino: '',
+        hora_inicio: '',
+        hora_termino: '',
+        lugar: '',
+        horas_totales: '',
+        colaborador_externo: ''
+      }
+    },
+    async loadCatalogs() {
+      try {
+        const [filialesResponse, volunteersResponse] = await Promise.all([
+          axios.get(`${API_BASE}/filiales`),
+          axios.get(`${API_BASE}/voluntarios`)
+        ])
+
+        this.filiales = Array.isArray(filialesResponse.data) ? filialesResponse.data : []
+        this.volunteers = Array.isArray(volunteersResponse.data) ? volunteersResponse.data : []
+      } catch (error) {
+        this.filiales = []
+        this.volunteers = []
+      }
+    },
     show() {
-      this.resetForm();
-      this.modalInstance.show();
+      this.resetForm()
+      this.modalInstance.show()
     },
     hide() {
-      this.modalInstance.hide();
+      this.modalInstance.hide()
     },
     resetForm() {
-      this.evento_id = '';
-      this.nombre = '';
-      this.tipo = '';
-      this.N_beneficiarios = '';
-      this.horas_participacion = 1;
-      this.nuevaActividadId = null;
-      this.voluntariosSeleccionados = [];
-      this.asistenciaPorUsuario = {};
+      this.form = this.defaultForm()
+      this.selectedVolunteers = []
+      this.volunteerHours = {}
+      this.isSubmitting = false
     },
-    async getEventos() {
-      try {
-        const res = await axios.get('http://localhost:8000/api/evento');
-        this.eventos = Array.isArray(res.data) ? res.data : (res.data.data || []);
-      } catch (e) {
-        this.eventos = [];
+    fullVolunteerName(volunteer) {
+      return [volunteer.nombres, volunteer.apellidos].filter(Boolean).join(' ') || volunteer.user?.name || 'Voluntario'
+    },
+    isSelected(nRegistro) {
+      return this.selectedVolunteers.includes(nRegistro)
+    },
+    toggleVolunteer(nRegistro) {
+      if (this.isSelected(nRegistro)) {
+        this.selectedVolunteers = this.selectedVolunteers.filter((value) => value !== nRegistro)
+        const nextHours = { ...this.volunteerHours }
+        delete nextHours[nRegistro]
+        this.volunteerHours = nextHours
+        return
+      }
+
+      this.selectedVolunteers = [...this.selectedVolunteers, nRegistro]
+      this.volunteerHours = {
+        ...this.volunteerHours,
+        [nRegistro]: this.volunteerHours[nRegistro] ?? 0
       }
     },
-    async guardar() {
+    buildPayload() {
+      return {
+        filial_id: Number(this.form.filial_id),
+        creado_por: this.$store.getters.authUser?.id,
+        nombre: this.form.nombre.trim(),
+        tipo: this.form.tipo,
+        objetivo: this.form.objetivo || null,
+        fecha_inicio: this.form.fecha_inicio,
+        fecha_termino: this.form.fecha_termino || null,
+        hora_inicio: this.form.hora_inicio || null,
+        hora_termino: this.form.hora_termino || null,
+        lugar: this.form.lugar || null,
+        horas_totales: this.form.horas_totales === '' ? null : Number(this.form.horas_totales),
+        colaborador_externo: this.form.colaborador_externo || null,
+        voluntarios_detalle: this.selectedVolunteers.map((nRegistro) => ({
+          voluntario_n_registro: nRegistro,
+          horas_asistidas: Number(this.volunteerHours[nRegistro] ?? 0),
+          registrado_por: this.$store.getters.authUser?.id || null
+        }))
+      }
+    },
+    async saveActivity() {
       if (!this.isFormValid) {
-        show_alerta('Complete todos los campos correctamente', 'warning');
-        return;
+        show_alerta('Completa los datos obligatorios de la actividad.', 'warning')
+        return
       }
 
-      try {
-        const parametros = {
-          evento_id: this.evento_id,
-          nombre: this.nombre.trim(),
-          tipo: this.tipo,
-          horas_participacion: this.horas_participacion,
-          ...(this.N_beneficiarios !== '' ? { N_beneficiarios: this.N_beneficiarios } : {})
-        };
-        const respuesta = await axios.post(this.url, parametros);
+      this.isSubmitting = true
 
-        if (respuesta.status === 201 || respuesta.status === 200) {
-          this.nuevaActividadId = respuesta.data.id;
-          this.hide();
-          this.cargarVoluntariosYMostrarModal();
-        } else {
-          show_alerta('Error al crear la actividad', 'error');
-        }
+      try {
+        await axios.post(`${API_BASE}/actividad`, this.buildPayload())
+        this.hide()
+        this.$emit('actividad-created')
+        this.resetForm()
+        show_alerta('Actividad creada correctamente.', 'success')
       } catch (error) {
-        if (error.response && error.response.data) {
-          const errores = error.response.data.errors || {};
-          let listado = '';
-
-          Object.keys(errores).forEach(key => {
-            listado += errores[key][0] + '. ';
-          });
-
-          if (error.response.data.error) {
-            listado += error.response.data.error;
-          }
-
-          show_alerta(listado || 'Error al crear la actividad', 'error');
-        } else {
-          show_alerta('Error al crear la actividad', 'error');
-        }
+        const errors = error.response?.data?.errors || {}
+        const firstMessage = Object.values(errors).flat()[0] || 'No se pudo crear la actividad.'
+        show_alerta(firstMessage, 'error')
+      } finally {
+        this.isSubmitting = false
       }
-    },
-    normalizeTipoSegunEvento() {
-      const availableTypes = this.filteredActivityTypeOptions.map((option) => option.value);
-
-      if (availableTypes.includes(this.tipo)) {
-        return;
-      }
-
-      this.tipo = availableTypes[0] || '';
-    },
-    async cargarVoluntariosYMostrarModal() {
-      this.voluntariosSeleccionados = [];
-      this.asistenciaPorUsuario = {};
-
-      try {
-        const res = await axios.get('http://localhost:8000/api/voluntarios');
-        const voluntarios = Array.isArray(res.data) ? res.data : (res.data.data || []);
-        this.voluntariosDisponibles = voluntarios
-          .map((voluntario) => voluntario.user)
-          .filter(Boolean);
-      } catch {
-        this.voluntariosDisponibles = [];
-      }
-
-      const modal = new Modal(this.$refs.selectVoluntariosModal);
-      modal.show();
-    },
-    asegurarAsistencia(userId) {
-      if (this.voluntariosSeleccionados.includes(userId) && this.asistenciaPorUsuario[userId] === undefined) {
-        this.asistenciaPorUsuario = {
-          ...this.asistenciaPorUsuario,
-          [userId]: true
-        };
-      }
-    },
-    async asociarVoluntarios() {
-      if (!this.nuevaActividadId) {
-        show_alerta('No se encontro la actividad', 'error');
-        return;
-      }
-
-      try {
-        await axios.put(`http://localhost:8000/api/actividad/${this.nuevaActividadId}`, {
-          planilla_detalle: this.voluntariosSeleccionados.map((userId) => ({
-            user_id: userId,
-            asistio: this.asistenciaPorUsuario[userId] ?? true
-          }))
-        });
-
-        const modal = Modal.getInstance(this.$refs.selectVoluntariosModal);
-        modal.hide();
-        Swal.fire({
-          icon: 'success',
-          title: 'Planilla guardada correctamente',
-          showConfirmButton: true,
-          confirmButtonText: 'Cerrar'
-        });
-        this.$emit('actividad-created');
-        this.resetForm();
-      } catch {
-        show_alerta('No se pudo guardar la planilla', 'error');
-      }
-    },
-    cerrarModalVoluntarios() {
-      const modal = Modal.getInstance(this.$refs.selectVoluntariosModal);
-      modal.hide();
-      this.$emit('actividad-created');
-      this.resetForm();
-    }
-  },
-  watch: {
-    evento_id() {
-      this.normalizeTipoSegunEvento();
     }
   }
-};
+}
 </script>
 
 <style scoped>
 .modal-header {
   border-bottom: 0;
-  background-color: #e01e1e !important;
-  color: #fff !important;
-}
-
-.btn-danger {
-  background-color: #e01e1e !important;
-  border-color: #e01e1e !important;
-  color: #fff !important;
-}
-
-.btn-danger:hover {
-  background-color: #b71c1c !important;
-  border-color: #b71c1c !important;
-  color: #fff !important;
 }
 
 .modal-footer {
@@ -374,7 +285,7 @@ export default {
 }
 
 .modal-content {
-  border-radius: 8px;
+  border-radius: 12px;
   border: none;
 }
 
@@ -382,49 +293,24 @@ export default {
   padding: 20px 30px;
 }
 
-.btn-cruzroja {
-  background-color: #e01e1e !important;
-  border-color: #e01e1e !important;
-  color: #fff !important;
-  border-radius: 0.5rem !important;
-  font-weight: bold;
-  box-shadow: 0 2px 6px rgba(224,30,30,0.08);
-  transition: background 0.2s, border 0.2s;
+.volunteer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.9rem;
 }
 
-.btn-cruzroja:hover,
-.btn-cruzroja:focus {
-  background-color: #b71c1c !important;
-  border-color: #b71c1c !important;
-  color: #fff !important;
+.volunteer-card {
+  border: 1px solid #e4e8ef;
+  border-radius: 16px;
+  padding: 0.95rem;
+  background: #fbfcfe;
 }
 
-.modal-cruzroja {
-  border-radius: 10px;
-  box-shadow: 0 4px 24px rgba(224,30,30,0.08);
-  border: none;
-}
-
-.modal-header-cruzroja {
-  background-color: #e01e1e !important;
-  color: #fff !important;
-  border-bottom: none;
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
-}
-
-.modal-footer-cruzroja {
-  border-top: none;
-  background: #fff;
-  border-bottom-left-radius: 10px;
-  border-bottom-right-radius: 10px;
-}
-
-.btn-close-white {
-  filter: invert(1) brightness(2);
-}
-
-.attendance-switch {
-  min-width: 120px;
+.empty-state {
+  border-radius: 18px;
+  border: 1px dashed #d6dde7;
+  background: #fafbfd;
+  padding: 1.2rem;
+  color: #65758a;
 }
 </style>

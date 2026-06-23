@@ -12,9 +12,8 @@ class Role extends Model
      * @var list<string>
      */
     protected $fillable = [
-        'name',
-        'slug',
-        'description',
+        'nombre',
+        'clave',
     ];
 
     public function permissions()

@@ -18,10 +18,8 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'rut',
-        'nombre',
+        'name',
         'email',
-        'telefono',
         'estado',
         'password',
     ];
@@ -43,7 +41,6 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'password',
-        'remember_token',
     ];
 
     /**
@@ -54,32 +51,20 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
+            'estado' => 'boolean',
             'password' => 'hashed',
         ];
     }
 
-    public function actividades()
-    {
-        return $this->belongsToMany(Actividad::class)
-            ->withPivot('asistio')
-            ->withTimestamps();
-    }
-
-    public function registrosHorasFilial()
-    {
-        return $this->hasMany(RegistroHoraFilial::class);
-    }
-
     public function hasRole(string $roleSlug): bool
     {
-        return $this->roles->contains(fn (Role $role) => $role->slug === $roleSlug);
+        return $this->roles->contains(fn (Role $role) => $role->clave === $roleSlug);
     }
 
     public function hasPermission(string $permissionSlug): bool
     {
         return $this->roles
             ->flatMap(fn (Role $role) => $role->permissions)
-            ->contains(fn ($permission) => $permission->slug === $permissionSlug);
+            ->contains(fn ($permission) => $permission->clave === $permissionSlug);
     }
 }

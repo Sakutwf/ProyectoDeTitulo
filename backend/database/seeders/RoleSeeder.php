@@ -15,36 +15,32 @@ class RoleSeeder extends Seeder
     {
         $roles = [
             [
-                'name' => 'Administrador',
-                'slug' => 'administrador',
-                'description' => 'Acceso completo a la administracion del sistema.',
+                'nombre' => 'Administrador',
+                'clave' => 'administrador',
                 'permissions' => Permission::pluck('id')->all(),
             ],
             [
-                'name' => 'Voluntario',
-                'slug' => 'voluntario',
-                'description' => 'Habilita la ficha y el historial del voluntario.',
+                'nombre' => 'Voluntario',
+                'clave' => 'voluntario',
                 'permissions' => [
-                    Permission::where('slug', 'ver_historial_voluntarios')->value('id'),
+                    Permission::where('clave', 'ver_historial_voluntarios')->value('id'),
                 ],
             ],
             [
-                'name' => 'Secretario Directiva',
-                'slug' => 'secretario-directiva',
-                'description' => 'Gestiona voluntarios, actividades y eventos.',
+                'nombre' => 'Secretario Directiva',
+                'clave' => 'secretario-directiva',
                 'permissions' => [
-                    Permission::where('slug', 'gestionar_voluntarios')->value('id'),
-                    Permission::where('slug', 'ver_historial_voluntarios')->value('id'),
-                    Permission::where('slug', 'gestionar_actividades')->value('id'),
-                    Permission::where('slug', 'gestionar_eventos')->value('id'),
+                    Permission::where('clave', 'gestionar_voluntarios')->value('id'),
+                    Permission::where('clave', 'ver_historial_voluntarios')->value('id'),
+                    Permission::where('clave', 'gestionar_actividades')->value('id'),
+                    Permission::where('clave', 'gestionar_actas_analisis')->value('id'),
                 ],
             ],
             [
-                'name' => 'Encargada Finanzas',
-                'slug' => 'encargada-finanzas',
-                'description' => 'Accede solo a los reportes de boletas.',
+                'nombre' => 'Encargada Finanzas',
+                'clave' => 'encargada-finanzas',
                 'permissions' => [
-                    Permission::where('slug', 'ver_reportes_boletas')->value('id'),
+                    Permission::where('clave', 'ver_reportes_boletas')->value('id'),
                 ],
             ],
         ];
@@ -54,7 +50,7 @@ class RoleSeeder extends Seeder
             unset($roleData['permissions']);
 
             $role = Role::updateOrCreate(
-                ['slug' => $roleData['slug']],
+                ['clave' => $roleData['clave']],
                 $roleData
             );
 

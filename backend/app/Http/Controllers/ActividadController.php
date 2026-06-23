@@ -2,37 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\ActividadTipo;
-use App\Enums\EventoTipo;
 use App\Models\Actividad;
-use App\Models\Evento;
-use App\Services\AttendanceSheetService;
+use App\Models\Voluntario;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
 
 class ActividadController extends Controller
 {
-    public function __construct(private AttendanceSheetService $attendanceSheetService)
-    {
-    }
+    private const RELATIONS = ['filial', 'creador', 'voluntarios.user'];
 
     /**
      * Display a listing of the resource paginated (8 per page) and searchable.
      */
     public function index(Request $request)
     {
-        $query = Actividad::with(['evento', 'users']);
+        $query = Actividad::with(self::RELATIONS);
 
         if ($request->has('search') && $request->search) {
             $search = $request->search;
             $query->where(function ($subQuery) use ($search) {
                 $subQuery->where('tipo', 'like', "%{$search}%")
                     ->orWhere('nombre', 'like', "%{$search}%")
-                    ->orWhereHas('evento', function ($eventoQuery) use ($search) {
-                        $eventoQuery->where('nombre', 'like', "%{$search}%")
-                            ->orWhere('tipo', 'like', "%{$search}%");
-                    });
+                    ->orWhere('lugar', 'like', "%{$search}%")
+                    ->orWhere('colaborador_externo', 'like', "%{$search}%");
             });
         }
 
@@ -52,28 +44,12 @@ class ActividadController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'evento_id' => 'required|integer|exists:eventos,id',
-            'nombre' => 'required|string|max:255',
-            'tipo' => ['required', Rule::enum(ActividadTipo::class)],
-            'N_beneficiarios' => 'nullable|integer',
-            'horas_participacion' => 'nullable|numeric|min:0',
-        ]);
-        $this->ensureEventAndActivityTypesAreCompatible((int) $request->evento_id, (string) $request->tipo);
+        $data = $this->validateActividad($request);
 
-        try {
-            $actividad = new Actividad();
-            $actividad->evento_id = $request->evento_id;
-            $actividad->nombre = trim((string) $request->nombre);
-            $actividad->tipo = ActividadTipo::tryFromMixed($request->tipo);
-            $actividad->N_beneficiarios = $request->N_beneficiarios;
-            $actividad->horas_participacion = $request->horas_participacion ?? 1;
-            $actividad->save();
+        $actividad = Actividad::create($data);
+        $this->syncVoluntarios($actividad, $request);
 
-            return response()->json($actividad->load('users'), 201);
-        } catch (\Exception $exception) {
-            return response()->json(['error' => $exception->getMessage()], 400);
-        }
+        return response()->json($actividad->load(self::RELATIONS), 201);
     }
 
     /**
@@ -81,7 +57,7 @@ class ActividadController extends Controller
      */
     public function show($id)
     {
-        return response()->json(Actividad::with('evento', 'users')->findOrFail($id), 200);
+        return response()->json(Actividad::with(self::RELATIONS)->findOrFail($id), 200);
     }
 
     /**
@@ -97,47 +73,13 @@ class ActividadController extends Controller
      */
     public function update($id, Request $request)
     {
-        $request->validate([
-            'evento_id' => 'sometimes|integer|exists:eventos,id',
-            'nombre' => 'sometimes|string|max:255',
-            'tipo' => ['sometimes', Rule::enum(ActividadTipo::class)],
-            'N_beneficiarios' => 'nullable|integer',
-            'horas_participacion' => 'nullable|numeric|min:0',
-            'planilla' => 'sometimes|array',
-            'planilla.*' => 'integer|exists:users,id',
-            'planilla_detalle' => 'sometimes|array',
-            'planilla_detalle.*.user_id' => 'required_with:planilla_detalle|integer|exists:users,id',
-            'planilla_detalle.*.asistio' => 'nullable|boolean',
-        ]);
+        $actividad = Actividad::findOrFail($id);
+        $data = $this->validateActividad($request, true);
 
-        try {
-            $actividad = Actividad::findOrFail($id);
-            $affectedUserIds = $actividad->users()->pluck('users.id')->all();
-            $eventoId = (int) ($request->evento_id ?? $actividad->evento_id);
-            $tipo = $request->tipo ?? $actividad->tipo;
+        $actividad->update($data);
+        $this->syncVoluntarios($actividad, $request);
 
-            $this->ensureEventAndActivityTypesAreCompatible($eventoId, $tipo);
-
-            $actividad->evento_id = $request->evento_id ?? $actividad->evento_id;
-            $actividad->nombre = $request->has('nombre')
-                ? trim((string) $request->nombre)
-                : $actividad->nombre;
-            $actividad->tipo = $request->has('tipo')
-                ? ActividadTipo::tryFromMixed($request->tipo)
-                : $actividad->tipo;
-            $actividad->N_beneficiarios = $request->N_beneficiarios ?? $actividad->N_beneficiarios;
-            $actividad->horas_participacion = $request->horas_participacion ?? $actividad->horas_participacion;
-            $actividad->save();
-
-            $updatedUserIds = $this->syncPlanilla($actividad, $request);
-            $this->attendanceSheetService->syncForUsers(array_merge($affectedUserIds, $updatedUserIds));
-
-            return response()->json($actividad->load('users'), 200);
-        } catch (\Exception $exception) {
-            \Log::error('Error al asociar voluntarios: ' . $exception->getMessage());
-
-            return response()->json(['error' => $exception->getMessage()], 500);
-        }
+        return response()->json($actividad->load(self::RELATIONS), 200);
     }
 
     /**
@@ -157,12 +99,21 @@ class ActividadController extends Controller
     public function asociarVoluntario($id, Request $request)
     {
         $actividad = Actividad::findOrFail($id);
-        $actividad->users()->syncWithoutDetaching([
-            $request->user_id => ['asistio' => true],
-        ]);
-        $this->attendanceSheetService->syncForUsers([$request->user_id]);
 
-        return response()->json(['success' => true], 200);
+        $data = $request->validate([
+            'voluntario_n_registro' => ['required', 'string', 'exists:voluntarios,n_registro'],
+            'horas_asistidas' => ['nullable', 'numeric', 'min:0'],
+            'registrado_por' => ['nullable', 'integer', 'exists:users,id'],
+        ]);
+
+        $actividad->voluntarios()->syncWithoutDetaching([
+            $data['voluntario_n_registro'] => [
+                'horas_asistidas' => $data['horas_asistidas'] ?? 0,
+                'registrado_por' => $data['registrado_por'] ?? null,
+            ],
+        ]);
+
+        return response()->json($actividad->load(self::RELATIONS), 200);
     }
 
     /**
@@ -171,56 +122,65 @@ class ActividadController extends Controller
     public function desasociarVoluntario($id, Request $request)
     {
         $actividad = Actividad::findOrFail($id);
-        $userId = (int) $request->user_id;
-        $actividad->users()->detach($request->user_id);
-        $this->attendanceSheetService->syncForUsers([$userId]);
+        $data = $request->validate([
+            'voluntario_n_registro' => ['required', 'string', 'exists:voluntarios,n_registro'],
+        ]);
 
-        return response()->json(['success' => true], 200);
+        $actividad->voluntarios()->detach($data['voluntario_n_registro']);
+
+        return response()->json($actividad->load(self::RELATIONS), 200);
     }
 
-    private function syncPlanilla(Actividad $actividad, Request $request): array
+    private function validateActividad(Request $request, bool $partial = false): array
     {
-        if ($request->has('planilla_detalle')) {
-            $syncData = collect($request->input('planilla_detalle', []))
+        $required = $partial ? 'sometimes' : 'required';
+
+        return $request->validate([
+            'filial_id' => [$required, 'integer', 'exists:filiales,id'],
+            'creado_por' => [$required, 'integer', 'exists:users,id'],
+            'nombre' => [$required, 'string', 'max:200'],
+            'tipo' => [$required, 'string', Rule::in(['Operativa', 'Formación', 'En filial', 'Reunion'])],
+            'objetivo' => ['nullable', 'string'],
+            'fecha_inicio' => [$required, 'date'],
+            'fecha_termino' => ['nullable', 'date', 'after_or_equal:fecha_inicio'],
+            'hora_inicio' => ['nullable', 'date_format:H:i'],
+            'hora_termino' => ['nullable', 'date_format:H:i'],
+            'lugar' => ['nullable', 'string', 'max:255'],
+            'horas_totales' => ['nullable', 'numeric', 'min:0'],
+            'colaborador_externo' => ['nullable', 'string', 'max:200'],
+            'voluntarios' => ['sometimes', 'array'],
+            'voluntarios.*' => ['string', 'exists:voluntarios,n_registro'],
+            'voluntarios_detalle' => ['sometimes', 'array'],
+            'voluntarios_detalle.*.voluntario_n_registro' => ['required_with:voluntarios_detalle', 'string', 'exists:voluntarios,n_registro'],
+            'voluntarios_detalle.*.horas_asistidas' => ['nullable', 'numeric', 'min:0'],
+            'voluntarios_detalle.*.registrado_por' => ['nullable', 'integer', 'exists:users,id'],
+        ]);
+    }
+
+    private function syncVoluntarios(Actividad $actividad, Request $request): void
+    {
+        if ($request->has('voluntarios_detalle')) {
+            $syncData = collect($request->input('voluntarios_detalle', []))
                 ->mapWithKeys(fn (array $detalle) => [
-                    (int) $detalle['user_id'] => ['asistio' => (bool) ($detalle['asistio'] ?? true)],
+                    $detalle['voluntario_n_registro'] => [
+                        'horas_asistidas' => $detalle['horas_asistidas'] ?? 0,
+                        'registrado_por' => $detalle['registrado_por'] ?? null,
+                    ],
                 ])
                 ->all();
 
-            $actividad->users()->sync($syncData);
-
-            return array_map('intval', array_keys($syncData));
+            $actividad->voluntarios()->sync($syncData);
+            return;
         }
 
-        if ($request->has('planilla')) {
-            $syncData = collect($request->input('planilla', []))
-                ->mapWithKeys(fn ($userId) => [(int) $userId => ['asistio' => true]])
+        if ($request->has('voluntarios')) {
+            $syncData = collect($request->input('voluntarios', []))
+                ->mapWithKeys(fn (string $nRegistro) => [
+                    $nRegistro => ['horas_asistidas' => 0, 'registrado_por' => null],
+                ])
                 ->all();
 
-            $actividad->users()->sync($syncData);
-
-            return array_map('intval', array_keys($syncData));
-        }
-
-        return $actividad->users()->pluck('users.id')->map(fn ($userId) => (int) $userId)->all();
-    }
-
-    private function ensureEventAndActivityTypesAreCompatible(int $eventoId, mixed $tipo): void
-    {
-        $evento = Evento::findOrFail($eventoId);
-        $tipoEvento = EventoTipo::tryFromMixed($evento->tipo);
-        $tipoActividad = ActividadTipo::tryFromMixed($tipo);
-
-        if ($tipoEvento === EventoTipo::FORMATIVO && ! $tipoActividad?->isFormativa()) {
-            throw ValidationException::withMessages([
-                'tipo' => ['Las actividades de eventos FORMATIVOS solo pueden ser CURSO, TALLER o SEMINARIO.'],
-            ]);
-        }
-
-        if ($tipoEvento === EventoTipo::SERVICIO && ! $tipoActividad?->isServicio()) {
-            throw ValidationException::withMessages([
-                'tipo' => ['Las actividades de eventos SERVICIO solo pueden ser CAMPAÑA, OPERATIVO, COBERTURA o COMUNITARIA.'],
-            ]);
+            $actividad->voluntarios()->sync($syncData);
         }
     }
 }

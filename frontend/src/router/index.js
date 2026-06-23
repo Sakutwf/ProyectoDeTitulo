@@ -2,13 +2,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import UserView from '../views/UserView.vue'
 import ActividadView from '../views/ActividadView.vue'
-import EventoView from '@/views/EventoView.vue'
 import HistorialView from '../views/HistorialView.vue'
 import HistorialPdfView from '../views/HistorialPdfView.vue'
 import LoginView from '../views/LoginView.vue'
 import AccessSelectionView from '../views/AccessSelectionView.vue'
 import VolunteerActivitiesView from '../views/VolunteerActivitiesView.vue'
-import VolunteerBoletasView from '../views/VolunteerBoletasView.vue'
 import store from '../store'
 import { defaultRouteForUser } from '../utils/auth'
 
@@ -43,12 +41,6 @@ const routes = [
     meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
   },
   {
-    path: '/eventos',
-    name: 'eventos',
-    component: EventoView,
-    meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
-  },
-  {
     path: '/actividades',
     name: 'actividades',
     component: ActividadView,
@@ -58,12 +50,6 @@ const routes = [
     path: '/mis-actividades',
     name: 'volunteer-activities',
     component: VolunteerActivitiesView,
-    meta: { requiresAuth: true, roles: ['voluntario'], experience: 'volunteer' }
-  },
-  {
-    path: '/mis-boletas',
-    name: 'volunteer-boletas',
-    component: VolunteerBoletasView,
     meta: { requiresAuth: true, roles: ['voluntario'], experience: 'volunteer' }
   },
   {

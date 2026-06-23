@@ -5,7 +5,7 @@
     <div class="content-wrapper">
       <div class="content-header">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-          <h3 class="m-0"><i class="fa-solid fa-list-check me-2"></i>Actividades</h3>
+          <h3 class="m-0"><i class="fa-solid fa-list-check me-2"></i>Mis actividades</h3>
           <span class="role-chip">Inscripciones activas</span>
         </div>
       </div>
@@ -14,9 +14,9 @@
         <div class="card shadow volunteer-card">
           <div class="card-body">
             <div class="section-copy">
-              <h2>Actividades activas para inscripcion</h2>
+              <h2>Actividades disponibles para participar</h2>
               <p>
-                Aqui puedes revisar las actividades de servicio vigentes e inscribirte cuando correspondan.
+                Aquí puedes revisar las actividades vigentes del sistema e inscribirte en las que correspondan.
               </p>
             </div>
 
@@ -29,25 +29,21 @@
             </div>
 
             <div v-else class="activity-grid">
-              <article
-                v-for="actividad in activeActivities"
-                :key="actividad.id"
-                class="activity-card"
-              >
+              <article v-for="actividad in activeActivities" :key="actividad.id" class="activity-card">
                 <div class="activity-card__top">
                   <span class="activity-badge">{{ actividad.tipo || 'Sin tipo' }}</span>
-                  <span class="activity-date">{{ formatDateRange(actividad.evento?.fecha_inicio, actividad.evento?.fecha_termino) }}</span>
+                  <span class="activity-date">{{ formatDateRange(actividad.fecha_inicio, actividad.fecha_termino) }}</span>
                 </div>
 
                 <h3>{{ actividad.nombre || 'Actividad sin nombre' }}</h3>
-                <p class="activity-event">{{ actividad.evento?.nombre || 'Evento sin nombre' }}</p>
+                <p class="activity-event">{{ actividad.filial?.nombre || 'Sin filial' }}</p>
                 <p class="activity-description">
-                  {{ actividad.evento?.descripcion || 'Sin descripcion disponible.' }}
+                  {{ actividad.objetivo || 'Sin objetivo registrado.' }}
                 </p>
 
                 <div class="activity-meta">
-                  <span>{{ formatHours(actividad.horas_participacion) }}</span>
-                  <span>{{ actividad.users?.length || 0 }} inscrito(s)</span>
+                  <span>{{ formatHours(actividad.horas_totales) }}</span>
+                  <span>{{ actividad.voluntarios?.length || 0 }} inscrito(s)</span>
                 </div>
 
                 <button
@@ -79,6 +75,7 @@ const API_BASE = 'http://localhost:8000/api'
 
 const store = useStore()
 const currentUser = computed(() => store.getters.authUser)
+const currentVolunteerRegister = computed(() => currentUser.value?.voluntario?.n_registro || null)
 const activities = ref([])
 const isLoading = ref(false)
 const loadingActivityId = ref(null)
@@ -87,13 +84,16 @@ const todayIso = new Date().toISOString().slice(0, 10)
 
 const activeActivities = computed(() =>
   activities.value
-    .filter((actividad) => actividad?.evento?.tipo === 'SERVICIO')
-    .filter((actividad) => (actividad?.evento?.fecha_termino || '').slice(0, 10) >= todayIso)
-    .sort((left, right) => (left.evento?.fecha_inicio || '').localeCompare(right.evento?.fecha_inicio || ''))
+    .filter((actividad) => {
+      const start = (actividad?.fecha_inicio || '').slice(0, 10)
+      const end = (actividad?.fecha_termino || '').slice(0, 10)
+      return (end || start) >= todayIso
+    })
+    .sort((left, right) => (left.fecha_inicio || '').localeCompare(right.fecha_inicio || ''))
 )
 
 function isEnrolled(actividad) {
-  return (actividad.users || []).some((user) => Number(user.id) === Number(currentUser.value?.id))
+  return (actividad.voluntarios || []).some((volunteer) => volunteer.n_registro === currentVolunteerRegister.value)
 }
 
 function enrollmentButtonLabel(actividad) {
@@ -101,7 +101,7 @@ function enrollmentButtonLabel(actividad) {
     return isEnrolled(actividad) ? 'Quitando...' : 'Inscribiendo...'
   }
 
-  return isEnrolled(actividad) ? 'Quitar inscripcion' : 'Inscribirme'
+  return isEnrolled(actividad) ? 'Quitar inscripción' : 'Inscribirme'
 }
 
 function formatDate(dateString) {
@@ -148,8 +148,8 @@ async function loadActivities() {
 }
 
 async function toggleEnrollment(actividad) {
-  if (!currentUser.value?.id) {
-    show_alerta('No existe un voluntario valido para inscribirse.', 'error')
+  if (!currentVolunteerRegister.value) {
+    show_alerta('No existe un voluntario válido para inscribirse.', 'error')
     return
   }
 
@@ -158,19 +158,20 @@ async function toggleEnrollment(actividad) {
   try {
     if (isEnrolled(actividad)) {
       await axios.delete(`${API_BASE}/actividad/${actividad.id}/voluntarios`, {
-        data: { user_id: currentUser.value.id }
+        data: { voluntario_n_registro: currentVolunteerRegister.value }
       })
-      show_alerta('Inscripcion retirada correctamente.', 'success')
+      show_alerta('Inscripción retirada correctamente.', 'success')
     } else {
       await axios.post(`${API_BASE}/actividad/${actividad.id}/voluntarios`, {
-        user_id: currentUser.value.id
+        voluntario_n_registro: currentVolunteerRegister.value,
+        registrado_por: currentUser.value?.id || null
       })
-      show_alerta('Inscripcion realizada correctamente.', 'success')
+      show_alerta('Inscripción realizada correctamente.', 'success')
     }
 
     await loadActivities()
   } catch (error) {
-    show_alerta('No se pudo actualizar la inscripcion en la actividad.', 'error')
+    show_alerta('No se pudo actualizar la inscripción en la actividad.', 'error')
   } finally {
     loadingActivityId.value = null
   }
@@ -305,16 +306,6 @@ onMounted(async () => {
   font-size: 0.9rem;
   font-weight: 600;
   flex-wrap: wrap;
-}
-
-.btn-danger {
-  background-color: #e01e1e;
-  border-color: #e01e1e;
-}
-
-.btn-danger:hover {
-  background-color: #c51b1b;
-  border-color: #c51b1b;
 }
 
 @media (max-width: 767.98px) {

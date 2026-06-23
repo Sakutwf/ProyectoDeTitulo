@@ -14,40 +14,34 @@ class PermissionSeeder extends Seeder
     {
         $permissions = [
             [
-                'name' => 'Gestionar voluntarios',
-                'slug' => 'gestionar_voluntarios',
-                'description' => 'Permite crear, editar y eliminar voluntarios.',
+                'nombre' => 'Gestionar voluntarios',
+                'clave' => 'gestionar_voluntarios',
             ],
             [
-                'name' => 'Ver historial de voluntarios',
-                'slug' => 'ver_historial_voluntarios',
-                'description' => 'Permite revisar hojas de vida, hojas anuales y antecedentes.',
+                'nombre' => 'Ver historial de voluntarios',
+                'clave' => 'ver_historial_voluntarios',
             ],
             [
-                'name' => 'Gestionar actividades',
-                'slug' => 'gestionar_actividades',
-                'description' => 'Permite administrar el CRUD de actividades.',
+                'nombre' => 'Gestionar actividades',
+                'clave' => 'gestionar_actividades',
             ],
             [
-                'name' => 'Gestionar eventos',
-                'slug' => 'gestionar_eventos',
-                'description' => 'Permite administrar el CRUD de eventos.',
+                'nombre' => 'Gestionar actas y analisis',
+                'clave' => 'gestionar_actas_analisis',
             ],
             [
-                'name' => 'Ver reportes de boletas',
-                'slug' => 'ver_reportes_boletas',
-                'description' => 'Permite acceder a reportes y pagos asociados a boletas.',
+                'nombre' => 'Ver reportes de boletas',
+                'clave' => 'ver_reportes_boletas',
             ],
             [
-                'name' => 'Gestionar roles y permisos',
-                'slug' => 'gestionar_roles_permisos',
-                'description' => 'Permite administrar la matriz de acceso del sistema.',
+                'nombre' => 'Gestionar roles y permisos',
+                'clave' => 'gestionar_roles_permisos',
             ],
         ];
 
         foreach ($permissions as $permission) {
             Permission::updateOrCreate(
-                ['slug' => $permission['slug']],
+                ['clave' => $permission['clave']],
                 $permission
             );
         }

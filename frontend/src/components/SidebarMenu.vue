@@ -7,7 +7,7 @@
         </div>
 
         <div class="sidebar-user">
-            <strong>{{ currentUser?.nombre || 'Sesion activa' }}</strong>
+            <strong>{{ currentUser?.name || 'Sesion activa' }}</strong>
             <span>{{ roleLabel }}</span>
         </div>
 
@@ -25,26 +25,6 @@
             <li v-if="canManagePlatform" class="nav-item" :class="{ active: activeLink === 'actividades' }">
                 <router-link to="/actividades" class="nav-link">
                     <i class="fa-solid fa-list me-2"></i> Actividades
-                </router-link>
-            </li>
-            <li v-if="canManagePlatform" class="nav-item" :class="{ active: activeLink === 'eventos' }">
-                <router-link to="/eventos" class="nav-link">
-                    <i class="fa-solid fa-calendar-check me-2"></i> Eventos
-                </router-link>
-            </li>
-            <li v-if="showVolunteerMenu && historyLink" class="nav-item" :class="{ active: activeLink === 'historial' }">
-                <router-link :to="historyLink" class="nav-link">
-                    <i class="fa-solid fa-id-card me-2"></i> Ver hoja de vida
-                </router-link>
-            </li>
-            <li v-if="showVolunteerMenu" class="nav-item" :class="{ active: activeLink === 'mis-actividades' }">
-                <router-link :to="{ name: 'volunteer-activities' }" class="nav-link">
-                    <i class="fa-solid fa-list-check me-2"></i> Actividades
-                </router-link>
-            </li>
-            <li v-if="showVolunteerMenu" class="nav-item" :class="{ active: activeLink === 'boletas' }">
-                <router-link :to="{ name: 'volunteer-boletas' }" class="nav-link">
-                    <i class="fa-solid fa-receipt me-2"></i> Boletas
                 </router-link>
             </li>
             <li v-if="canSwitchAccess" class="nav-item">
@@ -74,16 +54,6 @@ export default {
         canSwitchAccess() {
             return this.$store.getters.requiresAccessSelection
         },
-        showVolunteerMenu() {
-            return this.$store.getters.isVolunteerExperience || this.$store.getters.isVolunteerOnly
-        },
-        historyLink() {
-            if (!this.currentUser?.id || !this.currentUser?.voluntario) {
-                return null
-            }
-
-            return { name: 'HistorialView', params: { id: this.currentUser.id } }
-        },
         roleLabel() {
             return this.canManagePlatform ? 'Vista de administrador' : 'Perfil de voluntario'
         },
@@ -91,11 +61,7 @@ export default {
             const path = this.$route.path
 
             if (path.includes('/voluntarios')) return 'voluntarios'
-            if (path.includes('/mis-actividades')) return 'mis-actividades'
-            if (path.includes('/mis-boletas')) return 'boletas'
             if (path.includes('/actividades')) return 'actividades'
-            if (path.includes('/eventos')) return 'eventos'
-            if (path.includes('/historial')) return 'historial'
             return 'inicio'
         }
     },

@@ -2,13 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\AntecedenteVoluntario;
-use App\Models\HojaAnual;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Voluntario;
-use Illuminate\Support\Carbon;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
@@ -17,131 +16,123 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        $administrador = User::updateOrCreate(
-            ["rut" => "admin"],
+        $filialId = DB::table('filiales')->updateOrInsert(
+            ['nombre' => 'Filial Santiago Centro'],
             [
-                "nombre"=> "Administrador",
-                "email"=> "admin@cruzroja.local",
-                "telefono"=> "admin",
-                "estado"=> "ACTIVO",
-                "password"=> "admin",
+                'comite_regional' => 'Metropolitano',
+                'direccion' => 'Av. Principal 123',
+                'comuna' => 'Santiago',
+                'updated_at' => now(),
+                'created_at' => now(),
+            ]
+        );
+
+        $filial = DB::table('filiales')->where('nombre', 'Filial Santiago Centro')->first();
+
+        $administrador = User::updateOrCreate(
+            ['email' => 'admin@cruzroja.local'],
+            [
+                'name' => 'Administrador',
+                'estado' => true,
+                'password' => Hash::make('admin'),
             ]
         );
         $administrador->roles()->sync($this->roleIds(['administrador']));
         Voluntario::where('user_id', $administrador->id)->delete();
 
-        $voluntaria = User::create([
-            "rut" => "22.222.222-2",
-            "nombre"=> "Scarlet Diaz",
-            "email"=> "scarlet@gmail.com",
-            "telefono"=> "41232131",
-            "estado"=> "ACTIVO",
-            "password"=> "cruzroja26",
+        $voluntaria = User::updateOrCreate([
+            'email' => 'scarlet@gmail.com',
+        ], [
+            'name' => 'Scarlet Diaz',
+            'estado' => true,
+            'password' => Hash::make('cruzRojaCco26'),
         ]);
         $voluntaria->roles()->sync($this->roleIds(['voluntario']));
 
-        $voluntariaRegistro = Voluntario::create([
-            "user_id" => $voluntaria->id,
-            "fecha_ingreso"=> "2022-02-04",
-            "n_registro"=> "00001",
-            "grupo_sanguineo"=> "A",
-            "factor_rh"=> "+",
-            "fecha_nacimiento"=> "2000-02-03",
+        Voluntario::updateOrCreate([
+            'user_id' => $voluntaria->id,
+        ], [
+            'n_registro' => '00001',
+            'filial_id' => $filial->id,
+            'rut' => '22.222.222-2',
+            'nombres' => 'Scarlet',
+            'apellidos' => 'Diaz',
+            'nacionalidad' => 'Chilena',
+            'fecha_nacimiento' => '2000-02-03',
+            'fecha_incorporacion' => '2022-02-04',
+            'celular' => '41232131',
         ]);
 
-        $hojaDeVida = $voluntariaRegistro->hojaDeVida()->create([
-            "fecha_creacion" => "2022-02-04",
-            "estado" => "ACTIVO",
-        ]);
-
-        HojaAnual::create([
-            "hoja_de_vida_id" => $hojaDeVida->id_libro,
-            "anio" => 2024,
-            "porcentaje_asistencia" => 92.50,
-            "cargo" => "Brigadista",
-            "observaciones_generales" => "Participacion destacada durante el periodo.",
-        ]);
-
-        AntecedenteVoluntario::create([
-            "hoja_de_vida_id" => $hojaDeVida->id_libro,
-            "tipo" => "CURSO",
-            "nombre" => "Primeros Auxilios",
-            "descripcion" => "Curso base de atencion prehospitalaria.",
-            "fecha_inicio" => "2023-03-01",
-            "fecha_termino" => "2023-03-30",
-            "duracion" => "30 dias",
-        ]);
-
-        $voluntario = User::create([
-            "rut" => "33.333.333-3",
-            "nombre"=> "Matias Rojas",
-            "email"=> "miau@gmail.com",
-            "telefono"=> "41232131",
-            "estado"=> "ACTIVO",
-            "password"=> "cruzroja26",
+        $voluntario = User::updateOrCreate([
+            'email' => 'matias@gmail.com',
+        ], [
+            'name' => 'Matias Rojas',
+            'estado' => true,
+            'password' => Hash::make('cruzRojaCco26'),
         ]);
         $voluntario->roles()->sync($this->roleIds(['voluntario', 'secretario-directiva']));
 
-        $voluntarioRegistro = Voluntario::create([
-            "user_id" => $voluntario->id,
-            "fecha_ingreso"=> "2021-05-10",
-            "n_registro"=> "144301",
-            "grupo_sanguineo"=> "O",
-            "factor_rh"=> "-",
-            "fecha_nacimiento"=> "1998-11-15",
+        Voluntario::updateOrCreate([
+            'user_id' => $voluntario->id,
+        ], [
+            'n_registro' => '144301',
+            'filial_id' => $filial->id,
+            'rut' => '33.333.333-3',
+            'nombres' => 'Matias',
+            'apellidos' => 'Rojas',
+            'nacionalidad' => 'Chilena',
+            'fecha_nacimiento' => '1998-11-15',
+            'fecha_incorporacion' => '2021-05-10',
+            'celular' => '41232131',
         ]);
 
-        $hojaDeVida = $voluntarioRegistro->hojaDeVida()->create([
-            "fecha_creacion" => "2021-05-10",
-            "estado" => "INACTIVO",
-        ]);
-
-        HojaAnual::create([
-            "hoja_de_vida_id" => $hojaDeVida->id_libro,
-            "anio" => 2023,
-            "porcentaje_asistencia" => 78.00,
-            "cargo" => "Apoyo Logistico",
-            "observaciones_generales" => "Asistencia irregular en el ultimo trimestre.",
-        ]);
-
-        AntecedenteVoluntario::create([
-            "hoja_de_vida_id" => $hojaDeVida->id_libro,
-            "tipo" => "PREMIO",
-            "nombre" => "Reconocimiento Regional",
-            "descripcion" => "Premio por apoyo en operativos comunitarios.",
-            "fecha_inicio" => "2022-12-01",
-            "fecha_termino" => "2022-12-01",
-            "duracion" => "1 dia",
-        ]);
-
-        $finanzas = User::create([
-            "rut" => "44.444.444-4",
-            "nombre"=> "Javiera Fuentes",
-            "email"=> "javiera@gmail.com",
-            "telefono"=> "41232131",
-            "estado"=> "ACTIVO",
-            "password"=> "cruzroja26",
-        ]);
-        $finanzas->roles()->sync($this->roleIds(['encargada-finanzas']));
-        $this->upsertVolunteerLoginProfile($finanzas, '90002');
-    }
-
-    private function roleIds(array $slugs): array
-    {
-        return Role::whereIn('slug', $slugs)->pluck('id')->all();
-    }
-
-    private function upsertVolunteerLoginProfile(User $user, string $registro): void
-    {
-        Voluntario::updateOrCreate(
-            ['user_id' => $user->id],
+        DB::table('hojas_vida_anuales')->updateOrInsert(
+            ['voluntario_n_registro' => '00001', 'anio' => 2024],
             [
-                'fecha_ingreso' => Carbon::create(2020, 1, 1)->toDateString(),
-                'n_registro' => $registro,
-                'factor_rh' => '+',
-                'grupo_sanguineo' => 'O',
-                'fecha_nacimiento' => Carbon::create(1990, 1, 1)->toDateString(),
+                'asistencia_anual_horas' => 92.5,
+                'asistencia_anual_porcentaje' => 92.5,
+                'updated_at' => now(),
+                'created_at' => now(),
             ]
         );
+
+        DB::table('hojas_vida_anuales')->updateOrInsert(
+            ['voluntario_n_registro' => '144301', 'anio' => 2023],
+            [
+                'asistencia_anual_horas' => 78,
+                'asistencia_anual_porcentaje' => 78,
+                'comentarios' => 'Asistencia irregular en el ultimo trimestre.',
+                'updated_at' => now(),
+                'created_at' => now(),
+            ]
+        );
+
+        $finanzas = User::updateOrCreate([
+            'email' => 'javiera@gmail.com',
+        ], [
+            'name' => 'Javiera Fuentes',
+            'estado' => true,
+            'password' => Hash::make('cruzRojaCco26'),
+        ]);
+        $finanzas->roles()->sync($this->roleIds(['encargada-finanzas']));
+        Voluntario::updateOrCreate(
+            ['user_id' => $finanzas->id],
+            [
+                'n_registro' => '90002',
+                'filial_id' => $filial->id,
+                'rut' => '44.444.444-4',
+                'nombres' => 'Javiera',
+                'apellidos' => 'Fuentes',
+                'nacionalidad' => 'Chilena',
+                'fecha_nacimiento' => '1990-01-01',
+                'fecha_incorporacion' => '2020-01-01',
+                'celular' => '41232131',
+            ]
+        );
+    }
+
+    private function roleIds(array $claves): array
+    {
+        return Role::whereIn('clave', $claves)->pluck('id')->all();
     }
 }

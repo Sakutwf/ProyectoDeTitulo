@@ -4,14 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Permission;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class PermissionController extends Controller
 {
     public function index()
     {
-        return response()->json(Permission::with('roles')->orderBy('name')->get(), 200);
+        return response()->json(Permission::with('roles')->orderBy('nombre')->get(), 200);
     }
 
     public function store(Request $request)
@@ -46,14 +45,9 @@ class PermissionController extends Controller
 
     private function validatePermission(Request $request, ?int $permissionId = null): array
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', Rule::unique('permissions', 'name')->ignore($permissionId)],
-            'slug' => ['nullable', 'string', Rule::unique('permissions', 'slug')->ignore($permissionId)],
-            'description' => ['nullable', 'string'],
+        return $request->validate([
+            'nombre' => ['required', 'string', 'max:100'],
+            'clave' => ['required', 'string', 'max:100', Rule::unique('permissions', 'clave')->ignore($permissionId)],
         ]);
-
-        $validated['slug'] = $validated['slug'] ?? Str::slug($validated['name']);
-
-        return $validated;
     }
 }

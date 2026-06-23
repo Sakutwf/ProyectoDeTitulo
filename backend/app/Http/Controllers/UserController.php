@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Filial;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Voluntario;
@@ -9,15 +10,19 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
+    private const DEFAULT_PROFILE_PASSWORD = 'cruzRojaCco26';
+
     private const USER_RELATIONS = [
         'roles.permissions',
-        'voluntario.hojaDeVida.hojasAnuales',
-        'voluntario.hojaDeVida.antecedentes',
-        'actividades.evento',
-        'registrosHorasFilial',
+        'voluntario.filial',
+        'voluntario.hojasVidaAnuales.titulos',
+        'voluntario.hojasVidaAnuales.cursos',
+        'voluntario.hojasVidaAnuales.sanciones',
+        'voluntario.hojasVidaAnuales.reconocimiento',
     ];
 
     /**
@@ -31,9 +36,15 @@ class UserController extends Controller
             $search = $request->search;
 
             $query->where(function ($subQuery) use ($search) {
-                $subQuery->where('nombre', 'like', "%{$search}%")
+                $subQuery->where('name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('rut', 'like', "%{$search}%");
+                    ->orWhereHas('voluntario', function ($voluntarioQuery) use ($search) {
+                        $voluntarioQuery
+                            ->where('rut', 'like', "%{$search}%")
+                            ->orWhere('n_registro', 'like', "%{$search}%")
+                            ->orWhere('nombres', 'like', "%{$search}%")
+                            ->orWhere('apellidos', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -44,12 +55,29 @@ class UserController extends Controller
     }
 
     /**
-     * Metodo para buscar un usuario por su rut.
+     * Busca usuarios por nombre, email, rut o numero de registro.
      */
     public function search(Request $request)
     {
+        $request->validate([
+            'q' => ['nullable', 'string'],
+            'rut' => ['nullable', 'string'],
+        ]);
+
+        $term = trim((string) ($request->input('q') ?? $request->input('rut') ?? ''));
+
         $users = User::with(self::USER_RELATIONS)
-                ->where('rut', $request->rut)
+                ->where(function ($query) use ($term) {
+                    $query->where('name', 'like', "%{$term}%")
+                        ->orWhere('email', 'like', "%{$term}%")
+                        ->orWhereHas('voluntario', function ($voluntarioQuery) use ($term) {
+                            $voluntarioQuery
+                                ->where('rut', 'like', "%{$term}%")
+                                ->orWhere('n_registro', 'like', "%{$term}%")
+                                ->orWhere('nombres', 'like', "%{$term}%")
+                                ->orWhere('apellidos', 'like', "%{$term}%");
+                        });
+                })
                 ->get()
                 ->map(fn (User $user) => $this->prepareUserResponse($user, true));
 
@@ -138,19 +166,17 @@ class UserController extends Controller
     private function validateUser(Request $request, ?int $userId = null): array
     {
         $passwordRules = $userId === null
-            ? ['nullable', 'string', 'min:6', 'required_without:contrasena']
+            ? ['nullable', 'string', 'min:6']
             : ['nullable', 'string', 'min:6'];
 
         $contrasenaRules = $userId === null
-            ? ['nullable', 'string', 'min:6', 'required_without:password']
+            ? ['nullable', 'string', 'min:6']
             : ['nullable', 'string', 'min:6'];
 
         $validated = $request->validate([
-            'rut' => ['required', 'string', Rule::unique('users', 'rut')->ignore($userId)],
-            'nombre' => ['required', 'string'],
+            'name' => ['nullable', 'string', 'max:150'],
             'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($userId)],
-            'telefono' => ['required', 'string'],
-            'estado' => ['required', 'string'],
+            'estado' => ['required', 'boolean'],
             'password' => $passwordRules,
             'contrasena' => $contrasenaRules,
             'roles' => ['sometimes', 'array'],
@@ -161,8 +187,25 @@ class UserController extends Controller
 
         unset($validated['password'], $validated['contrasena']);
 
+        if (blank($validated['name'] ?? null)) {
+            $derivedName = trim(implode(' ', array_filter([
+                (string) $request->input('nombres', ''),
+                (string) $request->input('apellidos', ''),
+            ])));
+
+            if ($derivedName !== '') {
+                $validated['name'] = $derivedName;
+            } elseif ($userId === null) {
+                throw ValidationException::withMessages([
+                    'name' => 'Debes indicar un nombre para el perfil.',
+                ]);
+            }
+        }
+
         if ($password !== null) {
             $validated['password'] = $password;
+        } elseif ($userId === null) {
+            $validated['password'] = self::DEFAULT_PROFILE_PASSWORD;
         }
 
         return $validated;
@@ -184,65 +227,24 @@ class UserController extends Controller
 
         $voluntario = $user->voluntario;
 
-        $voluntarioData = $request->only([
-            'fecha_ingreso',
-            'n_registro',
-            'factor_rh',
-            'grupo_sanguineo',
-            'fecha_nacimiento',
-        ]);
-
-        $fotoRules = ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'];
-
-        $validated = validator(array_merge(
-            optional($user->voluntario)->only([
-                'fecha_ingreso',
-                'n_registro',
-                'factor_rh',
-                'grupo_sanguineo',
-                'fecha_nacimiento',
-            ]) ?? [],
-            $voluntarioData,
-            ['foto_perfil' => $request->file('foto_perfil')]
-        ), [
-            'fecha_ingreso' => ['required', 'date'],
-            'n_registro' => [
-                'required',
-                'string',
-                Rule::unique('voluntarios', 'n_registro')->ignore(optional($user->voluntario)->id),
-            ],
-            'factor_rh' => ['required', 'string'],
-            'grupo_sanguineo' => ['required', 'string'],
-            'fecha_nacimiento' => ['required', 'date'],
-            'foto_perfil' => $fotoRules,
-        ])->validate();
+        $validated = validator(
+            array_merge($request->all(), ['foto_perfil' => $request->file('foto_perfil')]),
+            $this->voluntarioRules($voluntario?->n_registro)
+        )->validate();
 
         unset($validated['foto_perfil']);
 
         if ($voluntario instanceof Voluntario) {
             $voluntario->update($validated);
+            $this->syncUserDisplayNameFromVolunteer($user, $validated);
             $this->syncVoluntarioPhoto($request, $voluntario);
-
-            if ($voluntario->hojaDeVida) {
-                $voluntario->hojaDeVida->update([
-                    'estado' => $user->estado,
-                ]);
-            } else {
-                $voluntario->hojaDeVida()->create([
-                    'fecha_creacion' => now()->toDateString(),
-                    'estado' => $user->estado,
-                ]);
-            }
 
             return;
         }
 
-        $voluntario = $user->voluntario()->create($validated);
+        $voluntario = $user->voluntario()->create($validated + ['user_id' => $user->id]);
+        $this->syncUserDisplayNameFromVolunteer($user, $validated);
         $this->syncVoluntarioPhoto($request, $voluntario);
-        $voluntario->hojaDeVida()->create([
-            'fecha_creacion' => now()->toDateString(),
-            'estado' => $user->estado,
-        ]);
     }
 
     private function hasVolunteerRole(User $user, Request $request): bool
@@ -252,13 +254,13 @@ class UserController extends Controller
 
             return Role::query()
                 ->whereIn('id', $roleIds)
-                ->where('slug', 'voluntario')
+                ->where('clave', 'voluntario')
                 ->exists();
         }
 
         $user->loadMissing('roles');
 
-        return $user->roles->contains(fn (Role $role) => $role->slug === 'voluntario');
+        return $user->roles->contains(fn (Role $role) => $role->clave === 'voluntario');
     }
 
     private function prepareUserResponse(User $user, bool $includeArchivedVolunteerProfile = false): User
@@ -284,5 +286,38 @@ class UserController extends Controller
 
         $path = $request->file('foto_perfil')->store('voluntarios/fotos', 'public');
         $voluntario->update(['foto_perfil' => $path]);
+    }
+
+    private function voluntarioRules(?string $currentRegistro = null): array
+    {
+        return [
+            'n_registro' => ['required', 'string', 'max:30', Rule::unique('voluntarios', 'n_registro')->ignore($currentRegistro, 'n_registro')],
+            'filial_id' => ['required', 'integer', Rule::exists('filiales', 'id')],
+            'rut' => ['required', 'string', 'max:20', Rule::unique('voluntarios', 'rut')->ignore($currentRegistro, 'n_registro')],
+            'nombres' => ['required', 'string', 'max:150'],
+            'apellidos' => ['required', 'string', 'max:150'],
+            'nacionalidad' => ['nullable', 'string', 'max:100'],
+            'fecha_nacimiento' => ['nullable', 'date'],
+            'fecha_incorporacion' => ['nullable', 'date'],
+            'celular' => ['nullable', 'string', 'max:30'],
+            'domicilio' => ['nullable', 'string', 'max:255'],
+            'enfermedades' => ['nullable', 'string'],
+            'alergias' => ['nullable', 'string'],
+            'contacto_emergencia_nombre' => ['nullable', 'string', 'max:150'],
+            'contacto_emergencia_numero' => ['nullable', 'string', 'max:30'],
+            'foto_perfil' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ];
+    }
+
+    private function syncUserDisplayNameFromVolunteer(User $user, array $voluntarioData): void
+    {
+        $fullName = trim(implode(' ', array_filter([
+            $voluntarioData['nombres'] ?? '',
+            $voluntarioData['apellidos'] ?? '',
+        ])));
+
+        if ($fullName !== '' && $user->name !== $fullName) {
+            $user->update(['name' => $fullName]);
+        }
     }
 }

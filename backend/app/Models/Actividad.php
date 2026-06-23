@@ -2,39 +2,55 @@
 
 namespace App\Models;
 
-use App\Enums\ActividadTipo;
 use Illuminate\Database\Eloquent\Model;
 
 class Actividad extends Model
 {
     protected $fillable = [
-        'id',
-        'evento_id',
+        'filial_id',
+        'creado_por',
         'nombre',
         'tipo',
-        'N_beneficiarios',
-        'horas_participacion',
-        'created_at',
-        'updated_at'
+        'objetivo',
+        'fecha_inicio',
+        'fecha_termino',
+        'hora_inicio',
+        'hora_termino',
+        'lugar',
+        'horas_totales',
+        'colaborador_externo',
     ];
 
     protected function casts(): array
     {
         return [
-            'tipo' => ActividadTipo::class,
-            'horas_participacion' => 'decimal:2',
+            'fecha_inicio' => 'date',
+            'fecha_termino' => 'date',
+            'horas_totales' => 'decimal:2',
         ];
     }
 
-    public function evento()
+    public function filial()
     {
-        return $this->belongsTo(Evento::class, 'evento_id');
+        return $this->belongsTo(Filial::class);
     }
 
-    public function users()
+    public function creador()
     {
-        return $this->belongsToMany(User::class)
-            ->withPivot('asistio')
+        return $this->belongsTo(User::class, 'creado_por');
+    }
+
+    public function voluntarios()
+    {
+        return $this->belongsToMany(
+            Voluntario::class,
+            'actividad_voluntario',
+            'actividad_id',
+            'voluntario_n_registro',
+            'id',
+            'n_registro'
+        )
+            ->withPivot('horas_asistidas', 'registrado_por')
             ->withTimestamps();
     }
 }

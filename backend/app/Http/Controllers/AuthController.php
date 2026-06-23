@@ -11,10 +11,11 @@ class AuthController extends Controller
 {
     private const USER_RELATIONS = [
         'roles.permissions',
-        'voluntario.hojaDeVida.hojasAnuales',
-        'voluntario.hojaDeVida.antecedentes',
-        'actividades.evento',
-        'registrosHorasFilial',
+        'voluntario.filial',
+        'voluntario.hojasVidaAnuales.titulos',
+        'voluntario.hojasVidaAnuales.cursos',
+        'voluntario.hojasVidaAnuales.sanciones',
+        'voluntario.hojasVidaAnuales.reconocimiento',
     ];
 
     public function login(Request $request)
@@ -32,11 +33,13 @@ class AuthController extends Controller
 
         $user = User::with(self::USER_RELATIONS)
             ->where(function ($query) use ($identifier) {
-                $query->where('rut', $identifier)
-                    ->orWhere('email', $identifier)
-                    ->orWhereHas('voluntario', function ($voluntarioQuery) use ($identifier) {
-                        $voluntarioQuery->where('n_registro', $identifier);
-                    });
+                $query->whereHas('voluntario', function ($voluntarioQuery) use ($identifier) {
+                    $voluntarioQuery->where('n_registro', $identifier);
+                });
+
+                if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+                    $query->orWhere('email', $identifier);
+                }
             })
             ->first();
 
@@ -46,18 +49,18 @@ class AuthController extends Controller
             ]);
         }
 
-        if ($user->estado !== 'ACTIVO') {
+        if (! $user->estado) {
             throw ValidationException::withMessages([
                 'user' => 'La cuenta se encuentra inactiva y no puede iniciar sesion.',
             ]);
         }
 
         $isAdmin = $user->hasRole('administrador');
-        $isVolunteer = $user->hasRole('voluntario') && $user->voluntario !== null;
+        $isVolunteer = $user->voluntario !== null;
 
         return response()->json([
             'user' => $this->prepareUserResponse($user),
-            'roles' => $user->roles->pluck('slug')->values(),
+            'roles' => $user->roles->pluck('clave')->values(),
             'is_admin' => $isAdmin,
             'can_access_admin' => $isAdmin || $user->hasRole('secretario-directiva'),
             'can_access_volunteer' => $isVolunteer,
@@ -68,10 +71,6 @@ class AuthController extends Controller
     private function prepareUserResponse(User $user): User
     {
         $user->loadMissing('roles.permissions');
-
-        if (! $user->hasRole('voluntario')) {
-            $user->setRelation('voluntario', null);
-        }
 
         return $user;
     }

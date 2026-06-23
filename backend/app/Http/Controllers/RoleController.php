@@ -4,14 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Role;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class RoleController extends Controller
 {
     public function index()
     {
-        return response()->json(Role::with('permissions')->orderBy('name')->get(), 200);
+        return response()->json(Role::with('permissions')->orderBy('nombre')->get(), 200);
     }
 
     public function store(Request $request)
@@ -51,16 +50,11 @@ class RoleController extends Controller
 
     private function validateRole(Request $request, ?int $roleId = null): array
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', Rule::unique('roles', 'name')->ignore($roleId)],
-            'slug' => ['nullable', 'string', Rule::unique('roles', 'slug')->ignore($roleId)],
-            'description' => ['nullable', 'string'],
+        return $request->validate([
+            'nombre' => ['required', 'string', 'max:100'],
+            'clave' => ['required', 'string', 'max:100', Rule::unique('roles', 'clave')->ignore($roleId)],
             'permissions' => ['sometimes', 'array'],
             'permissions.*' => ['integer', Rule::exists('permissions', 'id')],
         ]);
-
-        $validated['slug'] = $validated['slug'] ?? Str::slug($validated['name']);
-
-        return $validated;
     }
 }

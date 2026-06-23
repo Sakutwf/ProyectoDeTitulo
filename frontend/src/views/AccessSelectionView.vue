@@ -17,7 +17,7 @@
             <i class="fa-solid fa-id-card"></i>
           </span>
           <strong>Ingresar a perfil de voluntario</strong>
-          <small>Revisa tu historial, hoja anual, cursos, premios y observaciones.</small>
+          <small>Revisa tu hoja de vida, tus periodos anuales y tus actividades vigentes.</small>
         </button>
 
         <button type="button" class="access-option admin" @click="selectAccess('administrador')">
@@ -25,7 +25,7 @@
             <i class="fa-solid fa-user-shield"></i>
           </span>
           <strong>Ingresar a vista de administrador</strong>
-          <small>Gestiona voluntarios, eventos, actividades y configuracion del sistema.</small>
+          <small>Gestiona voluntarios, actividades y la información anual del sistema.</small>
         </button>
       </div>
     </section>
