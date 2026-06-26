@@ -12,10 +12,10 @@ class AuthController extends Controller
     private const USER_RELATIONS = [
         'roles.permissions',
         'voluntario.filial',
-        'voluntario.hojasVidaAnuales.titulos',
-        'voluntario.hojasVidaAnuales.cursos',
-        'voluntario.hojasVidaAnuales.sanciones',
-        'voluntario.hojasVidaAnuales.reconocimiento',
+        'voluntario.hojaVidaAnual.titulos',
+        'voluntario.hojaVidaAnual.cursos',
+        'voluntario.hojaVidaAnual.sanciones',
+        'voluntario.hojaVidaAnual.reconocimiento',
     ];
 
     public function login(Request $request)
@@ -32,26 +32,12 @@ class AuthController extends Controller
         $secret = $credentials['id'];
 
         $user = User::with(self::USER_RELATIONS)
-            ->where(function ($query) use ($identifier) {
-                $query->whereHas('voluntario', function ($voluntarioQuery) use ($identifier) {
-                    $voluntarioQuery->where('n_registro', $identifier);
-                });
-
-                if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
-                    $query->orWhere('email', $identifier);
-                }
-            })
+            ->where('username', $identifier)
             ->first();
 
         if (! $user instanceof User || ! Hash::check($secret, $user->password)) {
             throw ValidationException::withMessages([
                 'user' => 'Las credenciales ingresadas no son validas.',
-            ]);
-        }
-
-        if (! $user->estado) {
-            throw ValidationException::withMessages([
-                'user' => 'La cuenta se encuentra inactiva y no puede iniciar sesion.',
             ]);
         }
 
@@ -65,6 +51,7 @@ class AuthController extends Controller
             'can_access_admin' => $isAdmin || $user->hasRole('secretario-directiva'),
             'can_access_volunteer' => $isVolunteer,
             'requires_access_selection' => $isAdmin && $isVolunteer,
+            'must_change_password' => (bool) $user->must_change_password,
         ], 200);
     }
 

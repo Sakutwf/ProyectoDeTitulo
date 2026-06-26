@@ -104,7 +104,7 @@
             </tr>
             <tr>
               <td class="label-cell" colspan="2">Correo electrónico</td>
-              <td colspan="6">{{ user?.email || '' }}</td>
+              <td colspan="6">{{ volunteer.correo_electronico || '' }}</td>
             </tr>
             <tr>
               <td class="label-cell" colspan="2">Domicilio</td>
@@ -303,7 +303,7 @@ const user = ref(null)
 const volunteer = computed(() => user.value?.voluntario || null)
 
 const annualRecords = computed(() =>
-  [...(volunteer.value?.hojas_vida_anuales || [])].sort((left, right) => Number(right.anio) - Number(left.anio))
+  [...(volunteer.value?.hoja_vida_anual || [])].sort((left, right) => Number(right.anio) - Number(left.anio))
 )
 
 const selectedAnnual = computed(() => {
@@ -314,7 +314,7 @@ const selectedAnnual = computed(() => {
   return annualRecords.value[0] || null
 })
 
-const displayName = computed(() => [volunteer.value?.nombres, volunteer.value?.apellidos].filter(Boolean).join(' ') || user.value?.name || 'Voluntario')
+const displayName = computed(() => [volunteer.value?.nombres, volunteer.value?.apellidos].filter(Boolean).join(' ') || user.value?.username || 'Voluntario')
 
 const ageValue = computed(() => {
   const dateValue = volunteer.value?.fecha_nacimiento
@@ -330,11 +330,8 @@ const ageValue = computed(() => {
 
 const attendanceLabel = computed(() => {
   if (!selectedAnnual.value) return ''
-  const hours = selectedAnnual.value.asistencia_anual_horas
   const percentage = selectedAnnual.value.asistencia_anual_porcentaje
-  if (hours && percentage) return `${Number(hours)} horas / ${Number(percentage)}%`
   if (percentage) return `${Number(percentage)}%`
-  if (hours) return `${Number(hours)} horas`
   return ''
 })
 

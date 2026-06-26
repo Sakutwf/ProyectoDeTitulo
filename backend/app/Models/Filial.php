@@ -10,6 +10,7 @@ class Filial extends Model
 
     protected $fillable = [
         'nombre',
+        'cut',
         'comite_regional',
         'direccion',
         'comuna',

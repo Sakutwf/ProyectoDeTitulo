@@ -48,13 +48,7 @@ const attendanceLabel = computed(() => {
 })
 
 const secondaryLabel = computed(() => {
-  const hours = props.historial?.asistencia_anual_horas
-
-  if (hours === null || hours === undefined || hours === '') {
-    return 'Sin horas'
-  }
-
-  return `${Number(hours)} h`
+  return `${props.historial?.titulos?.length || 0} titulo(s)`
 })
 
 const summaryText = computed(() => {

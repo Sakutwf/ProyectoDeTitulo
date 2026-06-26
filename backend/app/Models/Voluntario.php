@@ -6,27 +6,29 @@ use Illuminate\Database\Eloquent\Model;
 
 class Voluntario extends Model
 {
-    protected $primaryKey = 'n_registro';
+    private const PROFILE_PHOTO_CATEGORY = 'foto_perfil';
 
-    public $incrementing = false;
-
-    protected $keyType = 'string';
+    private const ENTITY_TYPE = 'voluntario';
 
     protected $fillable = [
-        'n_registro',
         'user_id',
         'filial_id',
+        'registro_filial',
         'rut',
         'nombres',
         'apellidos',
         'nacionalidad',
         'fecha_nacimiento',
         'fecha_incorporacion',
+        'nivel_escolaridad',
+        'estado_civil',
+        'ocupacion',
+        'grupo_sanguineo',
+        'correo_electronico',
         'celular',
         'domicilio',
         'enfermedades',
         'alergias',
-        'foto_perfil',
         'contacto_emergencia_nombre',
         'contacto_emergencia_numero',
     ];
@@ -45,9 +47,16 @@ class Voluntario extends Model
         return $this->belongsTo(Filial::class);
     }
 
-    public function hojasVidaAnuales()
+    public function hojaVidaAnual()
     {
         return $this->hasMany(HojaVidaAnual::class);
+    }
+
+    public function archivoFotoPerfil()
+    {
+        return $this->hasOne(Archivo::class, 'entidad_id')
+            ->where('entidad', self::ENTITY_TYPE)
+            ->where('categoria', self::PROFILE_PHOTO_CATEGORY);
     }
 
     public function actividades()
@@ -55,21 +64,28 @@ class Voluntario extends Model
         return $this->belongsToMany(
             Actividad::class,
             'actividad_voluntario',
-            'voluntario_n_registro',
-            'actividad_id',
-            'n_registro',
-            'id'
+            'voluntario_id',
+            'actividad_id'
         )
             ->withPivot('horas_asistidas', 'registrado_por')
             ->withTimestamps();
     }
 
+    public function boletasViatico()
+    {
+        return $this->hasMany(BoletaViatico::class);
+    }
+
     public function getFotoPerfilUrlAttribute(): ?string
     {
-        if (! $this->foto_perfil) {
+        $archivo = $this->relationLoaded('archivoFotoPerfil')
+            ? $this->getRelation('archivoFotoPerfil')
+            : $this->archivoFotoPerfil()->first();
+
+        if (! $archivo?->ruta) {
             return null;
         }
 
-        return url('/storage/'.ltrim($this->foto_perfil, '/'));
+        return url('/storage/'.ltrim($archivo->ruta, '/'));
     }
 }

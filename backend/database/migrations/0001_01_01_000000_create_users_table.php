@@ -13,10 +13,9 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 150);
-            $table->string('email', 150)->unique();
-            $table->string('password');
-            $table->boolean('estado')->default(true);
+            $table->string('username', 150)->unique();
+            $table->string('password', 255);
+            $table->boolean('must_change_password')->default(true);
             $table->timestamps();
         });
 

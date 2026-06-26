@@ -88,24 +88,24 @@
             </div>
 
             <div v-if="volunteers.length" class="volunteer-grid">
-              <article v-for="volunteer in volunteers" :key="volunteer.n_registro" class="volunteer-card">
+              <article v-for="volunteer in volunteers" :key="volunteer.id" class="volunteer-card">
                 <label class="form-check d-flex align-items-start gap-2">
                   <input
-                    :checked="isSelected(volunteer.n_registro)"
+                    :checked="isSelected(volunteer.id)"
                     class="form-check-input mt-1"
                     type="checkbox"
-                    @change="toggleVolunteer(volunteer.n_registro)"
+                    @change="toggleVolunteer(volunteer.id)"
                   >
                   <span>
                     <strong>{{ fullVolunteerName(volunteer) }}</strong>
-                    <small class="d-block text-muted">N. Registro {{ volunteer.n_registro }}</small>
+                    <small class="d-block text-muted">Registro filial {{ volunteer.registro_filial }}</small>
                   </span>
                 </label>
 
-                <div v-if="isSelected(volunteer.n_registro)" class="mt-3">
+                <div v-if="isSelected(volunteer.id)" class="mt-3">
                   <label class="form-label">Horas asistidas</label>
                   <input
-                    v-model="volunteerHours[volunteer.n_registro]"
+                    v-model="volunteerHours[volunteer.id]"
                     type="number"
                     min="0"
                     step="0.25"
@@ -208,24 +208,24 @@ export default {
       this.isSubmitting = false
     },
     fullVolunteerName(volunteer) {
-      return [volunteer.nombres, volunteer.apellidos].filter(Boolean).join(' ') || volunteer.user?.name || 'Voluntario'
+      return [volunteer.nombres, volunteer.apellidos].filter(Boolean).join(' ') || volunteer.user?.username || 'Voluntario'
     },
-    isSelected(nRegistro) {
-      return this.selectedVolunteers.includes(nRegistro)
+    isSelected(voluntarioId) {
+      return this.selectedVolunteers.includes(voluntarioId)
     },
-    toggleVolunteer(nRegistro) {
-      if (this.isSelected(nRegistro)) {
-        this.selectedVolunteers = this.selectedVolunteers.filter((value) => value !== nRegistro)
+    toggleVolunteer(voluntarioId) {
+      if (this.isSelected(voluntarioId)) {
+        this.selectedVolunteers = this.selectedVolunteers.filter((value) => value !== voluntarioId)
         const nextHours = { ...this.volunteerHours }
-        delete nextHours[nRegistro]
+        delete nextHours[voluntarioId]
         this.volunteerHours = nextHours
         return
       }
 
-      this.selectedVolunteers = [...this.selectedVolunteers, nRegistro]
+      this.selectedVolunteers = [...this.selectedVolunteers, voluntarioId]
       this.volunteerHours = {
         ...this.volunteerHours,
-        [nRegistro]: this.volunteerHours[nRegistro] ?? 0
+        [voluntarioId]: this.volunteerHours[voluntarioId] ?? 0
       }
     },
     buildPayload() {
@@ -242,9 +242,9 @@ export default {
         lugar: this.form.lugar || null,
         horas_totales: this.form.horas_totales === '' ? null : Number(this.form.horas_totales),
         colaborador_externo: this.form.colaborador_externo || null,
-        voluntarios_detalle: this.selectedVolunteers.map((nRegistro) => ({
-          voluntario_n_registro: nRegistro,
-          horas_asistidas: Number(this.volunteerHours[nRegistro] ?? 0),
+        voluntarios_detalle: this.selectedVolunteers.map((voluntarioId) => ({
+          voluntario_id: voluntarioId,
+          horas_asistidas: Number(this.volunteerHours[voluntarioId] ?? 0),
           registrado_por: this.$store.getters.authUser?.id || null
         }))
       }

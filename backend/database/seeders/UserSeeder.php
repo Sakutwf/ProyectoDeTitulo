@@ -2,9 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Role;
-use App\Models\User;
-use App\Models\Voluntario;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -16,123 +13,202 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        $filialId = DB::table('filiales')->updateOrInsert(
-            ['nombre' => 'Filial Santiago Centro'],
+        $timestamp = now();
+
+        $this->deleteSeedUsers();
+
+        DB::table('filiales')->updateOrInsert(
+            ['cut' => '07301'],
             [
-                'comite_regional' => 'Metropolitano',
-                'direccion' => 'Av. Principal 123',
-                'comuna' => 'Santiago',
-                'updated_at' => now(),
-                'created_at' => now(),
+                'nombre' => 'Curicó',
+                'comite_regional' => 'Maule,
+                'direccion' => 'Estado N°206',
+                'comuna' => 'Curicó',
+                'updated_at' => $timestamp,
+                'created_at' => $timestamp,
             ]
         );
 
-        $filial = DB::table('filiales')->where('nombre', 'Filial Santiago Centro')->first();
+        $filialId = DB::table('filiales')
+            ->where('cut', 'CUR')
+            ->value('id');
 
-        $administrador = User::updateOrCreate(
-            ['email' => 'admin@cruzroja.local'],
-            [
-                'name' => 'Administrador',
-                'estado' => true,
-                'password' => Hash::make('admin'),
-            ]
+        $adminUserId = $this->upsertUser(
+            'admin',
+            'admin',
+            false
         );
-        $administrador->roles()->sync($this->roleIds(['administrador']));
-        Voluntario::where('user_id', $administrador->id)->delete();
 
-        $voluntaria = User::updateOrCreate([
-            'email' => 'scarlet@gmail.com',
-        ], [
-            'name' => 'Scarlet Diaz',
-            'estado' => true,
-            'password' => Hash::make('cruzRojaCco26'),
-        ]);
-        $voluntaria->roles()->sync($this->roleIds(['voluntario']));
+        $marianaUserId = $this->upsertUser(
+            '22.222.222-2',
+            'cruzRojaCco26',
+            false
+        );
 
-        Voluntario::updateOrCreate([
-            'user_id' => $voluntaria->id,
-        ], [
-            'n_registro' => '00001',
-            'filial_id' => $filial->id,
-            'rut' => '22.222.222-2',
-            'nombres' => 'Scarlet',
-            'apellidos' => 'Diaz',
-            'nacionalidad' => 'Chilena',
-            'fecha_nacimiento' => '2000-02-03',
-            'fecha_incorporacion' => '2022-02-04',
-            'celular' => '41232131',
-        ]);
+        $andresUserId = $this->upsertUser(
+            '33.333.333-3',
+            'cruzRojaCco26',
+            false
+        );
 
-        $voluntario = User::updateOrCreate([
-            'email' => 'matias@gmail.com',
-        ], [
-            'name' => 'Matias Rojas',
-            'estado' => true,
-            'password' => Hash::make('cruzRojaCco26'),
-        ]);
-        $voluntario->roles()->sync($this->roleIds(['voluntario', 'secretario-directiva']));
+        $javieraUserId = $this->upsertUser(
+            '44.444.444-4',
+            'cruzRojaCco26',
+            false
+        );
 
-        Voluntario::updateOrCreate([
-            'user_id' => $voluntario->id,
-        ], [
-            'n_registro' => '144301',
-            'filial_id' => $filial->id,
-            'rut' => '33.333.333-3',
-            'nombres' => 'Matias',
-            'apellidos' => 'Rojas',
-            'nacionalidad' => 'Chilena',
-            'fecha_nacimiento' => '1998-11-15',
-            'fecha_incorporacion' => '2021-05-10',
-            'celular' => '41232131',
-        ]);
+        $this->syncUserRoles($adminUserId, ['administrador']);
+        $this->syncUserRoles($marianaUserId, ['voluntario']);
+        $this->syncUserRoles($andresUserId, ['voluntario', 'secretario']);
+        $this->syncUserRoles($javieraUserId, ['finanzas']);
 
-        DB::table('hojas_vida_anuales')->updateOrInsert(
-            ['voluntario_n_registro' => '00001', 'anio' => 2024],
+        $scarletVoluntarioId = $this->upsertVoluntario(
+            $scarletUserId,
+            $filialId,
+            '00001',
             [
-                'asistencia_anual_horas' => 92.5,
-                'asistencia_anual_porcentaje' => 92.5,
-                'updated_at' => now(),
-                'created_at' => now(),
+                'rut' => '22.222.222-2',
+                'nombres' => 'Mariana',
+                'apellidos' => 'Lopez',
+                'nacionalidad' => 'Chilena',
+                'fecha_nacimiento' => '2000-02-03',
+                'fecha_incorporacion' => '2022-02-04',
+                'correo_electronico' => 'mlopez@gmail.com',
+                'celular' => '99546773',
             ]
         );
 
-        DB::table('hojas_vida_anuales')->updateOrInsert(
-            ['voluntario_n_registro' => '144301', 'anio' => 2023],
+        $matiasVoluntarioId = $this->upsertVoluntario(
+            $andresUserId,
+            $filialId,
+            '144301',
             [
-                'asistencia_anual_horas' => 78,
-                'asistencia_anual_porcentaje' => 78,
-                'comentarios' => 'Asistencia irregular en el ultimo trimestre.',
-                'updated_at' => now(),
-                'created_at' => now(),
+                'rut' => '33.333.333-3',
+                'nombres' => 'Andres',
+                'apellidos' => 'Rojas',
+                'nacionalidad' => 'Chilena',
+                'fecha_nacimiento' => '1998-11-15',
+                'fecha_incorporacion' => '2021-05-10',
+                'correo_electronico' => 'andres@gmail.com',
+                'celular' => '99232131',
             ]
         );
 
-        $finanzas = User::updateOrCreate([
-            'email' => 'javiera@gmail.com',
-        ], [
-            'name' => 'Javiera Fuentes',
-            'estado' => true,
-            'password' => Hash::make('cruzRojaCco26'),
-        ]);
-        $finanzas->roles()->sync($this->roleIds(['encargada-finanzas']));
-        Voluntario::updateOrCreate(
-            ['user_id' => $finanzas->id],
+        $this->upsertVoluntario(
+            $javieraUserId,
+            $filialId,
+            '90002',
             [
-                'n_registro' => '90002',
-                'filial_id' => $filial->id,
                 'rut' => '44.444.444-4',
                 'nombres' => 'Javiera',
                 'apellidos' => 'Fuentes',
                 'nacionalidad' => 'Chilena',
                 'fecha_nacimiento' => '1990-01-01',
                 'fecha_incorporacion' => '2020-01-01',
-                'celular' => '41232131',
+                'correo_electronico' => 'javiera@gmail.com',
+                'celular' => '98232131',
+            ]
+        );
+
+        DB::table('hoja_vida_anual')->updateOrInsert(
+            ['voluntario_id' => $marianaVoluntarioId, 'anio' => 2024],
+            [
+                'asistencia_anual_horas' => 120,
+                'asistencia_anual_porcentaje' => 92.5,
+                'updated_at' => $timestamp,
+                'created_at' => $timestamp,
+            ]
+        );
+
+        DB::table('hoja_vida_anual')->updateOrInsert(
+            ['voluntario_id' => $andresVoluntarioId, 'anio' => 2023],
+            [
+                'asistencia_anual_horas' => 98,
+                'asistencia_anual_porcentaje' => 98,
+                'comentarios' => 'Asistencia irregular en el ultimo trimestre.',
+                'updated_at' => $timestamp,
+                'created_at' => $timestamp,
             ]
         );
     }
 
-    private function roleIds(array $claves): array
+    private function upsertUser(string $username, string $password, bool $mustChangePassword): int
     {
-        return Role::whereIn('clave', $claves)->pluck('id')->all();
+        $timestamp = now();
+
+        DB::table('users')->updateOrInsert(
+            ['username' => $username],
+            [
+                'password' => Hash::make($password),
+                'must_change_password' => $mustChangePassword,
+                'updated_at' => $timestamp,
+                'created_at' => $timestamp,
+            ]
+        );
+
+        return (int) DB::table('users')
+            ->where('username', $username)
+            ->value('id');
+    }
+
+    private function deleteSeedUsers(): void
+    {
+        $userIds = DB::table('users')
+            ->whereIn('username', [
+                'admin',
+                '22.222.222-2',
+                '33.333.333-3',
+                '44.444.444-4',
+                '222222222',
+                '333333333',
+                '444444444',
+            ])
+            ->pluck('id');
+
+        if ($userIds->isEmpty()) {
+            return;
+        }
+
+        DB::table('voluntarios')->whereIn('user_id', $userIds)->delete();
+        DB::table('users')->whereIn('id', $userIds)->delete();
+    }
+
+    private function syncUserRoles(int $userId, array $roleClaves): void
+    {
+        $roleIds = DB::table('roles')
+            ->whereIn('clave', $roleClaves)
+            ->pluck('id');
+
+        foreach ($roleIds as $roleId) {
+            DB::table('role_user')->updateOrInsert(
+                [
+                    'user_id' => $userId,
+                    'role_id' => $roleId,
+                ],
+                [
+                    'updated_at' => now(),
+                    'created_at' => now(),
+                ]
+            );
+        }
+    }
+
+    private function upsertVoluntario(int $userId, int $filialId, string $registroFilial, array $data): int
+    {
+        $timestamp = now();
+
+        DB::table('voluntarios')->updateOrInsert(
+            ['user_id' => $userId],
+            array_merge($data, [
+                'filial_id' => $filialId,
+                'registro_filial' => $registroFilial,
+                'updated_at' => $timestamp,
+                'created_at' => $timestamp,
+            ])
+        );
+
+        return (int) DB::table('voluntarios')
+            ->where('user_id', $userId)
+            ->value('id');
     }
 }

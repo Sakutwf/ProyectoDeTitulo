@@ -4,14 +4,24 @@
     <div class="content-wrapper">
       <div class="content-header">
         <div class="d-flex justify-content-between align-items-center">
-          <h3 class="m-0"><i class="fa-solid fa-users me-2"></i>Gestión de perfiles</h3>
+          <div class="d-flex align-items-center gap-2">
+            <h3 class="m-0"><i class="fa-solid fa-users me-2"></i>Gestion de perfiles</h3>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm zoom-toggle-btn"
+              :title="isMaxZoom ? 'Reiniciar tamano del texto' : 'Agrandar texto de la tabla'"
+              @click="toggleTextZoom"
+            >
+              <i class="fa-solid fa-magnifying-glass-plus"></i>
+            </button>
+          </div>
           <div class="d-flex">
             <input
               v-model="search"
               @input="onSearch"
               type="text"
               class="form-control form-control-sm me-2"
-              placeholder="Buscar por nombre, correo, RUT o N° registro..."
+              placeholder="Buscar por nombre, RUT o telefono..."
             >
             <button class="btn btn-danger btn-sm" @click="abrirModalNuevoUsuario">
               <i class="fa-solid fa-user-plus me-1"></i> Nuevo perfil
@@ -24,77 +34,62 @@
         <div class="card shadow">
           <div class="card-body">
             <div class="table-responsive">
-              <table class="table custom-table">
+              <table class="table custom-table" :style="tableZoomStyle">
                 <thead>
                   <tr>
-                    <th>#</th>
-                    <th>Usuario</th>
-                    <th>Correo</th>
-                    <th>N° registro</th>
+                    <th>ID</th>
+                    <th>Nombre</th>
                     <th>RUT</th>
-                    <th>Filial</th>
-                    <th>Celular</th>
-                    <th>Ingreso</th>
-                    <th>Roles</th>
-                    <th>Estado</th>
+                    <th>Telefono</th>
+                    <th>Rol</th>
+                    <th class="text-center">Hoja de vida</th>
                     <th class="text-center">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="(user, i) in users" :key="user.id">
-                    <td>{{ (meta.from || 1) + i }}</td>
-                    <td>
-                      <div class="d-flex align-items-center py-2">
-                        <div class="avatar-circle" :class="{ 'has-photo': Boolean(user.voluntario?.foto_perfil_url) }">
-                          <img
-                            v-if="user.voluntario?.foto_perfil_url"
-                            :src="user.voluntario.foto_perfil_url"
-                            :alt="`Foto de ${user.name}`"
-                            class="avatar-image"
-                          >
-                          <span v-else class="initials">{{ getInitials(user.name) }}</span>
-                        </div>
-                        <div class="ms-3">
-                          <h6 class="mb-0">{{ user.name }}</h6>
-                        </div>
-                      </div>
-                    </td>
-                    <td>{{ user.email }}</td>
-                    <td>{{ user.voluntario?.n_registro || '-' }}</td>
+                  <tr v-for="user in users" :key="user.id">
+                    <td>{{ user.id }}</td>
+                    <td>{{ displayName(user) }}</td>
                     <td>{{ user.voluntario?.rut || '-' }}</td>
-                    <td>{{ user.voluntario?.filial?.nombre || '-' }}</td>
                     <td>{{ user.voluntario?.celular || '-' }}</td>
-                    <td>{{ formatDate(user.voluntario?.fecha_incorporacion) }}</td>
                     <td>
                       <div class="role-badges">
                         <span
-                          v-for="role in user.roles || []"
+                          v-for="role in visibleRoles(user)"
                           :key="role.id"
                           class="badge bg-light text-dark border"
                         >
                           {{ role.nombre }}
                         </span>
-                        <span v-if="!user.roles?.length" class="text-muted small">Sin roles</span>
+                        <span v-if="!visibleRoles(user).length" class="text-muted small">Sin roles</span>
                       </div>
                     </td>
                     <td>
-                      <span :class="['badge', user.estado ? 'bg-danger' : 'bg-secondary']">
-                        {{ user.estado ? 'Activo' : 'Inactivo' }}
-                      </span>
+                      <div class="d-flex justify-content-center">
+                        <button
+                          v-if="canViewHistory(user)"
+                          type="button"
+                          class="btn btn-sm btn-danger"
+                          @click="viewHistory(user.id)"
+                        >
+                          Ver historial
+                        </button>
+                        <span v-else class="text-muted small">No aplica</span>
+                      </div>
                     </td>
                     <td>
-                      <div class="d-flex justify-content-center">
+                      <div class="d-flex justify-content-center actions-cell">
                         <button @click="editUser(user.id)" class="btn btn-sm btn-outline-primary me-2" title="Editar">
                           <i class="fa-solid fa-edit"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" title="Eliminar" @click="eliminar(user.id, user.name)">
+                        <button class="btn btn-sm btn-outline-danger" title="Eliminar" @click="eliminar(user.id, displayName(user))">
                           <i class="fa-solid fa-trash"></i>
                         </button>
                       </div>
                     </td>
                   </tr>
                   <tr v-if="!users.length">
-                    <td colspan="11" class="text-center py-3">No hay perfiles disponibles.</td>
+                    <td colspan="7" class="text-center py-3">No hay perfiles disponibles.</td>
                   </tr>
                 </tbody>
               </table>
@@ -151,7 +146,25 @@ export default {
         from: 1
       },
       search: '',
-      selectedUserId: null
+      selectedUserId: null,
+      zoomLevelIndex: 0,
+      zoomLevels: [1.25, 1.57]
+    }
+  },
+  computed: {
+    tableZoomScale() {
+      return this.zoomLevels[this.zoomLevelIndex] || 1
+    },
+    isMaxZoom() {
+      return this.zoomLevelIndex === this.zoomLevels.length - 1
+    },
+    tableZoomStyle() {
+      return {
+        '--table-header-font-size': `${0.9 * this.tableZoomScale}rem`,
+        '--table-cell-font-size': `${1 * this.tableZoomScale}rem`,
+        '--table-cell-line-height': this.tableZoomScale > 1 ? '1.45' : '1.35',
+        '--table-badge-font-size': `${0.85 * Math.min(this.tableZoomScale, 1.18)}rem`
+      }
     }
   },
   mounted() {
@@ -185,13 +198,22 @@ export default {
     abrirModalNuevoUsuario() {
       this.$refs.userCreateModal.show()
     },
+    toggleTextZoom() {
+      this.zoomLevelIndex = this.isMaxZoom ? 0 : this.zoomLevels.length - 1
+    },
+    canViewHistory(user) {
+      return Boolean(user?.voluntario)
+    },
+    viewHistory(userId) {
+      this.$router.push({ name: 'HistorialView', params: { id: userId } })
+    },
     async eliminar(id, nombre) {
       const result = await Swal.fire({
-        title: `¿Eliminar a ${nombre}?`,
-        text: 'Se perderá la información del perfil.',
+        title: `Eliminar a ${nombre}?`,
+        text: 'Se perdera la informacion del perfil.',
         icon: 'question',
         showCancelButton: true,
-        confirmButtonText: 'Sí, eliminar',
+        confirmButtonText: 'Si, eliminar',
         cancelButtonText: 'Cancelar'
       })
 
@@ -207,15 +229,19 @@ export default {
         show_alerta('No se pudo eliminar el perfil.', 'error')
       }
     },
-    getInitials(name) {
-      if (!name) return 'U'
-      return name.split(' ').map((part) => part[0]).join('').toUpperCase().slice(0, 2)
+    displayName(user) {
+      const volunteerName = [user?.voluntario?.nombres, user?.voluntario?.apellidos].filter(Boolean).join(' ').trim()
+      return volunteerName || user?.username || 'Usuario'
     },
-    formatDate(dateString) {
-      if (!dateString) return '-'
-      return /^\d{4}-\d{2}-\d{2}/.test(dateString)
-        ? dateString.slice(0, 10).split('-').reverse().join('-')
-        : dateString
+    visibleRoles(user) {
+      const roles = user?.roles || []
+      const hasAdditionalRole = roles.some((role) => role?.nombre?.toLowerCase() !== 'voluntario')
+
+      if (!hasAdditionalRole) {
+        return roles
+      }
+
+      return roles.filter((role) => role?.nombre?.toLowerCase() !== 'voluntario')
     }
   }
 }
@@ -223,12 +249,14 @@ export default {
 
 <style scoped>
 .custom-table {
+  width: 100%;
   border-collapse: separate;
   border-spacing: 0;
+  table-layout: fixed;
 }
 
 .custom-table th {
-  font-size: 0.9rem;
+  font-size: var(--table-header-font-size, 0.9rem);
   letter-spacing: 0.5px;
   text-transform: uppercase;
   padding: 10px 12px;
@@ -237,38 +265,76 @@ export default {
 }
 
 .custom-table td {
+  font-size: var(--table-cell-font-size, 1rem);
+  line-height: var(--table-cell-line-height, 1.35);
   padding: 6px 12px;
   vertical-align: middle;
   border-bottom: 1px solid #e0e0e0;
 }
 
-.avatar-circle {
-  width: 40px;
-  height: 40px;
-  background-color: #e01e1e;
-  border-radius: 50%;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  overflow: hidden;
+.custom-table th,
+.custom-table td {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
-.avatar-circle.has-photo {
-  background-color: #e8edf5;
+.custom-table th:nth-child(1),
+.custom-table td:nth-child(1) {
+  width: 8%;
 }
 
-.avatar-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.custom-table th:nth-child(2),
+.custom-table td:nth-child(2) {
+  width: 21%;
+  padding-right: 6px;
+}
+
+.custom-table th:nth-child(3),
+.custom-table td:nth-child(3) {
+  width: 17%;
+  padding-left: 6px;
+}
+
+.custom-table th:nth-child(4),
+.custom-table td:nth-child(4) {
+  width: 14%;
+}
+
+.custom-table th:nth-child(5),
+.custom-table td:nth-child(5) {
+  width: 14%;
+}
+
+.custom-table th:nth-child(6),
+.custom-table td:nth-child(6) {
+  width: 14%;
+  white-space: nowrap;
+}
+
+.custom-table th:nth-child(7),
+.custom-table td:nth-child(7) {
+  width: 12%;
+  white-space: nowrap;
 }
 
 .role-badges {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+.role-badges .badge {
+  font-size: var(--table-badge-font-size, 0.85rem);
+}
+
+.zoom-toggle-btn {
+  flex-shrink: 0;
+  min-width: 74px;
+}
+
+.actions-cell {
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
 .content-wrapper {

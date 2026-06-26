@@ -46,15 +46,178 @@
                   <span>{{ actividad.voluntarios?.length || 0 }} inscrito(s)</span>
                 </div>
 
-                <button
-                  type="button"
-                  class="btn"
-                  :class="isEnrolled(actividad) ? 'btn-outline-danger' : 'btn-danger'"
-                  :disabled="loadingActivityId === actividad.id"
-                  @click="toggleEnrollment(actividad)"
-                >
-                  {{ enrollmentButtonLabel(actividad) }}
-                </button>
+                <div class="activity-actions">
+                  <button
+                    type="button"
+                    class="btn"
+                    :class="isEnrolled(actividad) ? 'btn-outline-danger' : 'btn-danger'"
+                    :disabled="loadingActivityId === actividad.id"
+                    @click="toggleEnrollment(actividad)"
+                  >
+                    {{ enrollmentButtonLabel(actividad) }}
+                  </button>
+
+                  <template v-if="isEnrolled(actividad)">
+                    <button
+                      type="button"
+                      class="btn btn-outline-primary"
+                      :disabled="galleryLoadingActivityId === actividad.id"
+                      @click="toggleGalleryPanel(actividad)"
+                    >
+                      {{ galleryButtonLabel(actividad) }}
+                    </button>
+
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary"
+                      :disabled="boletasLoadingActivityId === actividad.id"
+                      @click="toggleBoletasPanel(actividad)"
+                    >
+                      {{ boletasButtonLabel(actividad) }}
+                    </button>
+                  </template>
+                </div>
+
+                <section v-if="galleryActivityId === actividad.id" class="asset-panel">
+                  <div class="asset-panel__header">
+                    <div>
+                      <h4>Galeria de la actividad</h4>
+                      <p>Las imágenes quedan visibles para los voluntarios inscritos en esta actividad.</p>
+                    </div>
+                  </div>
+
+                  <div class="asset-form">
+                    <div class="asset-form__grid">
+                      <input
+                        v-model.trim="galleryForm.titulo"
+                        type="text"
+                        class="form-control"
+                        placeholder="Titulo de la imagen"
+                      >
+                      <input
+                        v-model="galleryForm.fecha"
+                        type="date"
+                        class="form-control"
+                      >
+                    </div>
+
+                    <textarea
+                      v-model.trim="galleryForm.descripcion"
+                      class="form-control"
+                      rows="2"
+                      placeholder="Descripcion breve"
+                    ></textarea>
+
+                    <input
+                      type="file"
+                      class="form-control"
+                      accept=".jpg,.jpeg,.png,.webp"
+                      @change="onGalleryFileSelected"
+                    >
+
+                    <div class="asset-form__actions">
+                      <button
+                        type="button"
+                        class="btn btn-danger btn-sm"
+                        :disabled="gallerySubmitting || !galleryForm.file"
+                        @click="uploadGalleryImage(actividad)"
+                      >
+                        {{ gallerySubmitting ? 'Subiendo...' : 'Subir imagen' }}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div v-if="galleryLoadingActivityId === actividad.id" class="asset-empty">
+                    Cargando galeria...
+                  </div>
+
+                  <div v-else-if="galleryItems.length" class="gallery-grid">
+                    <article v-for="item in galleryItems" :key="item.id" class="gallery-card">
+                      <img :src="item.imagen_url" :alt="item.titulo || 'Imagen de actividad'" class="gallery-card__image">
+                      <div class="gallery-card__body">
+                        <strong>{{ item.titulo || 'Imagen sin titulo' }}</strong>
+                        <small>{{ item.subido_por?.name || item.subido_por?.username || 'Voluntario' }}</small>
+                        <small>{{ formatDate(item.fecha) }}</small>
+                        <p>{{ item.descripcion || 'Sin descripcion.' }}</p>
+                      </div>
+                    </article>
+                  </div>
+
+                  <div v-else class="asset-empty">
+                    Todavia no hay imagenes registradas para esta actividad.
+                  </div>
+                </section>
+
+                <section v-if="boletasActivityId === actividad.id" class="asset-panel">
+                  <div class="asset-panel__header">
+                    <div>
+                      <h4>Boletas de viatico</h4>
+                      <p>Sube aqui tus respaldos para solicitar reembolso de viatico en esta actividad.</p>
+                    </div>
+                  </div>
+
+                  <div class="asset-form">
+                    <div class="asset-form__grid">
+                      <input
+                        v-model.trim="boletaForm.detalle_compra"
+                        type="text"
+                        class="form-control"
+                        placeholder="Detalle de compra"
+                      >
+                      <input
+                        v-model.number="boletaForm.monto"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        class="form-control"
+                        placeholder="Monto"
+                      >
+                    </div>
+
+                    <input
+                      v-model="boletaForm.fecha_compra"
+                      type="date"
+                      class="form-control"
+                    >
+
+                    <input
+                      type="file"
+                      class="form-control"
+                      accept=".jpg,.jpeg,.png,.webp,.pdf"
+                      @change="onBoletaFileSelected"
+                    >
+
+                    <div class="asset-form__actions">
+                      <button
+                        type="button"
+                        class="btn btn-danger btn-sm"
+                        :disabled="boletaSubmitting || !isBoletaFormValid"
+                        @click="uploadBoleta(actividad)"
+                      >
+                        {{ boletaSubmitting ? 'Subiendo...' : 'Registrar boleta' }}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div v-if="boletasLoadingActivityId === actividad.id" class="asset-empty">
+                    Cargando boletas...
+                  </div>
+
+                  <div v-else-if="boletaItems.length" class="receipt-list">
+                    <article v-for="item in boletaItems" :key="item.id" class="receipt-card">
+                      <div class="receipt-card__top">
+                        <strong>{{ item.detalle_compra }}</strong>
+                        <span class="receipt-state">{{ item.estado || 'pendiente' }}</span>
+                      </div>
+                      <p>{{ formatCurrency(item.monto) }} · {{ formatDate(item.fecha_compra) }}</p>
+                      <a :href="item.archivo_url" target="_blank" rel="noopener" class="receipt-link">Ver respaldo</a>
+                    </article>
+                  </div>
+
+                  <div v-else class="asset-empty">
+                    Aun no has subido boletas para esta actividad.
+                  </div>
+                </section>
               </article>
             </div>
           </div>
@@ -75,10 +238,20 @@ const API_BASE = 'http://localhost:8000/api'
 
 const store = useStore()
 const currentUser = computed(() => store.getters.authUser)
-const currentVolunteerRegister = computed(() => currentUser.value?.voluntario?.n_registro || null)
+const currentVolunteerId = computed(() => currentUser.value?.voluntario?.id || null)
 const activities = ref([])
 const isLoading = ref(false)
 const loadingActivityId = ref(null)
+const galleryActivityId = ref(null)
+const galleryLoadingActivityId = ref(null)
+const gallerySubmitting = ref(false)
+const galleryItems = ref([])
+const boletasActivityId = ref(null)
+const boletasLoadingActivityId = ref(null)
+const boletaSubmitting = ref(false)
+const boletaItems = ref([])
+const galleryForm = ref(createEmptyGalleryForm())
+const boletaForm = ref(createEmptyBoletaForm())
 
 const todayIso = new Date().toISOString().slice(0, 10)
 
@@ -93,7 +266,7 @@ const activeActivities = computed(() =>
 )
 
 function isEnrolled(actividad) {
-  return (actividad.voluntarios || []).some((volunteer) => volunteer.n_registro === currentVolunteerRegister.value)
+  return (actividad.voluntarios || []).some((volunteer) => Number(volunteer.id) === Number(currentVolunteerId.value))
 }
 
 function enrollmentButtonLabel(actividad) {
@@ -119,6 +292,37 @@ function formatHours(value) {
   const numericValue = Number(value || 0)
   return `${numericValue % 1 === 0 ? numericValue.toFixed(0) : numericValue.toFixed(2)} h`
 }
+
+function formatCurrency(value) {
+  const numericValue = Number(value || 0)
+  return numericValue.toLocaleString('es-CL', {
+    style: 'currency',
+    currency: 'CLP',
+    maximumFractionDigits: 0
+  })
+}
+
+function createEmptyGalleryForm() {
+  return {
+    titulo: '',
+    descripcion: '',
+    fecha: '',
+    file: null
+  }
+}
+
+function createEmptyBoletaForm() {
+  return {
+    detalle_compra: '',
+    monto: '',
+    fecha_compra: '',
+    file: null
+  }
+}
+
+const isBoletaFormValid = computed(() =>
+  Boolean(boletaForm.value.file && boletaForm.value.detalle_compra.trim() && Number(boletaForm.value.monto) > 0)
+)
 
 async function loadActivities() {
   isLoading.value = true
@@ -147,8 +351,163 @@ async function loadActivities() {
   }
 }
 
+function galleryButtonLabel(actividad) {
+  if (galleryLoadingActivityId.value === actividad.id) {
+    return 'Cargando galeria...'
+  }
+
+  return galleryActivityId.value === actividad.id ? 'Ocultar galeria' : 'Galeria'
+}
+
+function boletasButtonLabel(actividad) {
+  if (boletasLoadingActivityId.value === actividad.id) {
+    return 'Cargando boletas...'
+  }
+
+  return boletasActivityId.value === actividad.id ? 'Ocultar boletas' : 'Boletas'
+}
+
+function onGalleryFileSelected(event) {
+  galleryForm.value.file = event.target.files?.[0] || null
+}
+
+function onBoletaFileSelected(event) {
+  boletaForm.value.file = event.target.files?.[0] || null
+}
+
+async function loadGallery(actividadId) {
+  galleryLoadingActivityId.value = actividadId
+
+  try {
+    const response = await axios.get(`${API_BASE}/actividad/${actividadId}/galeria`)
+    galleryItems.value = Array.isArray(response.data) ? response.data : []
+  } catch (error) {
+    galleryItems.value = []
+    show_alerta('No se pudo cargar la galeria de la actividad.', 'error')
+  } finally {
+    galleryLoadingActivityId.value = null
+  }
+}
+
+async function loadBoletas(actividadId) {
+  boletasLoadingActivityId.value = actividadId
+
+  try {
+    const response = await axios.get(`${API_BASE}/actividad/${actividadId}/boletas`, {
+      params: { voluntario_id: currentVolunteerId.value }
+    })
+    boletaItems.value = Array.isArray(response.data) ? response.data : []
+  } catch (error) {
+    boletaItems.value = []
+    show_alerta('No se pudieron cargar tus boletas de viatico.', 'error')
+  } finally {
+    boletasLoadingActivityId.value = null
+  }
+}
+
+async function toggleGalleryPanel(actividad) {
+  if (galleryActivityId.value === actividad.id) {
+    galleryActivityId.value = null
+    galleryItems.value = []
+    galleryForm.value = createEmptyGalleryForm()
+    return
+  }
+
+  galleryActivityId.value = actividad.id
+  boletasActivityId.value = boletasActivityId.value === actividad.id ? null : boletasActivityId.value
+  galleryForm.value = createEmptyGalleryForm()
+  await loadGallery(actividad.id)
+}
+
+async function toggleBoletasPanel(actividad) {
+  if (boletasActivityId.value === actividad.id) {
+    boletasActivityId.value = null
+    boletaItems.value = []
+    boletaForm.value = createEmptyBoletaForm()
+    return
+  }
+
+  boletasActivityId.value = actividad.id
+  galleryActivityId.value = galleryActivityId.value === actividad.id ? null : galleryActivityId.value
+  boletaForm.value = createEmptyBoletaForm()
+  await loadBoletas(actividad.id)
+}
+
+async function uploadGalleryImage(actividad) {
+  if (!galleryForm.value.file) {
+    show_alerta('Selecciona una imagen para subir.', 'warning')
+    return
+  }
+
+  gallerySubmitting.value = true
+
+  try {
+    const formData = new FormData()
+    formData.append('archivo', galleryForm.value.file)
+    formData.append('subido_por', currentUser.value?.id || '')
+
+    if (galleryForm.value.titulo.trim()) {
+      formData.append('titulo', galleryForm.value.titulo.trim())
+    }
+
+    if (galleryForm.value.descripcion.trim()) {
+      formData.append('descripcion', galleryForm.value.descripcion.trim())
+    }
+
+    if (galleryForm.value.fecha) {
+      formData.append('fecha', galleryForm.value.fecha)
+    }
+
+    await axios.post(`${API_BASE}/actividad/${actividad.id}/galeria`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+
+    galleryForm.value = createEmptyGalleryForm()
+    await loadGallery(actividad.id)
+    show_alerta('Imagen subida correctamente.', 'success')
+  } catch (error) {
+    show_alerta('No se pudo subir la imagen de la actividad.', 'error')
+  } finally {
+    gallerySubmitting.value = false
+  }
+}
+
+async function uploadBoleta(actividad) {
+  if (!isBoletaFormValid.value) {
+    show_alerta('Completa detalle, monto y archivo de la boleta.', 'warning')
+    return
+  }
+
+  boletaSubmitting.value = true
+
+  try {
+    const formData = new FormData()
+    formData.append('voluntario_id', String(currentVolunteerId.value))
+    formData.append('archivo', boletaForm.value.file)
+    formData.append('detalle_compra', boletaForm.value.detalle_compra.trim())
+    formData.append('monto', String(boletaForm.value.monto))
+
+    if (boletaForm.value.fecha_compra) {
+      formData.append('fecha_compra', boletaForm.value.fecha_compra)
+    }
+
+    await axios.post(`${API_BASE}/actividad/${actividad.id}/boletas`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+
+    boletaForm.value = createEmptyBoletaForm()
+    await loadBoletas(actividad.id)
+    show_alerta('Boleta registrada correctamente.', 'success')
+  } catch (error) {
+    const message = error.response?.data?.message || 'No se pudo registrar la boleta.'
+    show_alerta(message, 'error')
+  } finally {
+    boletaSubmitting.value = false
+  }
+}
+
 async function toggleEnrollment(actividad) {
-  if (!currentVolunteerRegister.value) {
+  if (!currentVolunteerId.value) {
     show_alerta('No existe un voluntario válido para inscribirse.', 'error')
     return
   }
@@ -158,12 +517,12 @@ async function toggleEnrollment(actividad) {
   try {
     if (isEnrolled(actividad)) {
       await axios.delete(`${API_BASE}/actividad/${actividad.id}/voluntarios`, {
-        data: { voluntario_n_registro: currentVolunteerRegister.value }
+        data: { voluntario_id: currentVolunteerId.value }
       })
       show_alerta('Inscripción retirada correctamente.', 'success')
     } else {
       await axios.post(`${API_BASE}/actividad/${actividad.id}/voluntarios`, {
-        voluntario_n_registro: currentVolunteerRegister.value,
+        voluntario_id: currentVolunteerId.value,
         registrado_por: currentUser.value?.id || null
       })
       show_alerta('Inscripción realizada correctamente.', 'success')
@@ -308,9 +667,149 @@ onMounted(async () => {
   flex-wrap: wrap;
 }
 
+.activity-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.asset-panel {
+  border-top: 1px solid #e5ebf2;
+  padding-top: 1rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.asset-panel__header h4 {
+  margin: 0 0 0.2rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f3554;
+}
+
+.asset-panel__header p {
+  margin: 0;
+  color: #627488;
+  font-size: 0.9rem;
+}
+
+.asset-form {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.9rem;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #e5ebf2;
+}
+
+.asset-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.asset-form__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.asset-empty {
+  border-radius: 14px;
+  border: 1px dashed #d7e0ea;
+  padding: 0.9rem;
+  color: #66788c;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.85rem;
+}
+
+.gallery-card {
+  border: 1px solid #e1e6ef;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.gallery-card__image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  display: block;
+}
+
+.gallery-card__body {
+  padding: 0.8rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.gallery-card__body strong {
+  color: #22344d;
+}
+
+.gallery-card__body small,
+.gallery-card__body p {
+  margin: 0;
+  color: #66788c;
+}
+
+.receipt-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.receipt-card {
+  border: 1px solid #e1e6ef;
+  border-radius: 14px;
+  padding: 0.9rem;
+  background: #fff;
+}
+
+.receipt-card__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+
+.receipt-card p {
+  margin: 0 0 0.45rem;
+  color: #66788c;
+}
+
+.receipt-state {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.22rem 0.65rem;
+  background: #fff3cd;
+  color: #7a5a00;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.receipt-link {
+  color: #0f2f5f;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.receipt-link:hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 767.98px) {
   .content {
     padding: 0 1rem 1rem;
+  }
+
+  .asset-form__grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -18,9 +17,8 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
-        'email',
-        'estado',
+        'username',
+        'must_change_password',
         'password',
     ];
 
@@ -51,9 +49,43 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'estado' => 'boolean',
+            'must_change_password' => 'boolean',
             'password' => 'hashed',
         ];
+    }
+
+    public function getNameAttribute(): string
+    {
+        $voluntario = $this->relationLoaded('voluntario')
+            ? $this->getRelation('voluntario')
+            : $this->voluntario;
+
+        if ($voluntario) {
+            $fullName = trim(implode(' ', array_filter([
+                $voluntario->nombres ?? null,
+                $voluntario->apellidos ?? null,
+            ])));
+
+            if ($fullName !== '') {
+                return $fullName;
+            }
+        }
+
+        return $this->username;
+    }
+
+    public function getEmailAttribute(): ?string
+    {
+        $voluntario = $this->relationLoaded('voluntario')
+            ? $this->getRelation('voluntario')
+            : $this->voluntario;
+
+        return $voluntario?->correo_electronico;
+    }
+
+    public function getEstadoAttribute(): bool
+    {
+        return true;
     }
 
     public function hasRole(string $roleSlug): bool

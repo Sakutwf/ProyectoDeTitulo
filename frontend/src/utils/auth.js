@@ -16,7 +16,7 @@ export function canManagePlatform(user) {
 }
 
 export function canAccessVolunteerProfile(user) {
-  return hasRole(user, 'voluntario') && Boolean(user?.voluntario?.n_registro || user?.voluntario)
+  return hasRole(user, 'voluntario') && Boolean(user?.voluntario?.id || user?.voluntario)
 }
 
 export function requiresAccessSelection(user) {

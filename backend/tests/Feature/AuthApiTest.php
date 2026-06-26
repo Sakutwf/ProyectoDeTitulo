@@ -10,55 +10,55 @@ class AuthApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_admin_can_login_with_email(): void
+    public function test_admin_can_login_with_admin_username(): void
     {
         $this->seed();
 
         $this->postJson('/api/login', [
-            'user' => 'admin@cruzroja.local',
+            'user' => 'admin',
             'id' => 'admin',
         ])
             ->assertOk()
-            ->assertJsonPath('user.email', 'admin@cruzroja.local')
+            ->assertJsonPath('user.username', 'admin')
             ->assertJsonFragment(['administrador']);
     }
 
-    public function test_volunteer_can_login_with_registration_number(): void
+    public function test_volunteer_can_login_with_rut_as_username(): void
     {
         $this->seed();
 
         $this->postJson('/api/login', [
-            'user' => '00001',
+            'user' => '22.222.222-2',
             'id' => 'cruzRojaCco26',
         ])
             ->assertOk()
-            ->assertJsonPath('user.voluntario.n_registro', '00001')
+            ->assertJsonPath('user.voluntario.registro_filial', '00001')
             ->assertJsonFragment(['voluntario']);
     }
 
-    public function test_new_volunteer_profile_uses_generic_default_password_when_password_is_omitted(): void
+    public function test_new_volunteer_profile_uses_rut_as_username_when_password_is_omitted(): void
     {
         $this->seed();
 
         $volunteerRoleId = Role::query()->where('clave', 'voluntario')->value('id');
 
         $this->postJson('/api/user', [
-            'email' => 'nuevo.voluntario@cruzroja.local',
-            'estado' => true,
             'roles' => [$volunteerRoleId],
-            'n_registro' => '99001',
+            'registro_filial' => '99001',
             'filial_id' => 1,
             'rut' => '99.000.001-1',
             'nombres' => 'Nuevo',
             'apellidos' => 'Voluntario',
+            'correo_electronico' => 'nuevo.voluntario@cruzroja.local',
             'celular' => '912345678',
         ])->assertCreated();
 
         $this->postJson('/api/login', [
-            'user' => '99001',
+            'user' => '99.000.001-1',
             'id' => 'cruzRojaCco26',
         ])
             ->assertOk()
-            ->assertJsonPath('user.voluntario.n_registro', '99001');
+            ->assertJsonPath('user.voluntario.registro_filial', '99001')
+            ->assertJsonPath('user.username', '99.000.001-1');
     }
 }

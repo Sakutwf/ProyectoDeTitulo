@@ -5,7 +5,7 @@
     <div class="content-wrapper">
       <div class="content-header">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-          <h3 class="m-0"><i class="fa-solid fa-list me-2"></i>Gestión de actividades</h3>
+          <h3 class="m-0"><i class="fa-solid fa-list me-2"></i>Gestion de actividades</h3>
           <button class="btn btn-danger btn-sm" @click="openCreateModal">
             <i class="fa-solid fa-calendar-plus me-1"></i>Nueva actividad
           </button>
@@ -180,11 +180,11 @@ function onActividadUpdated() {
 
 async function deleteActividad(id) {
   const confirm = await Swal.fire({
-    title: '¿Está seguro de que desea eliminar esta actividad?',
-    text: 'Esta acción eliminará la actividad y sus asociaciones.',
+    title: 'Esta seguro de que desea eliminar esta actividad?',
+    text: 'Esta accion eliminara la actividad y sus asociaciones.',
     icon: 'warning',
     showCancelButton: true,
-    confirmButtonText: 'Sí, eliminar',
+    confirmButtonText: 'Si, eliminar',
     cancelButtonText: 'Cancelar'
   })
 
@@ -210,9 +210,9 @@ function showVolunteers(actividad) {
   }
 
   const html = volunteers.map((volunteer) => {
-    const fullName = [volunteer.nombres, volunteer.apellidos].filter(Boolean).join(' ') || volunteer.user?.name || volunteer.n_registro
+    const fullName = [volunteer.nombres, volunteer.apellidos].filter(Boolean).join(' ') || volunteer.user?.username || volunteer.registro_filial || 'Voluntario'
     const hours = Number(volunteer.pivot?.horas_asistidas ?? 0)
-    return `<li><strong>${fullName}</strong> · Reg. ${volunteer.n_registro} · ${hours} h</li>`
+    return `<li><strong>${fullName}</strong> · Reg. ${volunteer.registro_filial || '-'} · ${hours} h</li>`
   }).join('')
 
   Swal.fire({

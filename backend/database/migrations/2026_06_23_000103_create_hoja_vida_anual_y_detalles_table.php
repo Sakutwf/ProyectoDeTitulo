@@ -8,9 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('hojas_vida_anuales', function (Blueprint $table) {
+        Schema::create('hoja_vida_anual', function (Blueprint $table) {
             $table->id();
-            $table->string('voluntario_n_registro', 30);
+            $table->foreignId('voluntario_id')->constrained('voluntarios')->cascadeOnDelete();
             $table->year('anio');
             $table->decimal('asistencia_anual_horas', 6, 2)->default(0);
             $table->decimal('asistencia_anual_porcentaje', 5, 2)->default(0);
@@ -20,25 +20,26 @@ return new class extends Migration
             $table->string('comision_lugar', 255)->nullable();
             $table->text('comision_actividad')->nullable();
             $table->text('comentarios')->nullable();
+            $table->foreignId('generada_por')->nullable()->constrained('users')->nullOnDelete();
+            $table->date('fecha_generacion')->nullable();
+            $table->string('ruta_pdf', 255)->nullable();
             $table->timestamps();
 
-            $table->foreign('voluntario_n_registro')->references('n_registro')->on('voluntarios')->cascadeOnDelete();
-            $table->unique(['voluntario_n_registro', 'anio']);
+            $table->unique(['voluntario_id', 'anio']);
         });
 
         Schema::create('titulos_voluntario', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('hoja_vida_anual_id')->constrained('hojas_vida_anuales')->cascadeOnDelete();
+            $table->foreignId('hoja_vida_anual_id')->constrained('hoja_vida_anual')->cascadeOnDelete();
             $table->string('titulo', 150);
             $table->string('entregado_por', 150)->nullable();
             $table->string('codigo_titulo', 100)->nullable();
-            $table->string('archivo_titulo', 255)->nullable();
             $table->timestamps();
         });
 
         Schema::create('cursos_voluntario', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('hoja_vida_anual_id')->constrained('hojas_vida_anuales')->cascadeOnDelete();
+            $table->foreignId('hoja_vida_anual_id')->constrained('hoja_vida_anual')->cascadeOnDelete();
             $table->string('nombre_curso', 150);
             $table->string('entregado_por', 150)->nullable();
             $table->string('codigo_curso', 100)->nullable();
@@ -47,19 +48,19 @@ return new class extends Migration
 
         Schema::create('sanciones_voluntario', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('hoja_vida_anual_id')->constrained('hojas_vida_anuales')->cascadeOnDelete();
+            $table->foreignId('hoja_vida_anual_id')->constrained('hoja_vida_anual')->cascadeOnDelete();
             $table->string('tipo_sancion', 150);
             $table->date('fecha')->nullable();
             $table->text('resumen_sancion')->nullable();
             $table->text('apelacion')->nullable();
-            $table->text('decision_cig')->nullable();
             $table->date('fecha_apelacion')->nullable();
+            $table->text('decision_cig')->nullable();
             $table->timestamps();
         });
 
         Schema::create('reconocimientos_voluntario', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('hoja_vida_anual_id')->unique()->constrained('hojas_vida_anuales')->cascadeOnDelete();
+            $table->foreignId('hoja_vida_anual_id')->unique()->constrained('hoja_vida_anual')->cascadeOnDelete();
             $table->boolean('servicio_extraordinario')->default(false);
             $table->boolean('abnegacion')->default(false);
             $table->boolean('medalla_honor_3')->default(false);
@@ -78,6 +79,6 @@ return new class extends Migration
         Schema::dropIfExists('sanciones_voluntario');
         Schema::dropIfExists('cursos_voluntario');
         Schema::dropIfExists('titulos_voluntario');
-        Schema::dropIfExists('hojas_vida_anuales');
+        Schema::dropIfExists('hoja_vida_anual');
     }
 };

@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Actividad extends Model
 {
+    protected $table = 'actividades';
+
     protected $fillable = [
         'filial_id',
         'creado_por',
@@ -46,11 +48,19 @@ class Actividad extends Model
             Voluntario::class,
             'actividad_voluntario',
             'actividad_id',
-            'voluntario_n_registro',
-            'id',
-            'n_registro'
+            'voluntario_id'
         )
             ->withPivot('horas_asistidas', 'registrado_por')
             ->withTimestamps();
+    }
+
+    public function galeria()
+    {
+        return $this->hasMany(GaleriaActividad::class, 'actividad_id');
+    }
+
+    public function boletasViatico()
+    {
+        return $this->hasMany(BoletaViatico::class, 'actividad_id');
     }
 }

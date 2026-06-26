@@ -1,75 +1,55 @@
 <template>
-    <div class="row mt-3">
-        <div class="col-md-6 offset-md-3">
-            <div class="card shadow">
-                <div class="card-header bg-danger text-white text-center">
-                    <h4 class="mb-0"><i class="fa-solid fa-user-edit me-2"></i>Editar Usuario</h4>
-                </div>
-                <div class="card-body">
-                    <form v-on:submit="guardar">
-                        <div class="input-group mb-3">
-                            <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
-                            <input type="text" v-model="nombre" id="nombre" class="form-control" placeholder="Nombre">
-                        </div>
-                        <div class="input-group mb-3">
-                            <span class="input-group-text"><i class="fa-solid fa-phone"></i></span>
-                            <input type="text" v-model="telefono" id="telefono" class="form-control" placeholder="Teléfono">
-                        </div>
-                        <div class="input-group mb-3">
-                            <span class="input-group-text"><i class="fa-solid fa-at"></i></span>
-                            <input type="email" v-model="correo" id="correo" class="form-control" placeholder="Correo">
-                        </div>
-                        <div class="d-grid col-6 mx-auto">
-                            <button class="btn btn-danger">
-                                <i class="fa-solid fa-floppy-disk"></i> Guardar
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+  <div class="legacy-view">
+    <div class="legacy-card">
+      <h1>Vista reemplazada</h1>
+      <p>
+        Esta edicion pertenecia al modelo antiguo de usuarios.
+        La edicion actual se realiza desde el modulo de perfiles.
+      </p>
+      <button type="button" class="btn btn-danger" @click="goToProfiles">
+        Ir a gestion de perfiles
+      </button>
     </div>
+  </div>
 </template>
 
 <script>
 export default {
-    data() {
-        return {
-            nombre: '',
-            telefono: '',
-            correo: ''
-        };
-    },
-    methods: {
-        guardar() {
-            // Lógica para guardar los datos
-        }
+  name: 'EditView',
+  methods: {
+    goToProfiles() {
+      this.$router.push({ name: 'voluntarios' })
     }
-};
+  }
+}
 </script>
 
 <style scoped>
-/* Aplicamos estilos con scoped para asegurarnos que no sean sobrescritos */
-.card-header {
-    background-color: #ec1c24 !important;
-    color: white !important;
+.legacy-view {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: #f5f7fa;
+  padding: 24px;
 }
 
-.cruz-roja-btn {
-    background-color: #ec1c24 !important;
-    border-color: #ec1c24 !important;
-    color: white !important;
+.legacy-card {
+  max-width: 560px;
+  background: #fff;
+  border: 1px solid #e4e9f1;
+  border-radius: 18px;
+  box-shadow: 0 18px 40px rgba(15, 47, 95, 0.08);
+  padding: 32px;
+  text-align: center;
 }
 
-.cruz-roja-btn:hover {
-    background-color: #c4161d !important;
-    border-color: #c4161d !important;
-    color: white !important;
+.legacy-card h1 {
+  margin-bottom: 12px;
+  color: #0f2f5f;
 }
 
-/* Asegurarnos que Bootstrap no sobrescriba nuestros estilos */
-.btn-primary, .bg-primary, .btn-success, .bg-success, .btn-dark, .bg-dark {
-    background-color: #ec1c24 !important;
-    border-color: #ec1c24 !important;
+.legacy-card p {
+  margin-bottom: 20px;
+  color: #607086;
 }
 </style>

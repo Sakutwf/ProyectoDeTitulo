@@ -1,40 +1,79 @@
 <template>
-    <div class="sidebar">
+    <div class="sidebar" :class="{ 'sidebar--compact': displayCompact, 'sidebar--collapsible': collapsible }">
         <div class="sidebar-header">
             <div class="logo-container">
-                <img src="@/assets/LogoHorizontal.svg" alt="Cruz Roja Logo" class="logo">
+                <img :src="logoSrc" alt="Cruz Roja Logo" class="logo">
             </div>
         </div>
 
-        <div class="sidebar-user">
-            <strong>{{ currentUser?.name || 'Sesion activa' }}</strong>
-            <span>{{ roleLabel }}</span>
+        <div v-if="!displayCompact" class="sidebar-user-row">
+            <div class="sidebar-user">
+                <span>{{ roleLabel }}</span>
+            </div>
+
+            <button
+                v-if="collapsible"
+                type="button"
+                class="sidebar-toggle"
+                :title="displayCompact ? 'Extender barra lateral' : 'Contraer barra lateral'"
+                :aria-label="displayCompact ? 'Extender barra lateral' : 'Contraer barra lateral'"
+                @click="toggleSidebar"
+            >
+                <i class="fa-solid" :class="displayCompact ? 'fa-chevron-right' : 'fa-chevron-left'"></i>
+            </button>
+        </div>
+
+        <div v-else-if="collapsible" class="sidebar-toggle-row sidebar-toggle-row--compact">
+            <button
+                type="button"
+                class="sidebar-toggle"
+                :title="displayCompact ? 'Extender barra lateral' : 'Contraer barra lateral'"
+                :aria-label="displayCompact ? 'Extender barra lateral' : 'Contraer barra lateral'"
+                @click="toggleSidebar"
+            >
+                <i class="fa-solid" :class="displayCompact ? 'fa-chevron-right' : 'fa-chevron-left'"></i>
+            </button>
         </div>
 
         <ul class="nav flex-column">
             <li class="nav-item" :class="{ active: activeLink === 'inicio' }">
-                <router-link to="/inicio" class="nav-link">
-                    <i class="fa-solid fa-tachometer-alt me-2"></i> Inicio
+                <router-link to="/inicio" class="nav-link" :title="displayCompact ? 'Inicio' : null" :aria-label="displayCompact ? 'Inicio' : null">
+                    <span class="nav-link__icon">
+                        <i class="fa-solid fa-tachometer-alt"></i>
+                    </span>
+                    <span class="nav-link__label">Inicio</span>
                 </router-link>
             </li>
             <li v-if="canManagePlatform" class="nav-item" :class="{ active: activeLink === 'voluntarios' }">
-                <router-link to="/voluntarios" class="nav-link">
-                    <i class="fa-solid fa-users me-2"></i> Voluntarios
+                <router-link to="/voluntarios" class="nav-link" :title="displayCompact ? 'Voluntarios' : null" :aria-label="displayCompact ? 'Voluntarios' : null">
+                    <span class="nav-link__icon">
+                        <i class="fa-solid fa-users"></i>
+                    </span>
+                    <span class="nav-link__label">Voluntarios</span>
                 </router-link>
             </li>
             <li v-if="canManagePlatform" class="nav-item" :class="{ active: activeLink === 'actividades' }">
-                <router-link to="/actividades" class="nav-link">
-                    <i class="fa-solid fa-list me-2"></i> Actividades
+                <router-link to="/actividades" class="nav-link" :title="displayCompact ? 'Actividades' : null" :aria-label="displayCompact ? 'Actividades' : null">
+                    <span class="nav-link__icon">
+                        <i class="fa-solid fa-list"></i>
+                    </span>
+                    <span class="nav-link__label">Actividades</span>
                 </router-link>
             </li>
             <li v-if="canSwitchAccess" class="nav-item">
-                <button type="button" class="nav-link nav-link-button" @click="changeAccess">
-                    <i class="fa-solid fa-right-left me-2"></i> Cambiar vista
+                <button type="button" class="nav-link nav-link-button" :title="displayCompact ? 'Cambiar vista' : null" :aria-label="displayCompact ? 'Cambiar vista' : null" @click="changeAccess">
+                    <span class="nav-link__icon">
+                        <i class="fa-solid fa-right-left"></i>
+                    </span>
+                    <span class="nav-link__label">Cambiar vista</span>
                 </button>
             </li>
             <li class="nav-item mt-auto">
-                <button type="button" class="nav-link nav-link-button" @click="logout">
-                    <i class="fa-solid fa-sign-out-alt me-2"></i> Cerrar Sesion
+                <button type="button" class="nav-link nav-link-button" :title="displayCompact ? 'Cerrar sesion' : null" :aria-label="displayCompact ? 'Cerrar sesion' : null" @click="logout">
+                    <span class="nav-link__icon">
+                        <i class="fa-solid fa-sign-out-alt"></i>
+                    </span>
+                    <span class="nav-link__label">Cerrar Sesion</span>
                 </button>
             </li>
         </ul>
@@ -42,11 +81,35 @@
 </template>
 
 <script>
+import logoHorizontal from '@/assets/LogoHorizontal.svg'
+import logoVertical from '@/assets/LogoVertical.svg'
+
 export default {
     name: 'SidebarMenu',
+    props: {
+        compact: {
+            type: Boolean,
+            default: false
+        },
+        collapsible: {
+            type: Boolean,
+            default: false
+        }
+    },
+    data() {
+        return {
+            isCollapsed: this.compact
+        }
+    },
     computed: {
         currentUser() {
             return this.$store.getters.authUser
+        },
+        displayCompact() {
+            return this.collapsible ? this.isCollapsed : this.compact
+        },
+        logoSrc() {
+            return this.displayCompact ? logoVertical : logoHorizontal
         },
         canManagePlatform() {
             return this.$store.getters.isAdministratorExperience
@@ -55,7 +118,7 @@ export default {
             return this.$store.getters.requiresAccessSelection
         },
         roleLabel() {
-            return this.canManagePlatform ? 'Vista de administrador' : 'Perfil de voluntario'
+            return this.canManagePlatform ? 'Administrador' : 'Perfil de voluntario'
         },
         activeLink() {
             const path = this.$route.path
@@ -66,6 +129,13 @@ export default {
         }
     },
     methods: {
+        toggleSidebar() {
+            if (!this.collapsible) {
+                return
+            }
+
+            this.isCollapsed = !this.isCollapsed
+        },
         changeAccess() {
             this.$store.dispatch('chooseAccessMode', null)
             this.$router.push({ name: 'access-selection' })
@@ -91,27 +161,52 @@ export default {
     transition: all 0.3s;
 }
 
+.sidebar--compact {
+    width: 84px;
+}
+
 .sidebar-header {
-    padding: 1.5rem 0.5rem;
+    padding: 1rem 1rem 0.9rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     display: flex;
     justify-content: center;
 }
 
-.sidebar-user {
-    display: grid;
-    gap: 0.2rem;
+.sidebar-user-row,
+.sidebar-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
     padding: 1rem 1rem 0.75rem;
+    min-height: 72px;
+    box-sizing: border-box;
     border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-.sidebar-user strong {
-    font-size: 0.95rem;
+.sidebar-toggle {
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: flex-end;
+}
+
+.sidebar-user {
+    display: grid;
+    gap: 0.2rem;
+    min-width: 0;
 }
 
 .sidebar-user span {
-    font-size: 0.82rem;
-    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.92);
 }
 
 .logo-container {
@@ -119,6 +214,7 @@ export default {
     align-items: center;
     width: 100%;
     justify-content: center;
+    min-height: 50px;
 }
 
 .logo {
@@ -127,18 +223,34 @@ export default {
     max-height: 50px;
 }
 
+.sidebar--compact .sidebar-header {
+    padding: 1rem 1rem 0.9rem;
+}
+
+.sidebar--compact .logo {
+    width: 54px;
+    max-height: 54px;
+    object-fit: contain;
+}
+
 .sidebar .nav-link {
     color: rgba(255, 255, 255, 0.9);
     padding: 0.75rem 1rem;
+    min-height: 52px;
     font-weight: 500;
     border-left: 3px solid transparent;
     transition: all 0.2s;
     width: 100%;
+    box-sizing: border-box;
     text-align: left;
     background: transparent;
     border-top: none;
     border-right: none;
     border-bottom: none;
+    display: grid;
+    grid-template-columns: 1.25rem minmax(0, 1fr);
+    align-items: center;
+    column-gap: 0.75rem;
 }
 
 .sidebar .nav-link:hover,
@@ -155,5 +267,37 @@ export default {
 
 .nav-link-button {
     cursor: pointer;
+}
+
+.nav-link__icon {
+    width: 1.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.nav-link__label {
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.sidebar--compact .nav {
+    padding-top: 0.35rem;
+}
+
+.sidebar--compact .nav-link {
+    padding: 0.75rem 1rem;
+}
+
+.sidebar--compact .nav-link__label {
+    opacity: 0;
+    width: 0;
+    pointer-events: none;
+}
+
+.sidebar--compact .sidebar-toggle-row--compact {
+    padding: 1rem 1rem 0.75rem;
+    justify-content: flex-end;
 }
 </style>

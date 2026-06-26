@@ -12,46 +12,9 @@
         <div class="modal-body">
           <form @submit.prevent="guardar">
             <div class="row g-3">
-              <div class="col-md-6" v-if="!esVoluntario">
-                <label for="edit-name" class="form-label">Nombre</label>
-                <input id="edit-name" v-model.trim="name" type="text" class="form-control" required>
-              </div>
-
-              <div class="col-md-6">
-                <label for="edit-email" class="form-label">Correo electrónico</label>
-                <input id="edit-email" v-model.trim="email" type="email" class="form-control" required>
-              </div>
-
-              <div class="col-md-6">
-                <label for="edit-estado" class="form-label">Estado</label>
-                <select id="edit-estado" v-model="estado" class="form-select" required>
-                  <option :value="true">Activo</option>
-                  <option :value="false">Inactivo</option>
-                </select>
-              </div>
-
-              <div class="col-md-12">
-                <label class="form-label">Roles</label>
-                <div class="role-grid">
-                  <label
-                    v-for="role in rolesOptions"
-                    :key="role.id"
-                    class="role-card"
-                    :class="{ selected: selectedRoles.includes(role.id) }"
-                  >
-                    <input
-                      :id="`edit-role-${role.id}`"
-                      v-model="selectedRoles"
-                      class="form-check-input"
-                      type="checkbox"
-                      :value="role.id"
-                    >
-                    <div>
-                      <div class="fw-semibold">{{ role.nombre }}</div>
-                      <small class="text-muted">{{ role.clave }}</small>
-                    </div>
-                  </label>
-                </div>
+              <div class="col-md-12" v-if="!esVoluntario">
+                <label for="edit-username" class="form-label">Username</label>
+                <input id="edit-username" v-model.trim="username" type="text" class="form-control" required>
               </div>
 
               <template v-if="esVoluntario">
@@ -60,8 +23,8 @@
                 </div>
 
                 <div class="col-md-4">
-                  <label for="edit-n-registro" class="form-label">N° de registro</label>
-                  <input id="edit-n-registro" v-model.trim="n_registro" type="text" class="form-control" required>
+                  <label for="edit-registro-filial" class="form-label">Numero de registro</label>
+                  <input id="edit-registro-filial" v-model.trim="registro_filial" type="text" class="form-control" required>
                 </div>
 
                 <div class="col-md-4">
@@ -90,6 +53,11 @@
                 </div>
 
                 <div class="col-md-6">
+                  <label for="edit-correo-electronico" class="form-label">Correo electronico</label>
+                  <input id="edit-correo-electronico" v-model.trim="correo_electronico" type="email" class="form-control">
+                </div>
+
+                <div class="col-md-6">
                   <label for="edit-celular" class="form-label">Celular</label>
                   <input id="edit-celular" v-model.trim="celular" type="text" class="form-control">
                 </div>
@@ -105,7 +73,7 @@
                 </div>
 
                 <div class="col-md-6">
-                  <label for="edit-fecha-incorporacion" class="form-label">Fecha de incorporación</label>
+                  <label for="edit-fecha-incorporacion" class="form-label">Fecha de incorporacion</label>
                   <input id="edit-fecha-incorporacion" v-model="fecha_incorporacion" type="date" class="form-control">
                 </div>
 
@@ -120,7 +88,7 @@
                 </div>
 
                 <div class="col-md-6">
-                  <label for="edit-contacto-emergencia-numero" class="form-label">Número de emergencia</label>
+                  <label for="edit-contacto-emergencia-numero" class="form-label">Numero de emergencia</label>
                   <input id="edit-contacto-emergencia-numero" v-model.trim="contacto_emergencia_numero" type="text" class="form-control">
                 </div>
 
@@ -137,13 +105,13 @@
               </template>
 
               <div class="col-12">
-                <label for="edit-password" class="form-label">Nueva contraseña</label>
+                <label for="edit-password" class="form-label">Nueva contrasena</label>
                 <input
                   id="edit-password"
                   v-model.trim="password"
                   type="password"
                   class="form-control"
-                  placeholder="Déjala vacía si no quieres cambiarla"
+                  placeholder="Dejala vacia si no quieres cambiarla"
                 >
               </div>
             </div>
@@ -177,17 +145,16 @@ export default {
   data() {
     return {
       id: null,
-      name: '',
-      email: '',
-      estado: true,
+      username: '',
       selectedRoles: [],
       rolesOptions: [],
       filialesOptions: [],
-      n_registro: '',
+      registro_filial: '',
       filial_id: '',
       rut: '',
       nombres: '',
       apellidos: '',
+      correo_electronico: '',
       nacionalidad: '',
       fecha_nacimiento: '',
       fecha_incorporacion: '',
@@ -204,14 +171,30 @@ export default {
     }
   },
   computed: {
+    availableRoleOptions() {
+      const preferredOrder = {
+        administrador: 0,
+        voluntario: 1,
+        'secretario-directiva': 2,
+        'encargada-finanzas': 3
+      }
+
+      return [...this.rolesOptions].sort((a, b) => {
+        const orderA = preferredOrder[a.clave] ?? 99
+        const orderB = preferredOrder[b.clave] ?? 99
+
+        if (orderA !== orderB) {
+          return orderA - orderB
+        }
+
+        return a.nombre.localeCompare(b.nombre)
+      })
+    },
     selectedRoleDetails() {
       return this.rolesOptions.filter((role) => this.selectedRoles.includes(role.id))
     },
     esVoluntario() {
       return this.selectedRoleDetails.some((role) => role.clave === 'voluntario')
-    },
-    computedDisplayName() {
-      return `${this.nombres} ${this.apellidos}`.trim()
     }
   },
   watch: {
@@ -244,8 +227,23 @@ export default {
     hide() {
       this.modalInstance.hide()
     },
+    roleDescription(role) {
+      const descriptions = {
+        administrador: 'Acceso administrativo del sistema',
+        voluntario: 'Perfil con ficha completa de voluntario',
+        'secretario-directiva': 'Gestion de voluntarios, actividades y actas',
+        'encargada-finanzas': 'Acceso a reportes y gestion financiera'
+      }
+
+      return descriptions[role.clave] || role.clave
+    },
     onPhotoSelected(event) {
       this.foto_perfil = event.target.files?.[0] || null
+    },
+    appendIfFilled(formData, key, value) {
+      if (value !== null && value !== undefined && String(value).trim() !== '') {
+        formData.append(key, String(value).trim())
+      }
     },
     async getUser() {
       if (this.rolesOptions.length === 0 || this.filialesOptions.length === 0) {
@@ -256,15 +254,14 @@ export default {
       const user = response.data
       const voluntario = user.voluntario || null
 
-      this.name = user.name || ''
-      this.email = user.email || ''
-      this.estado = Boolean(user.estado)
+      this.username = user.username || ''
       this.selectedRoles = (user.roles || []).map((role) => role.id)
-      this.n_registro = voluntario?.n_registro || ''
+      this.registro_filial = voluntario?.registro_filial || ''
       this.filial_id = voluntario?.filial_id || ''
       this.rut = voluntario?.rut || ''
       this.nombres = voluntario?.nombres || ''
       this.apellidos = voluntario?.apellidos || ''
+      this.correo_electronico = voluntario?.correo_electronico || ''
       this.nacionalidad = voluntario?.nacionalidad || ''
       this.fecha_nacimiento = voluntario?.fecha_nacimiento || ''
       this.fecha_incorporacion = voluntario?.fecha_incorporacion || ''
@@ -278,24 +275,28 @@ export default {
     buildFormData() {
       const formData = new FormData()
       formData.append('_method', 'PUT')
-      formData.append('name', this.esVoluntario ? this.computedDisplayName : this.name.trim())
-      formData.append('email', this.email.trim())
-      formData.append('estado', this.estado ? '1' : '0')
+
+      if (!this.esVoluntario) {
+        formData.append('username', this.username.trim())
+      }
+
       this.selectedRoles.forEach((roleId) => formData.append('roles[]', roleId))
 
       if (this.esVoluntario) {
-        formData.append('n_registro', this.n_registro.trim())
+        formData.append('registro_filial', this.registro_filial.trim())
         formData.append('filial_id', String(this.filial_id))
         formData.append('rut', this.rut.trim())
         formData.append('nombres', this.nombres.trim())
         formData.append('apellidos', this.apellidos.trim())
-        formData.append('nacionalidad', this.nacionalidad.trim())
-        formData.append('fecha_nacimiento', this.fecha_nacimiento)
-        formData.append('fecha_incorporacion', this.fecha_incorporacion)
-        formData.append('celular', this.celular.trim())
-        formData.append('domicilio', this.domicilio.trim())
-        formData.append('contacto_emergencia_nombre', this.contacto_emergencia_nombre.trim())
-        formData.append('contacto_emergencia_numero', this.contacto_emergencia_numero.trim())
+
+        this.appendIfFilled(formData, 'correo_electronico', this.correo_electronico)
+        this.appendIfFilled(formData, 'nacionalidad', this.nacionalidad)
+        this.appendIfFilled(formData, 'fecha_nacimiento', this.fecha_nacimiento)
+        this.appendIfFilled(formData, 'fecha_incorporacion', this.fecha_incorporacion)
+        this.appendIfFilled(formData, 'celular', this.celular)
+        this.appendIfFilled(formData, 'domicilio', this.domicilio)
+        this.appendIfFilled(formData, 'contacto_emergencia_nombre', this.contacto_emergencia_nombre)
+        this.appendIfFilled(formData, 'contacto_emergencia_numero', this.contacto_emergencia_numero)
 
         if (this.foto_perfil) {
           formData.append('foto_perfil', this.foto_perfil)
@@ -309,19 +310,19 @@ export default {
       return formData
     },
     validateForm() {
-      if (!this.email.trim()) {
-        show_alerta('Debes ingresar el correo electrónico.', 'warning', 'edit-email')
+      if (!this.selectedRoles.length) {
+        show_alerta('Debes seleccionar al menos un rol.', 'warning')
         return false
       }
 
-      if (!this.esVoluntario && !this.name.trim()) {
-        show_alerta('Debes ingresar el nombre del usuario.', 'warning', 'edit-name')
+      if (!this.esVoluntario && !this.username.trim()) {
+        show_alerta('Debes ingresar el username del usuario.', 'warning', 'edit-username')
         return false
       }
 
       if (this.esVoluntario) {
-        if (!this.n_registro.trim()) {
-          show_alerta('Debes ingresar el N° de registro.', 'warning', 'edit-n-registro')
+        if (!this.registro_filial.trim()) {
+          show_alerta('Debes ingresar el numero de registro.', 'warning', 'edit-registro-filial')
           return false
         }
         if (!this.filial_id) {

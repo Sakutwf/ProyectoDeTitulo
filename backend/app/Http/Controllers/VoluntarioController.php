@@ -12,10 +12,10 @@ class VoluntarioController extends Controller
     private const RELATIONS = [
         'user.roles.permissions',
         'filial',
-        'hojasVidaAnuales.titulos',
-        'hojasVidaAnuales.cursos',
-        'hojasVidaAnuales.sanciones',
-        'hojasVidaAnuales.reconocimiento',
+        'hojaVidaAnual.titulos',
+        'hojaVidaAnual.cursos',
+        'hojaVidaAnual.sanciones',
+        'hojaVidaAnual.reconocimiento',
     ];
 
     public function index(Request $request)
@@ -25,7 +25,7 @@ class VoluntarioController extends Controller
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function ($subQuery) use ($search) {
-                $subQuery->where('n_registro', 'like', "%{$search}%")
+                $subQuery->where('registro_filial', 'like', "%{$search}%")
                     ->orWhere('rut', 'like', "%{$search}%")
                     ->orWhere('nombres', 'like', "%{$search}%")
                     ->orWhere('apellidos', 'like', "%{$search}%");
@@ -33,7 +33,7 @@ class VoluntarioController extends Controller
         }
 
         return response()->json(
-            $query->orderBy('n_registro')->get(),
+            $query->orderBy('registro_filial')->get(),
             200
         );
     }
@@ -43,6 +43,7 @@ class VoluntarioController extends Controller
         $data = $this->validateVoluntario($request);
 
         $voluntario = Voluntario::create($data);
+        $this->syncUsernameFromRut($voluntario);
         $this->ensureVolunteerRole($voluntario);
 
         return response()->json(
@@ -61,9 +62,10 @@ class VoluntarioController extends Controller
 
     public function update(Request $request, Voluntario $voluntario)
     {
-        $data = $this->validateVoluntario($request, $voluntario->n_registro);
+        $data = $this->validateVoluntario($request, $voluntario->id);
 
         $voluntario->update($data);
+        $this->syncUsernameFromRut($voluntario);
         $this->ensureVolunteerRole($voluntario);
 
         return response()->json(
@@ -79,23 +81,28 @@ class VoluntarioController extends Controller
         return response()->json(null, 204);
     }
 
-    private function validateVoluntario(Request $request, ?string $registroActual = null): array
+    private function validateVoluntario(Request $request, ?int $voluntarioId = null): array
     {
         return $request->validate([
             'user_id' => [
                 'required',
                 'integer',
                 'exists:users,id',
-                Rule::unique('voluntarios', 'user_id')->ignore($registroActual, 'n_registro'),
+                Rule::unique('voluntarios', 'user_id')->ignore($voluntarioId),
             ],
-            'n_registro' => ['required', 'string', 'max:30', Rule::unique('voluntarios', 'n_registro')->ignore($registroActual, 'n_registro')],
+            'registro_filial' => ['required', 'string', 'max:50'],
             'filial_id' => ['required', 'integer', 'exists:filiales,id'],
-            'rut' => ['required', 'string', 'max:20', Rule::unique('voluntarios', 'rut')->ignore($registroActual, 'n_registro')],
+            'rut' => ['required', 'string', 'max:20', Rule::unique('voluntarios', 'rut')->ignore($voluntarioId)],
             'nombres' => ['required', 'string', 'max:150'],
             'apellidos' => ['required', 'string', 'max:150'],
             'nacionalidad' => ['nullable', 'string', 'max:100'],
             'fecha_nacimiento' => ['nullable', 'date'],
             'fecha_incorporacion' => ['nullable', 'date'],
+            'nivel_escolaridad' => ['nullable', 'string', 'max:100'],
+            'estado_civil' => ['nullable', 'string', 'max:100'],
+            'ocupacion' => ['nullable', 'string', 'max:150'],
+            'grupo_sanguineo' => ['nullable', 'string', 'max:20'],
+            'correo_electronico' => ['nullable', 'email', 'max:150'],
             'celular' => ['nullable', 'string', 'max:30'],
             'domicilio' => ['nullable', 'string', 'max:255'],
             'enfermedades' => ['nullable', 'string'],
@@ -109,8 +116,15 @@ class VoluntarioController extends Controller
     {
         $roleId = Role::where('clave', 'voluntario')->value('id');
 
-        if ($roleId) {
+        if ($roleId && $voluntario->user) {
             $voluntario->user->roles()->syncWithoutDetaching([$roleId]);
+        }
+    }
+
+    private function syncUsernameFromRut(Voluntario $voluntario): void
+    {
+        if ($voluntario->user && $voluntario->rut !== '' && $voluntario->user->username !== $voluntario->rut) {
+            $voluntario->user->update(['username' => $voluntario->rut]);
         }
     }
 }

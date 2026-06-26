@@ -11,7 +11,8 @@ return new class extends Migration
         Schema::create('filiales', function (Blueprint $table) {
             $table->id();
             $table->string('nombre', 150);
-            $table->string('comite_regional', 150);
+            $table->string('cut', 50)->unique();
+            $table->string('comite_regional', 150)->nullable();
             $table->string('direccion', 255)->nullable();
             $table->string('comuna', 100)->nullable();
             $table->timestamps();
