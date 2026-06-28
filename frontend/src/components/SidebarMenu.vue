@@ -313,7 +313,7 @@ export default {
 
 
 
-@media (max-width: 991.98px) {
+@media (max-width: 1199.98px) {
     .sidebar {
         position: fixed;
         top: 0;
@@ -343,7 +343,7 @@ export default {
 
     .sidebar .nav {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(4.8rem, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(5.4rem, 1fr));
         align-items: stretch;
         gap: 0.45rem;
         padding: 0;
@@ -358,8 +358,8 @@ export default {
     .sidebar .nav-link {
         min-width: 0;
         width: 100%;
-        min-height: 4.25rem;
-        padding: 0.5rem 0.4rem;
+        min-height: 4.6rem;
+        padding: 0.62rem 0.45rem;
         border-left: none;
         border-top: 3px solid transparent;
         border-radius: 14px;
@@ -384,7 +384,7 @@ export default {
 
     .nav-link__label {
         width: auto;
-        font-size: 0.72rem;
+        font-size: 0.78rem;
         line-height: 1.1;
         white-space: normal;
         overflow: visible;
@@ -402,6 +402,7 @@ export default {
     }
 }
 </style>
+
 
 
 

@@ -186,6 +186,7 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import axios from 'axios'
 import Swal from 'sweetalert2'
 import SidebarMenu from '../components/SidebarMenu.vue'
@@ -242,6 +243,7 @@ const selectedActividadId = ref('')
 const loadingPrefill = ref(false)
 const isSaving = ref(false)
 const documentosGuardados = ref([])
+const route = useRoute()
 
 const form = reactive({
   titulo: '',
@@ -284,10 +286,27 @@ function openForm(type) {
 
 function closeForm() {
   selectedType.value = ''
+  selectedActividadId.value = ''
   form.titulo = ''
+  form.estado = 'borrador'
+  form.fecha_documento = todayAsInput()
   form.datos_contexto = null
   form.contenido = {}
   documentosGuardados.value = []
+}
+
+async function initializeFromRoute() {
+  const requestedType = String(route.query.tipo || '').trim()
+  const requestedActividadId = String(route.query.actividad || '').trim()
+  const isAllowedType = documentTypes.some((item) => item.key === requestedType)
+
+  if (!isAllowedType || !requestedActividadId) {
+    return
+  }
+
+  selectedActividadId.value = requestedActividadId
+  openForm(requestedType)
+  await handleActividadChange()
 }
 
 async function fetchActividades() {
@@ -424,8 +443,9 @@ function formatSavedDocument(documento) {
   return `${date} · ${author}`
 }
 
-onMounted(() => {
-  fetchActividades()
+onMounted(async () => {
+  await fetchActividades()
+  await initializeFromRoute()
 })
 </script>
 
@@ -723,3 +743,4 @@ onMounted(() => {
   }
 }
 </style>
+

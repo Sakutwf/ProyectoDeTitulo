@@ -62,6 +62,9 @@ class UserController extends Controller
                             ->orWhere('nombres', 'like', "%{$search}%")
                             ->orWhere('apellidos', 'like', "%{$search}%")
                             ->orWhere('correo_electronico', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('roles', function ($roleQuery) use ($search) {
+                        $roleQuery->where('nombre', 'like', "%{$search}%");
                     });
             });
         }
@@ -91,6 +94,9 @@ class UserController extends Controller
                             ->orWhere('nombres', 'like', "%{$term}%")
                             ->orWhere('apellidos', 'like', "%{$term}%")
                             ->orWhere('correo_electronico', 'like', "%{$term}%");
+                    })
+                    ->orWhereHas('roles', function ($roleQuery) use ($term) {
+                        $roleQuery->where('nombre', 'like', "%{$term}%");
                     });
             })
             ->get()
@@ -441,3 +447,7 @@ class UserController extends Controller
         }
     }
 }
+
+
+
+

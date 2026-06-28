@@ -36,7 +36,7 @@
                       <span
                         v-for="role in visibleRoles(user)"
                         :key="`mobile-role-${role.id}`"
-                        class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle"
+                        class="badge role-badge-mobile"
                       >
                         {{ role.nombre }}
                       </span>
@@ -45,7 +45,7 @@
                   </div>
 
                   <div class="profile-card__actions">
-                    <button @click="editUser(user.id)" class="btn btn-sm btn-outline-primary" title="Editar" aria-label="Editar">
+                    <button @click="editUser(user.id)" class="btn btn-sm profile-action-button" title="Editar" aria-label="Editar">
                       <i class="fa-solid fa-edit"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger" title="Eliminar" aria-label="Eliminar" @click="eliminar(user.id, displayName(user))">
@@ -56,8 +56,8 @@
 
                 <div class="profile-card__details">
                   <div class="profile-card__row">
-                    <span class="profile-card__label"><i class="fa-solid fa-id-card"></i> ID</span>
-                    <strong>{{ user.id }}</strong>
+                    <span class="profile-card__label"><i class="fa-solid fa-id-card"></i> N° Registro</span>
+                    <strong>{{ volunteerRegistrationLabel(user) }}</strong>
                   </div>
                   <div class="profile-card__row">
                     <span class="profile-card__label"><i class="fa-solid fa-address-card"></i> RUT</span>
@@ -67,10 +67,7 @@
                     <span class="profile-card__label"><i class="fa-solid fa-phone"></i> Telefono</span>
                     <strong>{{ user.voluntario?.celular || '-' }}</strong>
                   </div>
-                  <div class="profile-card__row">
-                    <span class="profile-card__label"><i class="fa-solid fa-shield-heart"></i> Rol</span>
-                    <strong>{{ primaryRoleLabel(user) }}</strong>
-                  </div>
+
                   <div class="profile-card__row profile-card__row--history">
                     <span class="profile-card__label"><i class="fa-solid fa-file-lines"></i> Hoja de Vida</span>
                     <button
@@ -91,66 +88,89 @@
               </div>
             </div>
 
-            <div class="table-responsive profiles-table-shell">
-              <table class="table custom-table custom-table--responsive">
-                <thead>
-                  <tr>
-                    <th class="column-mobile-hidden">ID</th>
-                    <th>Nombre</th>
-                    <th class="column-mobile-hidden">RUT</th>
-                    <th class="column-mobile-hidden">Telefono</th>
-                    <th>Rol</th>
-                    <th class="text-center">Hoja de<br>Vida</th>
-                    <th class="text-center">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="user in users" :key="user.id">
-                    <td data-label="ID" class="column-mobile-hidden">{{ user.id }}</td>
-                    <td data-label="Nombre">{{ displayName(user) }}</td>
-                    <td data-label="RUT" class="column-mobile-hidden">{{ user.voluntario?.rut || '-' }}</td>
-                    <td data-label="Telefono" class="column-mobile-hidden">{{ user.voluntario?.celular || '-' }}</td>
-                    <td data-label="Rol">
-                      <div class="role-badges">
-                        <span
-                          v-for="role in visibleRoles(user)"
-                          :key="role.id"
-                          class="badge bg-light text-dark border"
-                        >
-                          {{ role.nombre }}
-                        </span>
-                        <span v-if="!visibleRoles(user).length" class="text-muted small">Sin roles</span>
-                      </div>
-                    </td>
-                    <td data-label="Hoja de Vida">
-                      <div class="d-flex justify-content-center history-cell">
-                        <button
-                          v-if="canViewHistory(user)"
-                          type="button"
-                          class="btn btn-sm btn-danger"
-                          @click="viewHistory(user.id)"
-                        >
-                          Ver historial
-                        </button>
-                        <span v-else class="text-muted small">No aplica</span>
-                      </div>
-                    </td>
-                    <td data-label="Acciones">
-                      <div class="d-flex justify-content-center actions-cell">
-                        <button @click="editUser(user.id)" class="btn btn-sm btn-outline-primary me-2" title="Editar">
-                          <i class="fa-solid fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger" title="Eliminar" @click="eliminar(user.id, displayName(user))">
-                          <i class="fa-solid fa-trash"></i>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr v-if="!users.length" class="no-results-row">
-                    <td colspan="7" class="text-center py-3 no-results-cell">No hay perfiles disponibles.</td>
-                  </tr>
-                </tbody>
-              </table>
+            <div class="table-shell table-shell--profiles">
+              <div v-if="showProfilesTableNavigation" class="table-scroll-controls" aria-label="Navegacion horizontal de tabla">
+                <button
+                  type="button"
+                  class="table-scroll-button"
+                  :disabled="!canScrollProfilesLeft"
+                  @click="scrollProfilesTable(-1)"
+                  aria-label="Desplazar tabla hacia la izquierda"
+                >
+                  <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <button
+                  type="button"
+                  class="table-scroll-button"
+                  :disabled="!canScrollProfilesRight"
+                  @click="scrollProfilesTable(1)"
+                  aria-label="Desplazar tabla hacia la derecha"
+                >
+                  <i class="fa-solid fa-chevron-right"></i>
+                </button>
+              </div>
+
+              <div ref="profilesTableShell" class="table-responsive profiles-table-shell" @scroll="updateProfilesTableScroll">
+                <table class="table custom-table custom-table--responsive">
+                  <thead>
+                    <tr>
+                      <th class="column-mobile-hidden">N° Registro</th>
+                      <th>Nombre</th>
+                      <th class="column-mobile-hidden">RUT</th>
+                      <th>Rol</th>
+                      <th class="column-mobile-hidden">Telefono</th>
+                      <th class="text-center">Hoja de vida</th>
+                      <th class="text-center">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="user in users" :key="user.id">
+                      <td data-label="N° Registro" class="column-mobile-hidden">{{ volunteerRegistrationLabel(user) }}</td>
+                      <td data-label="Nombre">{{ displayName(user) }}</td>
+                      <td data-label="RUT" class="column-mobile-hidden">{{ user.voluntario?.rut || '-' }}</td>
+                      <td data-label="Rol">
+                        <div class="role-badges">
+                          <span
+                            v-for="role in visibleRoles(user)"
+                            :key="role.id"
+                            class="badge role-badge"
+                          >
+                            {{ role.nombre }}
+                          </span>
+                          <span v-if="!visibleRoles(user).length" class="text-muted small">Sin roles</span>
+                        </div>
+                      </td>
+                      <td data-label="Telefono" class="column-mobile-hidden">{{ user.voluntario?.celular || '-' }}</td>
+                      <td data-label="Hoja de Vida">
+                        <div class="d-flex justify-content-center history-cell">
+                          <button
+                            v-if="canViewHistory(user)"
+                            type="button"
+                            class="btn btn-danger btn-sm profile-card__history-button"
+                            @click="viewHistory(user.id)"
+                          >
+                            Ver historial
+                          </button>
+                          <span v-else class="text-muted small">No aplica</span>
+                        </div>
+                      </td>
+                      <td data-label="Acciones">
+                        <div class="d-flex justify-content-center actions-cell">
+                          <button @click="editUser(user.id)" class="btn btn-sm profile-action-button" title="Editar">
+                            <i class="fa-solid fa-edit"></i>
+                          </button>
+                          <button class="btn btn-sm btn-outline-danger" title="Eliminar" @click="eliminar(user.id, displayName(user))">
+                            <i class="fa-solid fa-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr v-if="!users.length" class="no-results-row">
+                      <td colspan="7" class="text-center py-3 no-results-cell">No hay perfiles disponibles.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <nav v-if="meta.last_page > 1" class="mt-3">
@@ -205,11 +225,18 @@ export default {
         from: 1
       },
       search: '',
-      selectedUserId: null
+      selectedUserId: null,
+      showProfilesTableNavigation: false,
+      canScrollProfilesLeft: false,
+      canScrollProfilesRight: false
     }
   },
   mounted() {
     this.getUsers()
+    window.addEventListener('resize', this.updateProfilesTableScroll)
+  },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.updateProfilesTableScroll)
   },
   methods: {
     async getUsers(page = 1) {
@@ -223,6 +250,8 @@ export default {
         last_page: response.data.last_page,
         from: response.data.from
       }
+
+      this.$nextTick(() => this.updateProfilesTableScroll())
     },
     onSearch() {
       this.getUsers(1)
@@ -238,6 +267,36 @@ export default {
     },
     abrirModalNuevoUsuario() {
       this.$refs.userCreateModal.show()
+    },
+    updateProfilesTableScroll() {
+      const shell = this.$refs.profilesTableShell
+
+      if (!shell || window.innerWidth < 768) {
+        this.showProfilesTableNavigation = false
+        this.canScrollProfilesLeft = false
+        this.canScrollProfilesRight = false
+        return
+      }
+
+      const overflowOffset = shell.scrollWidth - shell.clientWidth
+      const hasOverflow = overflowOffset > 8
+
+      this.showProfilesTableNavigation = hasOverflow
+      this.canScrollProfilesLeft = hasOverflow && shell.scrollLeft > 4
+      this.canScrollProfilesRight = hasOverflow && shell.scrollLeft < overflowOffset - 4
+    },
+    scrollProfilesTable(direction) {
+      const shell = this.$refs.profilesTableShell
+      if (!shell) {
+        return
+      }
+
+      shell.scrollBy({
+        left: direction * Math.max(shell.clientWidth * 0.72, 220),
+        behavior: 'smooth'
+      })
+
+      window.setTimeout(() => this.updateProfilesTableScroll(), 260)
     },
     canViewHistory(user) {
       return Boolean(user?.voluntario)
@@ -271,6 +330,28 @@ export default {
       const volunteerName = [user?.voluntario?.nombres, user?.voluntario?.apellidos].filter(Boolean).join(' ').trim()
       return volunteerName || user?.username || 'Usuario'
     },
+    volunteerRegistrationLabel(user) {
+      const registration = (user?.voluntario?.registro_filial || '').trim()
+      const filialName = this.normalizeFilialName(user?.voluntario?.filial?.nombre)
+
+      if (filialName && registration) {
+        return `${filialName} ${registration}`
+      }
+
+      return registration || filialName || '-'
+    },
+    normalizeFilialName(name) {
+      const value = (name || '').trim()
+
+      if (!value) {
+        return ''
+      }
+
+      return value
+        .replace(/^filial\s+de\s+/i, '')
+        .replace(/^filial\s+/i, '')
+        .trim()
+    },
     visibleRoles(user) {
       const roles = user?.roles || []
       const hasAdditionalRole = roles.some((role) => role?.nombre?.toLowerCase() !== 'voluntario')
@@ -280,10 +361,6 @@ export default {
       }
 
       return roles.filter((role) => role?.nombre?.toLowerCase() !== 'voluntario')
-    },
-    primaryRoleLabel(user) {
-      const roles = this.visibleRoles(user)
-      return roles[0]?.nombre || 'Sin roles'
     }
   }
 }
@@ -301,9 +378,17 @@ export default {
 
 .profiles-header__top {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-between;
   gap: 0.75rem;
+}
+
+.profiles-header__top h3 {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  font-size: 2rem;
+  line-height: 1.05;
 }
 
 .profiles-header__search {
@@ -315,15 +400,53 @@ export default {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
+  gap: 0.55rem;
   min-width: 44px;
+  min-height: 56px;
+  padding: 0.85rem 1.2rem;
+  border-radius: 16px;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.table-shell {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.table-scroll-controls {
+  display: none;
+  justify-content: flex-end;
+  gap: 0.55rem;
+}
+
+.table-scroll-button {
+  width: 2.3rem;
+  height: 2.3rem;
+  border: 1px solid #d5deea;
+  border-radius: 999px;
+  background: #fff;
+  color: #274062;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 18px rgba(15, 47, 95, 0.08);
+}
+
+.table-scroll-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+  box-shadow: none;
 }
 
 .custom-table {
   width: 100%;
+  min-width: 72rem;
   border-collapse: separate;
   border-spacing: 0;
-  table-layout: fixed;
+  table-layout: auto;
 }
 
 .custom-table th {
@@ -333,6 +456,11 @@ export default {
   padding: 10px 12px;
   color: #333;
   background-color: #f5f5f5;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+  line-height: 1.25;
 }
 
 .custom-table td {
@@ -341,66 +469,139 @@ export default {
   padding: 6px 12px;
   vertical-align: middle;
   border-bottom: 1px solid #e0e0e0;
-}
-
-.custom-table th,
-.custom-table td {
-  white-space: normal;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
 }
 
 .custom-table th:nth-child(1),
 .custom-table td:nth-child(1) {
-  width: 8%;
+  min-width: 9rem;
 }
 
 .custom-table th:nth-child(2),
 .custom-table td:nth-child(2) {
-  width: 21%;
-  padding-right: 6px;
+  min-width: 14rem;
+  white-space: normal;
 }
 
 .custom-table th:nth-child(3),
 .custom-table td:nth-child(3) {
-  width: 17%;
-  padding-left: 6px;
+  min-width: 10rem;
 }
 
 .custom-table th:nth-child(4),
 .custom-table td:nth-child(4) {
-  width: 14%;
+  min-width: 11rem;
 }
 
 .custom-table th:nth-child(5),
 .custom-table td:nth-child(5) {
-  width: 14%;
+  min-width: 8rem;
 }
 
 .custom-table th:nth-child(6),
 .custom-table td:nth-child(6) {
-  width: 14%;
-  white-space: nowrap;
+  min-width: 11rem;
 }
 
 .custom-table th:nth-child(7),
 .custom-table td:nth-child(7) {
-  width: 12%;
-  white-space: nowrap;
+  min-width: 8rem;
 }
 
 .role-badges {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  min-width: max-content;
+}
+
+.role-badge,
+.role-badges--mobile .badge.role-badge-mobile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0.45rem 0.95rem;
+  border: 1.5px solid #0f4c81;
+  border-radius: 0.9rem;
+  color: #0f4c81;
+  background: #fff;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: none;
 }
 
 .role-badges .badge {
-  font-size: 0.85rem;
+  text-align: left;
 }
 
 .actions-cell {
   flex-wrap: nowrap;
   white-space: nowrap;
+  gap: 0.55rem;
+}
+
+.actions-cell .btn,
+.profile-card__actions .btn {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.actions-cell .btn i,
+.profile-card__actions .btn i {
+  font-size: 1.1rem;
+}
+
+.profile-action-button {
+  border-color: #0f4c81;
+  color: #0f4c81;
+  border-radius: 12px;
+}
+
+.profile-action-button:hover,
+.profile-action-button:focus,
+.profile-action-button:active {
+  border-color: #0c416d;
+  color: #0c416d;
+  background: #edf5fb;
+}
+
+.history-cell {
+  min-height: 100%;
+  white-space: nowrap;
+}
+
+.profile-card__history-button {
+  min-height: 40px;
+  padding: 0.72rem 1.4rem;
+  border-radius: 22px;
+  font-weight: 800;
+  font-size: 1rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  border-color: #df3342;
+  background: #df3342;
+  box-shadow: none;
+}
+
+.profile-card__history-button:hover,
+.profile-card__history-button:focus,
+.profile-card__history-button:active {
+  border-color: #c92b39;
+  background: #c92b39;
 }
 
 .content-wrapper {
@@ -436,6 +637,32 @@ export default {
   border-color: #e01e1e;
 }
 
+@media (min-width: 768px) {
+  .table-scroll-controls {
+    display: flex;
+  }
+
+  .profiles-table-shell {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    padding-bottom: 0.25rem;
+  }
+
+  .custom-table th,
+  .custom-table td {
+    padding: 0.7rem 0.75rem;
+  }
+
+  .role-badges {
+    gap: 0.45rem;
+  }
+
+  .role-badges .badge {
+    max-width: 100%;
+  }
+}
+
 @media (max-width: 767.98px) {
   .content-header {
     padding: 1rem 1rem 0.9rem;
@@ -446,12 +673,12 @@ export default {
   }
 
   .profiles-header__top {
-    align-items: flex-start;
+    align-items: center;
   }
 
   .profiles-header__top h3 {
-    font-size: 1.5rem;
-    line-height: 1.15;
+    min-height: 44px;
+    font-size: 1.75rem;
   }
 
   .profiles-header__search {
@@ -468,13 +695,14 @@ export default {
     width: 44px;
     min-width: 44px;
     height: 44px;
+    min-height: 44px;
     padding: 0;
     border-radius: 12px;
     flex-shrink: 0;
   }
 
   .profiles-header__create-label,
-  .profiles-table-shell {
+  .table-shell--profiles {
     display: none;
   }
 
@@ -519,27 +747,10 @@ export default {
     font-weight: 800;
   }
 
-  .role-badges--mobile .badge {
-    border-radius: 999px;
-    padding: 0.5rem 0.9rem;
-    font-size: 0.92rem;
-    font-weight: 700;
-  }
-
   .profile-card__actions {
     display: flex;
     gap: 0.45rem;
     flex-shrink: 0;
-  }
-
-  .profile-card__actions .btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
   }
 
   .profile-card__details {
@@ -587,12 +798,8 @@ export default {
   .profile-card__row--history {
     align-items: center;
   }
-
-  .profile-card__history-button {
-    min-height: 42px;
-    padding: 0.55rem 0.95rem;
-    border-radius: 12px;
-    font-weight: 700;
-  }
 }
 </style>
+
+
+

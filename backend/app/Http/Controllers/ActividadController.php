@@ -16,7 +16,14 @@ class ActividadController extends Controller
 
     public function index(Request $request)
     {
-        $query = Actividad::with(self::RELATIONS);
+        $query = Actividad::with(self::RELATIONS)->with(['documentos' => function ($documentQuery) {
+            $documentQuery
+                ->select('id', 'actividad_id', 'tipo_documento', 'estado', 'updated_at')
+                ->whereIn('tipo_documento', ['analisis_contexto', 'informe_narrativo'])
+                ->whereIn('estado', ['borrador', 'final'])
+                ->latest('updated_at')
+                ->latest('id');
+        }]);
 
         if ($request->has('search') && $request->search) {
             $search = $request->search;
@@ -427,6 +434,10 @@ class ActividadController extends Controller
         }
     }
 }
+
+
+
+
 
 
 
