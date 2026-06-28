@@ -26,6 +26,10 @@ class HojaVidaAnual extends Model
         'asistencia_actividades_voluntariado_ajuste_horas',
         'asistencia_horas_filial_ajuste_horas',
         'asistencia_horas_formativas_ajuste_horas',
+        'cargo_clave',
+        'cargo_nombre',
+        'cargo_grupo',
+        'cargo_direccion',
         'estuvo_comision_servicio',
         'comision_fecha_inicio',
         'comision_fecha_termino',
@@ -327,3 +331,4 @@ class HojaVidaAnual extends Model
         ];
     }
 }
+

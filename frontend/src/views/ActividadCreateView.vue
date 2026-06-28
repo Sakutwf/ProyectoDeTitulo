@@ -108,6 +108,7 @@
                     v-model="volunteerHours[volunteer.id]"
                     type="number"
                     min="0"
+                    :max="activityHoursLimit ?? null"
                     step="0.25"
                     class="form-control"
                   >
@@ -136,9 +137,8 @@
 import axios from 'axios'
 import { Modal } from 'bootstrap'
 import { ACTIVITY_TYPE_OPTIONS } from '../constants/activityTypes'
+import { API_BASE } from '../config/api'
 import { show_alerta } from '../funciones'
-
-const API_BASE = 'http://localhost:8000/api'
 
 export default {
   name: 'ActividadCreateView',
@@ -158,6 +158,32 @@ export default {
   computed: {
     isFormValid() {
       return Boolean(this.form.filial_id && this.form.tipo && this.form.nombre && this.form.fecha_inicio)
+    },
+    activityHoursLimit() {
+      if (this.form.horas_totales !== '' && this.form.horas_totales !== null && this.form.horas_totales !== undefined) {
+        const totalHours = Number(this.form.horas_totales)
+        return Number.isFinite(totalHours) && totalHours >= 0 ? totalHours : null
+      }
+
+      if (!this.form.hora_inicio || !this.form.hora_termino) {
+        return null
+      }
+
+      const [startHour, startMinute] = this.form.hora_inicio.split(':').map(Number)
+      const [endHour, endMinute] = this.form.hora_termino.split(':').map(Number)
+
+      if (![startHour, startMinute, endHour, endMinute].every(Number.isFinite)) {
+        return null
+      }
+
+      const startMinutes = (startHour * 60) + startMinute
+      const endMinutes = (endHour * 60) + endMinute
+
+      if (endMinutes <= startMinutes) {
+        return null
+      }
+
+      return Number(((endMinutes - startMinutes) / 60).toFixed(2))
     }
   },
   mounted() {
@@ -228,10 +254,38 @@ export default {
         [voluntarioId]: this.volunteerHours[voluntarioId] ?? 0
       }
     },
+    validateVolunteerHours() {
+      const assignedVolunteers = this.selectedVolunteers
+        .map((voluntarioId) => {
+          const volunteer = this.volunteers.find((item) => Number(item.id) === Number(voluntarioId))
+          return {
+            name: this.fullVolunteerName(volunteer || {}),
+            hours: Number(this.volunteerHours[voluntarioId] ?? 0)
+          }
+        })
+        .filter((item) => item.hours > 0)
+
+      if (!assignedVolunteers.length) {
+        return true
+      }
+
+      if (this.activityHoursLimit === null) {
+        show_alerta('Debes ingresar las horas totales de la actividad antes de asignar horas a voluntarios.', 'warning')
+        return false
+      }
+
+      const invalidVolunteer = assignedVolunteers.find((item) => item.hours > this.activityHoursLimit)
+
+      if (invalidVolunteer) {
+        show_alerta('Las horas asignadas a ' + invalidVolunteer.name + ' no pueden superar las horas totales de la actividad.', 'warning')
+        return false
+      }
+
+      return true
+    },
     buildPayload() {
       return {
         filial_id: Number(this.form.filial_id),
-        creado_por: this.$store.getters.authUser?.id,
         nombre: this.form.nombre.trim(),
         tipo: this.form.tipo,
         objetivo: this.form.objetivo || null,
@@ -240,18 +294,21 @@ export default {
         hora_inicio: this.form.hora_inicio || null,
         hora_termino: this.form.hora_termino || null,
         lugar: this.form.lugar || null,
-        horas_totales: this.form.horas_totales === '' ? null : Number(this.form.horas_totales),
+        horas_totales: this.activityHoursLimit,
         colaborador_externo: this.form.colaborador_externo || null,
         voluntarios_detalle: this.selectedVolunteers.map((voluntarioId) => ({
           voluntario_id: voluntarioId,
           horas_asistidas: Number(this.volunteerHours[voluntarioId] ?? 0),
-          registrado_por: this.$store.getters.authUser?.id || null
         }))
       }
     },
     async saveActivity() {
       if (!this.isFormValid) {
         show_alerta('Completa los datos obligatorios de la actividad.', 'warning')
+        return
+      }
+
+      if (!this.validateVolunteerHours()) {
         return
       }
 

@@ -60,6 +60,14 @@
                     <span class="nav-link__label">Actividades</span>
                 </router-link>
             </li>
+            <li v-if="canManagePlatform" class="nav-item" :class="{ active: activeLink === 'documentos' }">
+                <router-link to="/documentos" class="nav-link" :title="displayCompact ? 'Documentos' : null" :aria-label="displayCompact ? 'Documentos' : null">
+                    <span class="nav-link__icon">
+                        <i class="fa-solid fa-folder-open"></i>
+                    </span>
+                    <span class="nav-link__label">Documentos</span>
+                </router-link>
+            </li>
             <li v-if="canSwitchAccess" class="nav-item">
                 <button type="button" class="nav-link nav-link-button" :title="displayCompact ? 'Cambiar vista' : null" :aria-label="displayCompact ? 'Cambiar vista' : null" @click="changeAccess">
                     <span class="nav-link__icon">
@@ -78,6 +86,7 @@
             </li>
         </ul>
     </div>
+
 </template>
 
 <script>
@@ -125,6 +134,7 @@ export default {
 
             if (path.includes('/voluntarios')) return 'voluntarios'
             if (path.includes('/actividades')) return 'actividades'
+            if (path.includes('/documentos')) return 'documentos'
             return 'inicio'
         }
     },
@@ -300,4 +310,101 @@ export default {
     padding: 1rem 1rem 0.75rem;
     justify-content: flex-end;
 }
+
+
+
+@media (max-width: 991.98px) {
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: auto;
+        width: 100%;
+        min-height: 0;
+        z-index: 1200;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+        border-bottom-left-radius: 18px;
+        border-bottom-right-radius: 18px;
+        padding: 0.4rem 0.65rem 0.55rem;
+    }
+
+    .sidebar--compact {
+        width: 100%;
+    }
+
+    .sidebar-header,
+    .sidebar-user-row,
+    .sidebar-toggle-row {
+        display: none;
+    }
+
+    .sidebar .nav {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(4.8rem, 1fr));
+        align-items: stretch;
+        gap: 0.45rem;
+        padding: 0;
+        width: 100%;
+    }
+
+    .sidebar .nav-item {
+        min-width: 0;
+        margin-top: 0 !important;
+    }
+
+    .sidebar .nav-link {
+        min-width: 0;
+        width: 100%;
+        min-height: 4.25rem;
+        padding: 0.5rem 0.4rem;
+        border-left: none;
+        border-top: 3px solid transparent;
+        border-radius: 14px;
+        grid-template-columns: 1fr;
+        justify-items: center;
+        align-content: center;
+        row-gap: 0.35rem;
+        text-align: center;
+        white-space: normal;
+    }
+
+    .sidebar .nav-link:hover,
+    .sidebar .nav-item.active .nav-link {
+        border-left-color: transparent;
+        border-top-color: #ffffff;
+    }
+
+    .nav-link__icon {
+        width: auto;
+        font-size: 1rem;
+    }
+
+    .nav-link__label {
+        width: auto;
+        font-size: 0.72rem;
+        line-height: 1.1;
+        white-space: normal;
+        overflow: visible;
+    }
+
+    :global(.content-wrapper) {
+        width: 100%;
+        min-width: 0;
+        padding-top: 5.7rem;
+        padding-bottom: 0;
+    }
+
+    :global(.content-header) {
+        margin-bottom: 1rem;
+    }
+}
 </style>
+
+
+
+
+
+

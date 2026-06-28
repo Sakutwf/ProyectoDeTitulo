@@ -5,10 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Actividad;
 use App\Models\Archivo;
 use App\Models\BoletaViatico;
-use App\Models\GaleriaActividad;
 use App\Models\Voluntario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class ActividadController extends Controller
 {
@@ -39,6 +39,10 @@ class ActividadController extends Controller
     public function store(Request $request)
     {
         $data = $this->validateActividad($request);
+        $this->ensureVolunteerHoursWithinActivityTotal(
+            $data['horas_totales'] ?? null,
+            $request->input('voluntarios_detalle', [])
+        );
 
         $actividad = Actividad::create($data);
         $this->syncVoluntarios($actividad, $request);
@@ -60,6 +64,10 @@ class ActividadController extends Controller
     {
         $actividad = Actividad::findOrFail($id);
         $data = $this->validateActividad($request, true);
+        $this->ensureVolunteerHoursWithinActivityTotal(
+            $data['horas_totales'] ?? $actividad->horas_totales,
+            $request->input('voluntarios_detalle', [])
+        );
 
         $actividad->update($data);
         $this->syncVoluntarios($actividad, $request);
@@ -84,6 +92,11 @@ class ActividadController extends Controller
             'horas_asistidas' => ['nullable', 'numeric', 'min:0'],
             'registrado_por' => ['nullable', 'integer', 'exists:users,id'],
         ]);
+
+        $this->ensureVolunteerHoursWithinActivityTotal($actividad->horas_totales, [[
+            'voluntario_id' => $data['voluntario_id'],
+            'horas_asistidas' => $data['horas_asistidas'] ?? 0,
+        ]]);
 
         $actividad->voluntarios()->syncWithoutDetaching([
             $data['voluntario_id'] => [
@@ -244,13 +257,91 @@ class ActividadController extends Controller
         );
     }
 
+    private function normalizeActividadAuditReferences(Request $request): void
+    {
+        $currentUserId = $request->user()?->id;
+
+        $creadoPor = $request->input('creado_por');
+
+        if ($creadoPor === '' || $creadoPor === null) {
+            if ($currentUserId !== null) {
+                $request->merge(['creado_por' => $currentUserId]);
+            } else {
+                $request->request->remove('creado_por');
+            }
+        }
+
+        if (! $request->has('voluntarios_detalle') || ! is_array($request->input('voluntarios_detalle'))) {
+            return;
+        }
+
+        $normalizedDetails = collect($request->input('voluntarios_detalle', []))
+            ->map(function ($detalle) use ($currentUserId) {
+                if (! is_array($detalle)) {
+                    return $detalle;
+                }
+
+                $registradoPor = $detalle['registrado_por'] ?? null;
+
+                if ($registradoPor === '' || $registradoPor === null) {
+                    if ($currentUserId !== null) {
+                        $detalle['registrado_por'] = $currentUserId;
+                    } else {
+                        unset($detalle['registrado_por']);
+                    }
+                }
+
+                return $detalle;
+            })
+            ->all();
+
+        $request->merge(['voluntarios_detalle' => $normalizedDetails]);
+    }
+
+    private function normalizeHorasTotalesFromSchedule(Request $request): void
+    {
+        $rawHours = $request->input('horas_totales');
+
+        if (! ($rawHours === '' || $rawHours === null)) {
+            return;
+        }
+
+        $start = $request->input('hora_inicio');
+        $end = $request->input('hora_termino');
+
+        if (! is_string($start) || ! is_string($end) || trim($start) === '' || trim($end) === '') {
+            return;
+        }
+
+        try {
+            $startTime = new \DateTimeImmutable(trim($start));
+            $endTime = new \DateTimeImmutable(trim($end));
+        } catch (\Exception $exception) {
+            return;
+        }
+
+        if ($endTime <= $startTime) {
+            return;
+        }
+
+        $minutes = ($endTime->getTimestamp() - $startTime->getTimestamp()) / 60;
+        $hours = round($minutes / 60, 2);
+
+        if ($hours > 0) {
+            $request->merge(['horas_totales' => $hours]);
+        }
+    }
+
+
     private function validateActividad(Request $request, bool $partial = false): array
     {
         $required = $partial ? 'sometimes' : 'required';
+        $this->normalizeActividadAuditReferences($request);
+        $this->normalizeHorasTotalesFromSchedule($request);
 
         return $request->validate([
             'filial_id' => [$required, 'integer', 'exists:filiales,id'],
-            'creado_por' => [$required, 'integer', 'exists:users,id'],
+            'creado_por' => ['nullable', 'integer', 'exists:users,id'],
             'nombre' => [$required, 'string', 'max:200'],
             'tipo' => [$required, 'string', 'max:100'],
             'objetivo' => ['nullable', 'string'],
@@ -296,4 +387,46 @@ class ActividadController extends Controller
             $actividad->voluntarios()->sync($syncData);
         }
     }
+
+
+    private function ensureVolunteerHoursWithinActivityTotal($horasTotales, array $voluntariosDetalle): void
+    {
+        $activityHours = $horasTotales === null || $horasTotales === '' ? null : (float) $horasTotales;
+        $details = collect($voluntariosDetalle)
+            ->values()
+            ->map(fn (array $detalle) => [
+                'voluntario_id' => $detalle['voluntario_id'] ?? null,
+                'horas_asistidas' => (float) ($detalle['horas_asistidas'] ?? 0),
+            ])
+            ->all();
+
+        $hasAssignedHours = collect($details)->contains(fn (array $detalle) => $detalle['horas_asistidas'] > 0);
+
+        if (! $hasAssignedHours) {
+            return;
+        }
+
+        if ($activityHours === null) {
+            throw ValidationException::withMessages([
+                'horas_totales' => ['Debes ingresar las horas totales de la actividad antes de asignar horas a voluntarios.'],
+            ]);
+        }
+
+        $errors = [];
+
+        foreach ($details as $index => $detalle) {
+            if ($detalle['horas_asistidas'] > $activityHours) {
+                $errors["voluntarios_detalle.$index.horas_asistidas"] = [
+                    'Las horas asignadas a cada voluntario no pueden superar las horas totales de la actividad.',
+                ];
+            }
+        }
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
+    }
 }
+
+
+

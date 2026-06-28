@@ -28,7 +28,7 @@
             </div>
 
             <div class="table-responsive">
-              <table class="table custom-table">
+              <table class="table custom-table custom-table--responsive">
                 <thead>
                   <tr>
                     <th>#</th>
@@ -44,16 +44,16 @@
                 </thead>
                 <tbody>
                   <tr v-for="(actividad, index) in actividades" :key="actividad.id">
-                    <td>{{ (meta.from || 1) + index }}</td>
+                    <td data-label="#">{{ (meta.from || 1) + index }}</td>
                     <td>
                       <div class="fw-semibold">{{ actividad.nombre || '-' }}</div>
                       <small class="text-muted">{{ actividad.objetivo || 'Sin objetivo registrado' }}</small>
                     </td>
-                    <td><span class="badge bg-secondary">{{ actividad.tipo || '-' }}</span></td>
-                    <td>{{ actividad.filial?.nombre || '-' }}</td>
-                    <td>{{ formatDateRange(actividad.fecha_inicio, actividad.fecha_termino) }}</td>
-                    <td>{{ actividad.lugar || '-' }}</td>
-                    <td>{{ formatHours(actividad.horas_totales) }}</td>
+                    <td data-label="Tipo"><span class="badge bg-secondary">{{ actividad.tipo || '-' }}</span></td>
+                    <td data-label="Filial">{{ actividad.filial?.nombre || '-' }}</td>
+                    <td data-label="Fechas">{{ formatDateRange(actividad.fecha_inicio, actividad.fecha_termino) }}</td>
+                    <td data-label="Lugar">{{ actividad.lugar || '-' }}</td>
+                    <td data-label="Horas">{{ formatHours(actividad.horas_totales) }}</td>
                     <td>
                       <button class="btn btn-sm btn-outline-primary" @click="showVolunteers(actividad)">
                         {{ actividad.voluntarios?.length || 0 }} voluntario(s)
@@ -70,8 +70,8 @@
                       </div>
                     </td>
                   </tr>
-                  <tr v-if="!actividades.length">
-                    <td colspan="9" class="text-center py-3">No hay actividades disponibles</td>
+                  <tr v-if="!actividades.length" class="no-results-row">
+                    <td colspan="9" class="text-center py-3 no-results-cell">No hay actividades disponibles</td>
                   </tr>
                 </tbody>
               </table>
@@ -118,10 +118,9 @@ import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import Swal from 'sweetalert2'
 import SidebarMenu from '../components/SidebarMenu.vue'
+import { API_BASE } from '../config/api'
 import ActividadEditView from './ActividadEditView.vue'
 import ActividadCreateView from './ActividadCreateView.vue'
-
-const API_BASE = 'http://localhost:8000/api'
 
 const actividades = ref([])
 const meta = ref({ current_page: 1, last_page: 1, from: 1 })
@@ -312,4 +311,86 @@ onMounted(() => {
   background: #f5f5f5;
   border-color: #e0e0e0;
 }
+
+.actions-cell {
+  flex-wrap: nowrap;
+  gap: 0.55rem;
+}
+
+@media (max-width: 767.98px) {
+  .table-responsive {
+    overflow: visible;
+  }
+
+  .custom-table--responsive,
+  .custom-table--responsive tbody,
+  .custom-table--responsive tr,
+  .custom-table--responsive td {
+    display: block;
+    width: 100% !important;
+  }
+
+  .custom-table--responsive thead {
+    display: none;
+  }
+
+  .custom-table--responsive tbody {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .custom-table--responsive tr {
+    padding: 0.95rem;
+    border: 1px solid #dfe7f1;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 10px 24px rgba(15, 47, 95, 0.06);
+  }
+
+  .custom-table--responsive td {
+    display: grid;
+    grid-template-columns: minmax(6.8rem, 8.5rem) minmax(0, 1fr);
+    gap: 0.7rem;
+    padding: 0.3rem 0;
+    border-bottom: none;
+    text-align: left !important;
+  }
+
+  .custom-table--responsive td::before {
+    content: attr(data-label);
+    color: #71829a;
+    font-size: 0.77rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .custom-table--responsive td[data-label="Voluntarios"],
+  .custom-table--responsive td[data-label="Acciones"] {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+
+  .actions-cell {
+    justify-content: flex-start !important;
+  }
+
+  .custom-table--responsive tr.no-results-row {
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .custom-table--responsive .no-results-cell {
+    display: block;
+    padding: 1rem 0;
+  }
+
+  .custom-table--responsive .no-results-cell::before {
+    content: none;
+  }
+}
 </style>
+
+

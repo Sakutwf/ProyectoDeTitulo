@@ -7,6 +7,7 @@ import HistorialPdfView from '../views/HistorialPdfView.vue'
 import LoginView from '../views/LoginView.vue'
 import AccessSelectionView from '../views/AccessSelectionView.vue'
 import VolunteerActivitiesView from '../views/VolunteerActivitiesView.vue'
+import DocumentosView from '../views/DocumentosView.vue'
 import store from '../store'
 import { defaultRouteForUser } from '../utils/auth'
 
@@ -44,6 +45,12 @@ const routes = [
     path: '/actividades',
     name: 'actividades',
     component: ActividadView,
+    meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
+  },
+  {
+    path: '/documentos',
+    name: 'documentos',
+    component: DocumentosView,
     meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
   },
   {
@@ -130,3 +137,5 @@ router.beforeEach((to, from, next) => {
 })
 
 export default router
+
+

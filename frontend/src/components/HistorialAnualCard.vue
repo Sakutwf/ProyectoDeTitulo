@@ -69,13 +69,13 @@ const summaryText = computed(() => {
 <style scoped>
 .annual-card {
   display: grid;
-  grid-template-columns: clamp(80px, 5.4vw, 106px) 1fr;
-  gap: clamp(0.85rem, 0.75vw, 1rem);
+  grid-template-columns: clamp(72px, 4.8vw, 92px) 1fr;
+  gap: clamp(0.7rem, 0.65vw, 0.9rem);
   align-items: stretch;
   background: #ffffff;
   border: 1px solid #ece8e2;
   border-radius: 18px;
-  padding: clamp(0.8rem, 0.8vw, 1rem);
+  padding: clamp(0.72rem, 0.7vw, 0.9rem);
   color: #0f2f5f;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
@@ -95,11 +95,11 @@ const summaryText = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: clamp(80px, 5vw, 106px);
-  border-radius: 22px;
+  min-height: clamp(72px, 4.6vw, 92px);
+  border-radius: 20px;
   background: #ff313d;
   color: #fff;
-  font-size: clamp(1.35rem, 0.8vw + 1.18rem, 1.8rem);
+  font-size: clamp(1.24rem, 0.7vw + 1.1rem, 1.62rem);
   font-weight: 800;
   letter-spacing: 0.04em;
 }
@@ -111,29 +111,31 @@ const summaryText = computed(() => {
 .annual-card__header {
   display: flex;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.6rem;
   align-items: center;
-  margin-bottom: 0.45rem;
+  margin-bottom: 0.32rem;
 }
 
 .annual-card__header strong {
-  font-size: clamp(0.95rem, 0.25vw + 0.9rem, 1.05rem);
+  font-size: clamp(0.92rem, 0.2vw + 0.88rem, 1rem);
 }
 
 .annual-card__badge {
   white-space: nowrap;
-  padding: 0.2rem 0.55rem;
+  padding: 0.18rem 0.5rem;
   border-radius: 999px;
   background: #eef4fb;
   color: #0f2f5f;
-  font-size: clamp(0.82rem, 0.18vw + 0.79rem, 0.92rem);
+  font-size: clamp(0.78rem, 0.14vw + 0.76rem, 0.88rem);
   font-weight: 700;
 }
 
 .annual-card__text {
   margin: 0;
   color: #5f6f82;
-  font-size: clamp(0.94rem, 0.22vw + 0.89rem, 1.02rem);
-  line-height: 1.4;
+  font-size: clamp(0.9rem, 0.16vw + 0.87rem, 0.98rem);
+  line-height: 1.32;
 }
 </style>
+
+

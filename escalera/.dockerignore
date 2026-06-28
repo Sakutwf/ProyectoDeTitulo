@@ -1,0 +1,14 @@
+.git
+.agents
+.codex
+artifacts
+tmp
+backend/.env
+backend/vendor
+backend/node_modules
+frontend/node_modules
+frontend/dist
+frontend/dist-build-*
+frontend/frontend-dev.log
+**/.DS_Store
+**/Thumbs.db

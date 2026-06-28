@@ -1,0 +1,73 @@
+name: sistema-cruz-roja
+
+x-laravel-env: &laravel-env
+  APP_NAME: ${APP_NAME:-Sistema Cruz Roja}
+  APP_ENV: ${APP_ENV:-production}
+  APP_DEBUG: ${APP_DEBUG:-false}
+  APP_URL: ${APP_URL:-http://localhost:8080}
+  APP_KEY: ${APP_KEY}
+  LOG_CHANNEL: ${LOG_CHANNEL:-stack}
+  LOG_LEVEL: ${LOG_LEVEL:-warning}
+  DB_CONNECTION: ${DB_CONNECTION:-mariadb}
+  DB_HOST: db
+  DB_PORT: 3306
+  DB_DATABASE: ${MARIADB_DATABASE:-SistemaCruzRoja}
+  DB_USERNAME: ${MARIADB_USER:-cruzroja}
+  DB_PASSWORD: ${MARIADB_PASSWORD}
+  SESSION_DRIVER: ${SESSION_DRIVER:-database}
+  CACHE_STORE: ${CACHE_STORE:-database}
+  QUEUE_CONNECTION: ${QUEUE_CONNECTION:-database}
+  SESSION_DOMAIN: ${SESSION_DOMAIN:-localhost}
+  SANCTUM_STATEFUL_DOMAINS: ${SANCTUM_STATEFUL_DOMAINS:-localhost,127.0.0.1}
+
+services:
+  db:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-SistemaCruzRoja}
+      MARIADB_USER: ${MARIADB_USER:-cruzroja}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -uroot -p$$MARIADB_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  app:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    environment: *laravel-env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - backend_storage:/var/www/backend/storage
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web/Dockerfile
+      args:
+        VUE_APP_API_BASE_URL: ${VUE_APP_API_BASE_URL:-/api}
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_started
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    volumes:
+      - backend_storage:/var/www/backend/storage:ro
+
+volumes:
+  mariadb_data:
+  backend_storage:

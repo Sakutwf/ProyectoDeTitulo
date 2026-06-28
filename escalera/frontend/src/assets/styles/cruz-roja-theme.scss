@@ -1,0 +1,162 @@
+/**
+ * Cruz Roja - Tema Global
+ * Basado en el Manual de Identidad Corporativa: https://www2.cruzroja.es/manual-identidad-cr
+ */
+
+// Importación de fuentes
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap');
+
+// Variables de colores primarios de Cruz Roja
+:root {
+  // Color principal - Rojo Cruz Roja
+  --cr-red: #ec1c24;
+  --cr-red-dark: #c4161d;
+  --cr-red-light: #ff3b42;
+  
+  // Colores complementarios
+  --cr-white: #ffffff;
+  --cr-black: #1a1a1a;
+  --cr-gray: #f5f5f5;
+  --cr-gray-dark: #4a4a4a;
+  
+  // Colores de estado
+  --cr-success: #3aaa35;
+  --cr-warning: #ffc107;
+  --cr-info: #2196f3;
+  --cr-danger: #ec1c24;
+  
+  // Colores de fondo
+  --cr-background: #f8f9fa;
+  --cr-background-light: #ffffff;
+  --cr-background-dark: #eeeeee;
+  
+  // Sombras
+  --cr-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  --cr-shadow-strong: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+// Tipografía global
+body {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--cr-black);
+  background-color: var(--cr-background);
+}
+
+// Encabezados - Tipografía Montserrat
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+// Tamaños específicos para títulos
+h1, .h1 { font-size: 2.25rem; }
+h2, .h2 { font-size: 1.875rem; }
+h3, .h3 { font-size: 1.5rem; }
+h4, .h4 { font-size: 1.25rem; }
+h5, .h5 { font-size: 1.125rem; }
+h6, .h6 { font-size: 1rem; }
+
+// Clases de utilidad para colores de texto
+.text-cr-red { color: var(--cr-red) !important; }
+.text-cr-white { color: var(--cr-white) !important; }
+.text-cr-black { color: var(--cr-black) !important; }
+.text-cr-gray { color: var(--cr-gray-dark) !important; }
+
+// Clases de utilidad para fondos
+.bg-cr-red { background-color: var(--cr-red) !important; color: var(--cr-white) !important; }
+.bg-cr-red-dark { background-color: var(--cr-red-dark) !important; color: var(--cr-white) !important; }
+.bg-cr-red-light { background-color: var(--cr-red-light) !important; color: var(--cr-white) !important; }
+.bg-cr-white { background-color: var(--cr-white) !important; }
+.bg-cr-gray { background-color: var(--cr-gray) !important; }
+
+// Botones estilo Cruz Roja
+.btn-cr-primary {
+  background-color: var(--cr-red);
+  border-color: var(--cr-red);
+  color: var(--cr-white);
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 500;
+  
+  &:hover, &:focus, &:active {
+    background-color: var(--cr-red-dark);
+    border-color: var(--cr-red-dark);
+    color: var(--cr-white);
+  }
+}
+
+.btn-cr-outline {
+  background-color: transparent;
+  border-color: var(--cr-red);
+  color: var(--cr-red);
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 500;
+  
+  &:hover, &:focus, &:active {
+    background-color: var(--cr-red);
+    border-color: var(--cr-red);
+    color: var(--cr-white);
+  }
+}
+
+// Bordes estilo Cruz Roja
+.border-cr-red { border-color: var(--cr-red) !important; }
+
+// Otros elementos de UI
+.card {
+  border-radius: 8px;
+  border: none;
+  box-shadow: var(--cr-shadow);
+}
+
+.card-header {
+  background-color: var(--cr-white);
+  border-bottom: 1px solid var(--cr-gray);
+  padding: 1rem 1.25rem;
+}
+
+.table {
+  thead th {
+    background-color: var(--cr-gray);
+    border-bottom: 2px solid var(--cr-red);
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+  }
+}
+
+// Sidebar específico de Cruz Roja
+.sidebar {
+  background-color: var(--cr-red);
+  color: var(--cr-white);
+  
+  .nav-link {
+    color: rgba(255, 255, 255, 0.9);
+    font-family: 'Montserrat', sans-serif;
+    
+    &:hover, &:focus, &.active {
+      background-color: rgba(255, 255, 255, 0.15);
+      color: var(--cr-white);
+      border-left-color: var(--cr-white);
+    }
+  }
+}
+
+// Estilos para formularios
+.form-control, .form-select {
+  border-radius: 4px;
+  border: 1px solid #ced4da;
+  padding: 0.375rem 0.75rem;
+  
+  &:focus {
+    border-color: var(--cr-red-light);
+    box-shadow: 0 0 0 0.25rem rgba(236, 28, 36, 0.25);
+  }
+}
+
+.form-label {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}

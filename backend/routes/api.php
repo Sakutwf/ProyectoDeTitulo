@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FilialController;
 use App\Http\Controllers\HojaVidaAnualController;
+use App\Http\Controllers\DocumentoActividadController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
@@ -22,6 +23,12 @@ Route::apiResource('user', UserController::class);
 Route::apiResource('role', RoleController::class);
 Route::apiResource('permissions', PermissionController::class);
 Route::get('filiales', [FilialController::class, 'index']);
+Route::get('actividad/{actividad}/documentos/prefill', [DocumentoActividadController::class, 'prefill']);
+Route::get('actividad/{actividad}/documentos', [DocumentoActividadController::class, 'index']);
+Route::post('actividad/{actividad}/documentos', [DocumentoActividadController::class, 'store']);
+Route::get('documentos-actividad/{documentoActividad}', [DocumentoActividadController::class, 'show']);
+Route::put('documentos-actividad/{documentoActividad}', [DocumentoActividadController::class, 'update']);
+Route::delete('documentos-actividad/{documentoActividad}', [DocumentoActividadController::class, 'destroy']);
 Route::post('actividad/{id}/voluntarios', [ActividadController::class, 'asociarVoluntario']);
 Route::delete('actividad/{id}/voluntarios', [ActividadController::class, 'desasociarVoluntario']);
 Route::get('actividad/{id}/galeria', [ActividadController::class, 'galeria']);
@@ -41,3 +48,5 @@ Route::get('/users', function(){
       'name' => $user->name,
   ]);
 });
+
+

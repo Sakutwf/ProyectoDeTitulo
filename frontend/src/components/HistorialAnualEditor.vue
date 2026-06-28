@@ -150,6 +150,15 @@
               </div>
             </label>
           </div>
+        </article>
+
+        <article v-if="!isSectionModal" class="editor-card editor-card--section">
+          <div class="section-header">
+            <div>
+              <h4>Comision de servicio</h4>
+              <p class="section-note">Completa esta seccion solo si el voluntario estuvo en comision de servicio durante el periodo.</p>
+            </div>
+          </div>
 
           <div class="form-grid period-service-grid">
             <label class="checkbox-field">
@@ -237,6 +246,28 @@
                   }}
                 </button>
               </div>
+              <div v-if="hasAttachmentPreview(title)" class="attachment-preview">
+                <img
+                  v-if="attachmentPreviewKind(title) === 'image'"
+                  :src="attachmentPreviewUrl(title)"
+                  :alt="`Vista previa de ${attachmentDisplayName(title, 'titulo')}`"
+                  class="attachment-preview__image"
+                >
+                <iframe
+                  v-else-if="attachmentPreviewKind(title) === 'pdf'"
+                  :src="attachmentPreviewUrl(title)"
+                  class="attachment-preview__frame"
+                  title="Vista previa del respaldo del titulo"
+                ></iframe>
+                <a
+                  :href="attachmentPreviewUrl(title)"
+                  target="_blank"
+                  rel="noopener"
+                  class="attachment-preview__open"
+                >
+                  Abrir vista completa
+                </a>
+              </div>
               <button
   type="button"
   class="icon-delete-button"
@@ -313,6 +344,28 @@
                           : 'Limpiar'
                   }}
                 </button>
+              </div>
+              <div v-if="hasAttachmentPreview(course)" class="attachment-preview">
+                <img
+                  v-if="attachmentPreviewKind(course) === 'image'"
+                  :src="attachmentPreviewUrl(course)"
+                  :alt="`Vista previa de ${attachmentDisplayName(course, 'curso')}`"
+                  class="attachment-preview__image"
+                >
+                <iframe
+                  v-else-if="attachmentPreviewKind(course) === 'pdf'"
+                  :src="attachmentPreviewUrl(course)"
+                  class="attachment-preview__frame"
+                  title="Vista previa del respaldo del curso"
+                ></iframe>
+                <a
+                  :href="attachmentPreviewUrl(course)"
+                  target="_blank"
+                  rel="noopener"
+                  class="attachment-preview__open"
+                >
+                  Abrir vista completa
+                </a>
               </div>
               <button
   type="button"
@@ -424,10 +477,9 @@
 
 <script setup>
 import axios from 'axios'
-import { computed, nextTick, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { API_BASE } from '../config/api'
 import { show_alerta } from '../funciones'
-
-const API_BASE = 'http://127.0.0.1:8000/api'
 
 const props = defineProps({
   volunteerId: {
@@ -563,6 +615,10 @@ const attendancePreview = computed(() => {
 const selectedCargoDetails = computed(() => cargoOptions.find((cargo) => cargo.key === form.cargo_clave) || null)
 const selectedCargoLabel = computed(() => formatCargoLabel(selectedCargoDetails.value))
 
+onBeforeUnmount(() => {
+  cleanupAttachmentPreviews()
+})
+
 watch(
   () => props.record,
   async (record) => {
@@ -640,6 +696,7 @@ function createEmptyTitleRow() {
     archivo: null,
     archivo_url: '',
     archivo_nombre: '',
+    archivo_preview_url: '',
     eliminar_archivo: false
   }
 }
@@ -653,6 +710,7 @@ function createEmptyCourseRow() {
     archivo: null,
     archivo_url: '',
     archivo_nombre: '',
+    archivo_preview_url: '',
     eliminar_archivo: false
   }
 }
@@ -730,6 +788,7 @@ function applyRecord(record) {
       archivo: null,
       archivo_url: row.archivo_url || '',
       archivo_nombre: row.archivo_nombre || '',
+      archivo_preview_url: '',
       eliminar_archivo: false
     }))
     next.cursos = (record.cursos?.length ? record.cursos : [createEmptyCourseRow()]).map((row) => ({
@@ -740,6 +799,7 @@ function applyRecord(record) {
       archivo: null,
       archivo_url: row.archivo_url || '',
       archivo_nombre: row.archivo_nombre || '',
+      archivo_preview_url: '',
       eliminar_archivo: false
     }))
     next.sanciones = (record.sanciones?.length ? record.sanciones : [createEmptySanctionRow()]).map((row) => ({
@@ -756,6 +816,7 @@ function applyRecord(record) {
     }, createEmptyRecognition())
   }
 
+  cleanupAttachmentPreviews()
   Object.assign(form, next)
   showSanctionsSection.value = next.sanciones.some((row) => sanctionHasData(row))
   showCargoSelector.value = next.tiene_cargo_periodo
@@ -822,6 +883,78 @@ function formatCargoLabel(cargo) {
   }
 
   return `${cargo.grupo}: ${cargo.nombre} de ${cargo.direccion}`
+}
+
+function cleanupAttachmentPreviews() {
+  form.titulos.forEach((row) => revokeAttachmentPreview(row))
+  form.cursos.forEach((row) => revokeAttachmentPreview(row))
+}
+
+function revokeAttachmentPreview(row) {
+  if (row?.archivo_preview_url && String(row.archivo_preview_url).startsWith('blob:')) {
+    URL.revokeObjectURL(row.archivo_preview_url)
+  }
+
+  if (row) {
+    row.archivo_preview_url = ''
+  }
+}
+
+function setAttachmentFile(row, file) {
+  if (!row) {
+    return
+  }
+
+  revokeAttachmentPreview(row)
+  row.archivo = file
+  row.archivo_preview_url = file ? URL.createObjectURL(file) : ''
+  row.eliminar_archivo = false
+}
+
+function attachmentPreviewUrl(row) {
+  if (!row || row.eliminar_archivo) {
+    return ''
+  }
+
+  if (row.archivo && row.archivo_preview_url) {
+    return row.archivo_preview_url
+  }
+
+  return row.archivo_url || ''
+}
+
+function attachmentDisplayName(row, fallback = 'archivo') {
+  return row?.archivo?.name || row?.archivo_nombre || fallback
+}
+
+function attachmentPreviewKind(row) {
+  if (!row || row.eliminar_archivo) {
+    return null
+  }
+
+  if (row.archivo?.type?.startsWith('image/')) {
+    return 'image'
+  }
+
+  if (row.archivo?.type === 'application/pdf') {
+    return 'pdf'
+  }
+
+  const reference = attachmentDisplayName(row, row?.archivo_url || '')
+
+  if (/\.(jpg|jpeg|png|webp|gif|bmp|svg)$/i.test(reference)) {
+    return 'image'
+  }
+
+  if (/\.pdf$/i.test(reference)) {
+    return 'pdf'
+  }
+
+  return null
+}
+
+function hasAttachmentPreview(row) {
+  return Boolean(attachmentPreviewUrl(row) && attachmentPreviewKind(row))
 }
 
 function appendValue(formData, key, value) {
@@ -909,6 +1042,12 @@ function addTitleRow() {
 }
 
 function removeTitleRow(index) {
+  const row = form.titulos[index]
+
+  if (row) {
+    revokeAttachmentPreview(row)
+  }
+
   if (form.titulos.length === 1) {
     form.titulos.splice(0, 1, createEmptyTitleRow())
     return
@@ -922,6 +1061,12 @@ function addCourseRow() {
 }
 
 function removeCourseRow(index) {
+  const row = form.cursos[index]
+
+  if (row) {
+    revokeAttachmentPreview(row)
+  }
+
   if (form.cursos.length === 1) {
     form.cursos.splice(0, 1, createEmptyCourseRow())
     return
@@ -974,8 +1119,7 @@ function onTitleFileSelected(index, event) {
     return
   }
 
-  row.archivo = file
-  row.eliminar_archivo = false
+  setAttachmentFile(row, file)
   event.target.value = ''
 }
 
@@ -987,8 +1131,7 @@ function onCourseFileSelected(index, event) {
     return
   }
 
-  row.archivo = file
-  row.eliminar_archivo = false
+  setAttachmentFile(row, file)
   event.target.value = ''
 }
 
@@ -1000,6 +1143,7 @@ function clearTitleAttachment(index) {
   }
 
   if (row.archivo) {
+    revokeAttachmentPreview(row)
     row.archivo = null
     return
   }
@@ -1017,6 +1161,7 @@ function clearCourseAttachment(index) {
   }
 
   if (row.archivo) {
+    revokeAttachmentPreview(row)
     row.archivo = null
     return
   }
@@ -1306,7 +1451,6 @@ async function submit() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10px 18px rgba(255, 55, 67, 0.18);
 }
 
 .attendance-summary__action--increase {
@@ -1523,6 +1667,43 @@ async function submit() {
   flex-wrap: wrap;
 }
 
+.attachment-preview {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.85rem;
+  border: 1px solid #c9d8e6;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.attachment-preview__image {
+  width: 100%;
+  max-height: 280px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: #f6f9fc;
+}
+
+.attachment-preview__frame {
+  width: 100%;
+  height: 280px;
+  border: 1px solid #d8e3ee;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.attachment-preview__open {
+  justify-self: start;
+  color: #173b70;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.attachment-preview__open:hover {
+  text-decoration: underline;
+}
+
 .attachment-link {
   color: #173b70;
   font-weight: 700;
@@ -1663,6 +1844,9 @@ async function submit() {
   }
 }
 </style>
+
+
+
 
 
 

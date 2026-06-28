@@ -63,4 +63,10 @@ class Actividad extends Model
     {
         return $this->hasMany(BoletaViatico::class, 'actividad_id');
     }
+
+    public function documentos()
+    {
+        return $this->hasMany(DocumentoActividad::class, 'actividad_id');
+    }
 }
+

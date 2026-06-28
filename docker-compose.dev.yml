@@ -1,0 +1,40 @@
+services:
+  db:
+    ports:
+      - "${DB_FORWARD_PORT:-3306}:3306"
+
+  app:
+    environment:
+      APP_ENV: local
+      APP_DEBUG: true
+      LOG_LEVEL: debug
+    volumes:
+      - ./backend:/var/www/backend
+      - backend_vendor:/var/www/backend/vendor
+      - backend_storage:/var/www/backend/storage
+
+  web:
+    depends_on:
+      frontend-builder:
+        condition: service_started
+    volumes:
+      - backend_storage:/var/www/backend/storage:ro
+      - frontend_dist:/usr/share/nginx/html:ro
+      - ./backend/public:/var/www/backend/public:ro
+
+  frontend-builder:
+    image: node:20-alpine
+    working_dir: /usr/src/frontend
+    command: sh -lc "npm ci && npm run build -- --watch"
+    restart: unless-stopped
+    environment:
+      VUE_APP_API_BASE_URL: ${VUE_APP_API_BASE_URL:-/api}
+    volumes:
+      - ./frontend:/usr/src/frontend
+      - frontend_node_modules:/usr/src/frontend/node_modules
+      - frontend_dist:/usr/src/frontend/dist
+
+volumes:
+  backend_vendor:
+  frontend_node_modules:
+  frontend_dist:

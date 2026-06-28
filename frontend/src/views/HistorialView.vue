@@ -79,8 +79,40 @@
                     </div>
                   </div>
 
-                  <div class="hero-brand">
-                    <img :src="logoSrc" alt="Cruz Roja Chilena">
+                  <div class="hero-side">
+                    <div class="hero-brand">
+                      <img :src="logoSrc" alt="Cruz Roja Chilena">
+                    </div>
+
+                    <div class="hero-brand-actions">
+                      <button
+                        type="button"
+                        class="action-button action-button--primary hero-brand-action"
+                        :disabled="!selectedAnnual"
+                        @click="openPdfExport"
+                      >
+                        Exportar PDF
+                      </button>
+
+                      <button
+                        v-if="canManageHojaVida"
+                        type="button"
+                        class="action-button hero-brand-action"
+                        @click="openCreateEditor"
+                      >
+                        Agregar hoja anual
+                      </button>
+
+                      <button
+                        v-if="canManageHojaVida"
+                        type="button"
+                        class="action-button action-button--ghost hero-brand-action"
+                        :disabled="!selectedAnnual"
+                        @click="openEditEditor"
+                      >
+                        Editar periodo
+                      </button>
+                    </div>
                   </div>
                 </div>
               </article>
@@ -193,15 +225,19 @@
                       </div>
                     </div>
 
-                    <div class="fact-grid">
+                    <div class="fact-grid fact-grid--personal">
                       <article
                         v-for="fact in filteredPersonalFacts"
                         :key="fact.label"
-                        class="fact-tile"
-                        :class="{ 'fact-tile--wide': fact.wide }"
+                        class="fact-tile fact-tile--personal"
+                        :class="fact.layoutClass"
                       >
-                        <span>{{ fact.label }}</span>
-                        <strong>{{ fact.value }}</strong>
+                        <span class="fact-tile__label">{{ fact.label }}</span>
+                        <div v-if="fact.secondaryValue" class="fact-tile__split">
+                          <strong>{{ fact.value }}</strong>
+                          <strong class="fact-tile__secondary">{{ fact.secondaryValue }}</strong>
+                        </div>
+                        <strong v-else>{{ fact.value }}</strong>
                       </article>
                     </div>
                   </section>
@@ -457,9 +493,8 @@ import logoSrc from '../assets/LogoVertical.svg'
 import SidebarMenu from '../components/SidebarMenu.vue'
 import HistorialAnualCard from '../components/HistorialAnualCard.vue'
 import HistorialAnualEditor from '../components/HistorialAnualEditor.vue'
+import { API_BASE } from '../config/api'
 import { show_alerta } from '../funciones'
-
-const API_BASE = 'http://127.0.0.1:8000/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -521,6 +556,7 @@ const displayName = computed(() => {
 })
 
 const cargoLabel = computed(() =>
+  selectedAnnual.value?.cargo_nombre ||
   selectedAnnual.value?.cargo ||
   volunteer.value?.cargo ||
   'Sin Cargo registrado'
@@ -537,8 +573,8 @@ const periodCargoInfo = computed(() => {
   }
 
   return {
-    hasCargo: Boolean(annual.cargo),
-    label: annual.cargo || 'Sin cargo registrado para este periodo'
+    hasCargo: Boolean(annual.cargo_nombre || annual.cargo),
+    label: annual.cargo_nombre || annual.cargo || 'Sin cargo registrado para este periodo'
   }
 })
 
@@ -565,20 +601,26 @@ const personalFacts = computed(() => {
   }
 
   return [
-    { label: 'Nombres', value: volunteer.value.nombres || 'Sin registro' },
-    { label: 'Apellidos', value: volunteer.value.apellidos || 'Sin registro' },
+    { label: 'Nombre', value: displayName.value, layoutClass: 'fact-tile--span-2 fact-tile--primary' },
     { label: 'RUT', value: volunteer.value.rut || 'Sin registro' },
-    { label: 'Celular', value: volunteer.value.celular || 'Sin registro' },
-    { label: 'Nacionalidad', value: volunteer.value.nacionalidad || 'Sin registro' },
     { label: 'Edad', value: ageLabel.value },
+    { label: 'Estado Civil', value: volunteer.value.estado_civil || 'Sin registro' },
+    { label: 'Domicilio', value: volunteer.value.domicilio || 'Sin registro', layoutClass: 'fact-tile--span-2' },
+    { label: 'Nacionalidad', value: volunteer.value.nacionalidad || 'Sin registro' },
+    { label: 'Celular', value: volunteer.value.celular || 'Sin registro' },
+    { label: 'Correo electrónico', value: volunteer.value.correo_electronico || 'Sin correo', layoutClass: 'fact-tile--email' },
     { label: 'Fecha de nacimiento', value: formatDate(volunteer.value.fecha_nacimiento) },
     { label: 'Alergias', value: volunteer.value.alergias || 'Sin registro' },
-    { label: 'Fecha incorporacion', value: formatDate(volunteer.value.fecha_incorporacion) },
     { label: 'Enfermedades', value: volunteer.value.enfermedades || 'Sin registro' },
-    { label: 'Correo electronico', value: volunteer.value.correo_electronico || 'Sin correo', wide: true },
-    { label: 'Domicilio', value: volunteer.value.domicilio || 'Sin registro', wide: true },
-    { label: 'Contacto de emergencia', value: volunteer.value.contacto_emergencia_nombre || 'Sin registro', wide: true },
-    { label: 'Numero de contacto', value: volunteer.value.contacto_emergencia_numero || 'Sin registro' },
+    { label: 'Grupo Sanguíneo', value: volunteer.value.grupo_sanguineo || 'Sin registro' },
+    { label: 'Nivel de escolaridad', value: volunteer.value.nivel_escolaridad || 'Sin registro' },
+    { label: 'Ocupación', value: volunteer.value.ocupacion || 'Sin registro' },
+    {
+      label: 'Nombre y Contacto para emergencias',
+      value: volunteer.value.contacto_emergencia_nombre || 'Sin registro',
+      secondaryValue: volunteer.value.contacto_emergencia_numero || 'Sin registro',
+      layoutClass: 'fact-tile--span-2 fact-tile--contact'
+    },
   ]
 })
 
@@ -1138,6 +1180,30 @@ function matchesSearch(value) {
   justify-content: center;
   background: #fff;
 }
+.hero-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.6rem;
+}
+
+.hero-brand-actions {
+  display: none;
+  justify-items: start;
+}
+
+.hero-brand-action {
+  width: 100%;
+  max-width: 6.3rem;
+  border-radius: 12px;
+  min-height: 36px;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  white-space: normal;
+  text-align: center;
+}
+
 
 .hero-brand img {
   width: 72px;
@@ -1261,8 +1327,8 @@ function matchesSearch(value) {
 }
 
 .content-grid {
-  grid-template-columns: minmax(0, 1.22fr) minmax(380px, 0.9fr);
-  gap: 1.2rem;
+  grid-template-columns: minmax(0, 1fr) minmax(18.5rem, 21.5rem);
+  gap: 0.95rem;
   align-items: start;
 }
 
@@ -1272,8 +1338,15 @@ function matchesSearch(value) {
   gap: 1.2rem;
 }
 
+.sidebar-column {
+  width: 100%;
+  max-width: 21.5rem;
+  justify-self: stretch;
+}
+
 .history-panel {
   min-width: 0;
+  width: 100%;
 }
 
 .panel-header--history {
@@ -1319,6 +1392,7 @@ function matchesSearch(value) {
 
 .recognition-panel {
   min-width: 0;
+  width: 100%;
 }
 
 .panel,
@@ -1336,8 +1410,10 @@ function matchesSearch(value) {
   gap: 0.85rem;
 }
 
-
-
+.fact-grid--personal {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.85rem;
+}
 
 .fact-tile {
   padding: 0.95rem 1rem;
@@ -1345,7 +1421,65 @@ function matchesSearch(value) {
   border: 1px solid #e7edf4;
 }
 
-.fact-tile--wide {
+.fact-tile--personal {
+  min-width: 0;
+  padding: 0.82rem 0.95rem;
+  display: grid;
+  gap: 0.22rem;
+  align-content: start;
+  background: #f7f9fc;
+  border-color: #e9eef5;
+}
+
+.fact-tile__label {
+  margin-bottom: 0 !important;
+}
+
+.fact-tile--personal .fact-tile__label {
+  color: #7a8faa;
+  font-size: 1.12rem;
+  line-height: 1.16;
+  font-weight: 800;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.fact-tile--personal strong {
+  color: #163a69;
+  font-size: 1.24rem;
+  line-height: 1.26;
+  font-weight: 800;
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+
+.fact-tile--personal.fact-tile--primary strong {
+  font-size: 1.3rem;
+}
+
+.fact-tile--email strong {
+  font-size: 1.1rem;
+  line-height: 1.22;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+
+.fact-tile__split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.6rem;
+  align-items: end;
+}
+
+.fact-tile__secondary {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.fact-tile--wide,
+.fact-tile--span-2 {
   grid-column: span 2;
 }
 
@@ -1444,12 +1578,16 @@ function matchesSearch(value) {
 
 .recognition-grid--sidebar {
   grid-template-columns: 1fr;
+  gap: 0.65rem;
 }
 
 .recognition-item {
   background: #f8fafc;
   border: 1px solid #e7edf4;
-  padding: 0.75rem 0.85rem;
+  padding: 0.62rem 0.74rem;
+  display: grid;
+  gap: 0.12rem;
+  align-content: start;
 }
 
 .recognition-item.active {
@@ -1472,11 +1610,17 @@ function matchesSearch(value) {
 .action-panel {
   display: grid;
   gap: 0.85rem;
+  justify-items: start;
 }
 
 .action-button {
-  width: 100%;
+  width: 13.5rem;
+  max-width: 100%;
   min-height: 54px;
+  padding: 0 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 999px;
   border: 1px solid #173b70;
   background: #173b70;
@@ -1502,7 +1646,10 @@ function matchesSearch(value) {
 .section-upload-button {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.45rem;
+  min-width: 10.75rem;
+  max-width: 100%;
   min-height: 38px;
   padding: 0.45rem 0.9rem;
   border: 1px solid #ff3743;
@@ -1519,7 +1666,7 @@ function matchesSearch(value) {
 
 .annual-list {
   display: grid;
-  gap: 0.85rem;
+  gap: 0.72rem;
 }
 
 .panel-empty {
@@ -1554,7 +1701,7 @@ function matchesSearch(value) {
   }
 
   .content-grid {
-    grid-template-columns: minmax(0, 1.28fr) minmax(420px, 0.92fr);
+    grid-template-columns: minmax(0, 1fr) minmax(19rem, 22rem);
   }
 
   .hero-panel h2 {
@@ -1562,7 +1709,36 @@ function matchesSearch(value) {
   }
 }
 
-@media (max-width: 1199.98px) {
+@media (max-width: 1439.98px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar-column {
+    max-width: none;
+  }
+
+  .hero-layout {
+    grid-template-columns: 170px minmax(0, 1fr);
+    grid-template-areas:
+      "rail panel"
+      "actions actions"
+      "toolbar toolbar";
+    align-items: start;
+  }
+
+  .hero-panel,
+  .action-panel--hero {
+    min-height: 0;
+  }
+
+  .action-panel--hero {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-self: start;
+  }
+}
+
+@media (max-width: 991.98px) {
   .content-grid,
   .hero-layout,
   .split-grid,
@@ -1572,68 +1748,107 @@ function matchesSearch(value) {
     grid-template-columns: 1fr;
   }
 
-  .content-grid {
-    grid-template-columns: 1fr;
+  .hero-layout {
+    grid-template-columns: minmax(8.75rem, 9.75rem) minmax(0, 1fr);
+    grid-template-areas:
+      "rail panel"
+      "toolbar toolbar";
+    gap: 0.95rem;
+    align-items: start;
   }
 
-  .hero-layout {
+  .hero-rail {
+    grid-template-columns: 52px minmax(0, 1fr);
     grid-template-areas:
-      "rail"
-      "panel"
-      "toolbar"
-      "actions";
-    grid-template-columns: 1fr;
+      "back year"
+      "photo photo";
+    gap: 0.65rem;
+    align-items: start;
+  }
+
+  .photo-card {
+    grid-column: 1 / -1;
+    width: 100%;
+    justify-self: stretch;
+  }
+
+  .toolbar-row,
+  .panel-header {
+    align-items: stretch;
+  }
+
+  .hero-panel {
+    padding: 1.15rem 1.2rem;
+    min-height: 0;
+  }
+
+  .hero-panel h2 {
+    font-size: clamp(2.15rem, 1.8rem + 1.3vw, 2.8rem);
+    line-height: 1.08;
+  }
+
+  .hero-top {
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    gap: 1rem;
+  }
+
+  .hero-meta {
+    gap: 0.55rem 0.9rem;
+    margin-bottom: 0.45rem;
+  }
+
+  .hero-side {
+    width: 8.6rem;
+    min-width: 8.6rem;
+    align-items: stretch;
+    gap: 0.55rem;
+  }
+
+  .hero-brand {
+    width: 100px;
+    min-width: 100px;
+    height: 82px;
+    margin-left: 0;
+    align-self: flex-end;
+  }
+
+  .hero-brand img {
+    width: 62px;
+  }
+
+  .hero-brand-actions {
+    display: grid;
+    justify-items: stretch;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .hero-brand-action {
+    max-width: none;
+    border-radius: 999px;
+    min-height: 40px;
+    padding: 0.48rem 0.7rem;
+    font-size: 0.86rem;
+    font-weight: 700;
+    line-height: 1.18;
+  }
+
+  .action-panel--hero {
+    display: none;
+  }
+
+  .fact-grid--personal {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .fact-tile--wide,
   .commission-item--wide {
     grid-column: auto;
   }
-}
 
-@media (max-width: 767.98px) {
-  .d-flex {
-    display: block !important;
-  }
-
-  .content {
-    padding: 0 1rem 1rem;
-  }
-
-  .hero-layout {
-    gap: 0.85rem;
-  }
-
-  .hero-rail {
-    grid-template-columns: 54px minmax(0, 1fr);
-    grid-template-areas:
-      "back year"
-      "photo photo";
-    align-items: start;
-  }
-
-  .photo-card {
-    grid-column: 1 / -1;
-  }
-
-  .toolbar-row,
-  .hero-top,
-  .panel-header {
-    align-items: stretch;
-  }
-
-  .hero-top {
-    flex-wrap: wrap;
-  }
-
-  .hero-brand {
-    width: 104px;
-    min-width: 104px;
-    height: 84px;
-  }
-
-  .hero-brand img {
-    width: 66px;
+  .fact-grid--personal .fact-tile--span-2 {
+    grid-column: span 2;
   }
 
   .panel-header--history,
@@ -1644,13 +1859,164 @@ function matchesSearch(value) {
   .history-nav {
     justify-content: space-between;
   }
+}
+
+@media (max-width: 767.98px) {
+  .hero-layout {
+    grid-template-columns: minmax(8rem, 8.9rem) minmax(0, 1fr);
+    grid-template-areas:
+      "rail panel"
+      "toolbar toolbar";
+    gap: 0.8rem;
+    align-items: start;
+  }
+
+  .hero-rail {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    grid-template-areas:
+      "back year"
+      "photo photo";
+    gap: 0.55rem;
+    align-items: start;
+  }
+
+  .back-button,
+  .year-card {
+    min-height: 40px;
+    border-radius: 12px;
+  }
+
+  .hero-panel {
+    min-height: 0;
+    padding: 1rem 1rem 1.05rem;
+  }
+
+  .hero-panel h2 {
+    font-size: clamp(2rem, 7.1vw, 2.45rem);
+    line-height: 1.1;
+  }
+
+  .hero-top {
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    gap: 0.8rem;
+  }
+
+  .hero-meta {
+    gap: 0.35rem 0.7rem;
+    margin-bottom: 0.45rem;
+  }
+
+  .hero-side {
+    width: 8rem;
+    min-width: 8rem;
+    gap: 0.5rem;
+  }
+
+  .hero-brand {
+    width: 88px;
+    min-width: 88px;
+    height: 72px;
+    margin-left: 0;
+    align-self: flex-end;
+  }
+
+  .hero-brand img {
+    width: 54px;
+  }
+
+  .hero-brand-actions {
+    justify-items: stretch;
+    gap: 0.45rem;
+  }
+
+  .hero-brand-action {
+    max-width: none;
+    border-radius: 999px;
+    min-height: 38px;
+    padding: 0.45rem 0.55rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .year-card {
+    min-width: 0;
+    width: auto;
+    padding: 0 0.8rem;
+    justify-self: start;
+  }
+
+  .photo-card {
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: none;
+    justify-self: stretch;
+    margin-inline: 0;
+  }
+
+  .hero-kicker {
+    font-size: 0.85rem;
+    letter-spacing: 0.03em;
+  }
+
+  .hero-stat {
+    padding-block: 0.05rem;
+  }
+
+  .hero-stat span {
+    font-size: 1rem;
+    line-height: 1.22;
+    margin-bottom: 0.18rem;
+  }
+
+  .hero-stat strong {
+    font-size: 1.45rem;
+    line-height: 1.22;
+  }
+
+  .fact-grid--personal {
+    grid-template-columns: 1fr;
+  }
+
+  .fact-grid--personal .fact-tile--span-2 {
+    grid-column: auto;
+  }
+
+  .fact-tile__split {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+
+  .fact-tile__secondary {
+    text-align: left;
+    white-space: normal;
+  }
 
   .search-shell,
   .status-pill,
-  .action-button,
-  .history-counter,
-  .section-upload-button {
+  .history-counter {
     width: 100%;
+    justify-content: center;
+  }
+
+  .search-shell {
+    min-height: 64px;
+    padding: 0 1rem;
+    border-radius: 20px;
+  }
+
+  .search-shell i {
+    font-size: 1.05rem;
+  }
+
+  .search-shell input {
+    font-size: 1rem;
+  }
+
+  .action-button,
+  .section-upload-button {
+    max-width: 100%;
     justify-content: center;
   }
 
@@ -1659,27 +2025,3 @@ function matchesSearch(value) {
   }
 }
 </style>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

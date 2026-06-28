@@ -77,12 +77,14 @@ export default {
   background: rgba(255, 255, 255, 0.97);
   border: 1px solid rgba(15, 47, 95, 0.08);
   box-shadow: 0 28px 72px rgba(15, 47, 95, 0.12);
+  text-align: center;
 }
 
 .access-logo {
-  width: min(250px, 100%);
+  display: block;
+  width: min(360px, 100%);
   height: auto;
-  margin-bottom: 2rem;
+  margin: 0 auto 2rem;
 }
 
 .access-copy h1 {
@@ -113,17 +115,20 @@ export default {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
   margin-top: 2rem;
+  justify-content: center;
+  align-items: stretch;
 }
 
 .access-option {
   border: none;
   border-radius: 28px;
-  padding: 1.4rem;
-  text-align: left;
+  padding: 1.55rem 1.15rem;
+  text-align: center;
   display: grid;
-  gap: 0.8rem;
+  justify-items: center;
+  gap: 0.95rem;
   color: #fff;
-  min-height: 230px;
+  min-height: 220px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -132,12 +137,14 @@ export default {
 }
 
 .access-option strong {
-  font-size: 1.2rem;
+  font-size: 1.4rem;
+  line-height: 1.25;
 }
 
 .access-option small {
-  font-size: 0.98rem;
-  line-height: 1.55;
+  max-width: 27ch;
+  font-size: 1.06rem;
+  line-height: 1.45;
   color: rgba(255, 255, 255, 0.86);
 }
 
@@ -173,3 +180,4 @@ export default {
   }
 }
 </style>
+
