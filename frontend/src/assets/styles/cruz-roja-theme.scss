@@ -160,3 +160,31 @@ h6, .h6 { font-size: 1rem; }
   font-weight: 500;
   margin-bottom: 0.5rem;
 }
+
+// SweetAlert mas rapido
+.swal2-container {
+  z-index: 5000 !important;
+  animation-duration: 80ms !important;
+}
+
+.swal2-popup {
+  animation-duration: 90ms !important;
+  transition-duration: 90ms !important;
+}
+
+.swal2-show {
+  animation-duration: 90ms !important;
+}
+
+.swal2-hide {
+  animation-duration: 70ms !important;
+}
+
+.swal2-backdrop-show {
+  animation-duration: 80ms !important;
+}
+
+.swal2-backdrop-hide {
+  animation-duration: 70ms !important;
+}
+

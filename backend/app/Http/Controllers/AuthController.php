@@ -43,9 +43,12 @@ class AuthController extends Controller
 
         $isAdmin = $user->hasRole('administrador');
         $isVolunteer = $user->voluntario !== null;
+        $user->tokens()->where('name', 'frontend')->delete();
+        $token = $user->createToken('frontend')->plainTextToken;
 
         return response()->json([
             'user' => $this->prepareUserResponse($user),
+            'token' => $token,
             'roles' => $user->roles->pluck('clave')->values(),
             'is_admin' => $isAdmin,
             'can_access_admin' => $isAdmin || $user->hasRole('secretario-directiva'),
@@ -53,6 +56,13 @@ class AuthController extends Controller
             'requires_access_selection' => $isAdmin && $isVolunteer,
             'must_change_password' => (bool) $user->must_change_password,
         ], 200);
+    }
+
+    public function logout(Request $request)
+    {
+        $request->user()?->currentAccessToken()?->delete();
+
+        return response()->json(null, 204);
     }
 
     private function prepareUserResponse(User $user): User

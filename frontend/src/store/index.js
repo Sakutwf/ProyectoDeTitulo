@@ -1,4 +1,6 @@
 import { createStore } from 'vuex'
+import axios from 'axios'
+import { buildApiUrl } from '../config/api'
 import {
   canManagePlatform,
   defaultRouteForUser,
@@ -45,8 +47,18 @@ function persistSession(session) {
   window.localStorage.removeItem(SESSION_STORAGE_KEY)
 }
 
+function applyAuthToken(session) {
+  const token = session?.token
+
+  if (token) {
+    axios.defaults.headers.common.Authorization = `Bearer ${token}`
+    return
+  }
+
+  delete axios.defaults.headers.common.Authorization
+}
 function normalizeSession(session) {
-  if (!session?.user) {
+  if (!session?.user || !session?.token) {
     return null
   }
 
@@ -79,10 +91,12 @@ export default createStore({
       const normalizedSession = normalizeSession(session)
       state.session = normalizedSession
       persistSession(normalizedSession)
+      applyAuthToken(normalizedSession)
     },
     clearSession(state) {
       state.session = null
       persistSession(null)
+      applyAuthToken(null)
     },
     setAccessMode(state, accessMode) {
       if (!state.session?.user) {
@@ -96,6 +110,7 @@ export default createStore({
 
       state.session = nextSession
       persistSession(nextSession)
+      applyAuthToken(nextSession)
     }
   },
   actions: {
@@ -108,8 +123,14 @@ export default createStore({
     chooseAccessMode({ commit }, accessMode) {
       commit('setAccessMode', accessMode)
     },
-    logout({ commit }) {
-      commit('clearSession')
+    async logout({ commit }) {
+      try {
+        await axios.post(buildApiUrl('logout'))
+      } catch (error) {
+        // La limpieza local debe ocurrir aunque el token ya haya expirado.
+      } finally {
+        commit('clearSession')
+      }
     },
   },
   modules: {

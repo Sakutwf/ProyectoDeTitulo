@@ -1,5 +1,5 @@
 <template>
-  <div class="editor-modal" @click.self="requestClose">
+  <div class="editor-modal">
     <section class="editor-panel" role="dialog" aria-modal="true" :aria-labelledby="dialogTitleId">
       <div class="editor-panel__header">
         <div>
@@ -1844,6 +1844,7 @@ async function submit() {
   }
 }
 </style>
+
 
 
 

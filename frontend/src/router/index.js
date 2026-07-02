@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { Modal } from 'bootstrap'
 import HomeView from '../views/HomeView.vue'
 import UserView from '../views/UserView.vue'
 import ActividadView from '../views/ActividadView.vue'
@@ -8,8 +9,24 @@ import LoginView from '../views/LoginView.vue'
 import AccessSelectionView from '../views/AccessSelectionView.vue'
 import VolunteerActivitiesView from '../views/VolunteerActivitiesView.vue'
 import DocumentosView from '../views/DocumentosView.vue'
+import GaleriaFotosView from '../views/GaleriaFotosView.vue'
 import store from '../store'
 import { defaultRouteForUser } from '../utils/auth'
+
+function closeOpenModals() {
+  if (typeof document === 'undefined') {
+    return
+  }
+
+  document.querySelectorAll('.modal.show').forEach((element) => {
+    const instance = Modal.getInstance(element) || new Modal(element)
+    instance.hide()
+  })
+
+  document.querySelectorAll('.modal-backdrop').forEach((backdrop) => backdrop.remove())
+  document.body.classList.remove('modal-open')
+  document.body.style.removeProperty('padding-right')
+}
 
 const routes = [
   {
@@ -54,6 +71,12 @@ const routes = [
     meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
   },
   {
+    path: '/galeria-fotos',
+    name: 'galeria-fotos',
+    component: GaleriaFotosView,
+    meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
+  },
+  {
     path: '/mis-actividades',
     name: 'volunteer-activities',
     component: VolunteerActivitiesView,
@@ -79,6 +102,10 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
+  if (to.fullPath !== from.fullPath) {
+    closeOpenModals()
+  }
+
   const isAuthenticated = store.getters.isAuthenticated
   const authUser = store.getters.authUser
   const accessMode = store.getters.accessMode

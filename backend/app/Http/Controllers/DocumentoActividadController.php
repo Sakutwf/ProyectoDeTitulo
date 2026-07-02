@@ -6,6 +6,7 @@ use App\Models\Actividad;
 use App\Models\DocumentoActividad;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 class DocumentoActividadController extends Controller
@@ -55,7 +56,7 @@ class DocumentoActividadController extends Controller
         $validated = $this->validateDocumentRequest($request, $actividad);
 
         $documento = DB::transaction(function () use ($actividad, $request, $validated) {
-            return DocumentoActividad::create([
+            $documento = DocumentoActividad::create([
                 'actividad_id' => $actividad->id,
                 'tipo_documento' => $validated['tipo_documento'],
                 'titulo' => $validated['titulo'],
@@ -66,6 +67,12 @@ class DocumentoActividadController extends Controller
                 'ruta_pdf' => $validated['ruta_pdf'] ?? null,
                 'generado_por' => $validated['generado_por'] ?? $request->user()?->id,
             ]);
+
+            if ($documento->estado === 'final') {
+                $this->deleteOtherDrafts($documento);
+            }
+
+            return $documento;
         });
 
         return response()->json($documento->load(self::RELATIONS), 201);
@@ -73,10 +80,7 @@ class DocumentoActividadController extends Controller
 
     public function show(DocumentoActividad $documentoActividad)
     {
-        return response()->json(
-            $documentoActividad->load(self::RELATIONS),
-            200
-        );
+        return response()->json($documentoActividad->load(self::RELATIONS), 200);
     }
 
     public function update(Request $request, DocumentoActividad $documentoActividad)
@@ -95,6 +99,10 @@ class DocumentoActividadController extends Controller
                 'generado_por' => $validated['generado_por'] ?? $documentoActividad->generado_por ?? $request->user()?->id,
             ]);
 
+            if ($documentoActividad->estado === 'final') {
+                $this->deleteOtherDrafts($documentoActividad);
+            }
+
             return $documentoActividad->fresh()->load(self::RELATIONS);
         });
 
@@ -106,6 +114,16 @@ class DocumentoActividadController extends Controller
         $documentoActividad->delete();
 
         return response()->json(null, 204);
+    }
+
+    private function deleteOtherDrafts(DocumentoActividad $documento): void
+    {
+        DocumentoActividad::query()
+            ->where('actividad_id', $documento->actividad_id)
+            ->where('tipo_documento', $documento->tipo_documento)
+            ->where('estado', 'borrador')
+            ->whereKeyNot($documento->id)
+            ->delete();
     }
 
     private function validateDocumentRequest(Request $request, Actividad $actividad, bool $partial = false): array
@@ -145,6 +163,28 @@ class DocumentoActividadController extends Controller
 
     private function buildInitialContent(string $type): array
     {
+        if ($type === 'analisis_contexto') {
+            return [
+                'proposito_documento' => '',
+                'descripcion_evento' => [
+                    'nombre_evento' => '',
+                    'fecha_evento' => '',
+                    'horario_evento' => '',
+                    'lugar_evento' => '',
+                    'participantes_evento' => '',
+                    'organizador_evento' => '',
+                    'clima_esperado' => '',
+                    'climas_esperados' => [],
+                ],
+                'riesgos' => [],
+                'plan_traslados' => '',
+                'protocolo_traslado' => '',
+                'centros_salud' => '',
+                'conclusion' => '',
+                'observaciones_finales' => '',
+            ];
+        }
+
         $base = [
             'resumen' => '',
             'desarrollo' => '',
@@ -155,15 +195,6 @@ class DocumentoActividadController extends Controller
             'observaciones' => '',
         ];
 
-        if ($type === 'analisis_contexto') {
-            return array_merge($base, [
-                'analisis_contextual' => '',
-                'diagnostico' => '',
-                'oportunidades' => '',
-                'riesgos' => '',
-            ]);
-        }
-
         return array_merge($base, [
             'introduccion' => '',
             'metodologia' => '',
@@ -173,27 +204,22 @@ class DocumentoActividadController extends Controller
 
     private function buildPrefillPayload(Actividad $actividad, string $type): array
     {
-        $actividad->loadMissing([
+        $relations = [
             'filial',
             'creador',
-            'voluntarios.user',
+            'voluntarios.user.roles',
             'galeria.archivo',
+            'albumes.fotos',
             'boletasViatico.voluntario.user',
             'boletasViatico.archivo',
-        ]);
+        ];
 
-        $participants = $actividad->voluntarios
-            ->map(function ($voluntario) {
-                return [
-                    'id' => $voluntario->id,
-                    'nombre' => trim(collect([$voluntario->nombres, $voluntario->apellidos])->filter()->implode(' ')),
-                    'registro_filial' => $voluntario->registro_filial,
-                    'rut' => $voluntario->rut,
-                    'horas_asistidas' => (float) ($voluntario->pivot?->horas_asistidas ?? 0),
-                ];
-            })
-            ->values()
-            ->all();
+        if ($this->supportsClimateRelations()) {
+            $relations[] = 'climas.archivo';
+        }
+
+        $actividad->loadMissing($relations);
+
 
         $boletas = $actividad->boletasViatico
             ->map(function ($boleta) {
@@ -216,14 +242,52 @@ class DocumentoActividadController extends Controller
             ->map(function ($item) {
                 return [
                     'id' => $item->id,
+                    'archivo_id' => $item->archivo_id,
                     'titulo' => $item->titulo,
                     'descripcion' => $item->descripcion,
                     'fecha' => optional($item->fecha)->format('Y-m-d'),
                     'imagen_url' => $item->imagen_url,
+                    'origen' => 'galeria_actividad',
                 ];
-            })
+            });
+
+        $albumPhotos = $actividad->albumes
+            ->flatMap(fn ($album) => $album->fotos->map(fn ($foto) => [
+                'id' => 'album-'.$foto->id,
+                'archivo_id' => $foto->id,
+                'titulo' => $foto->nombre_original ?: $album->nombre,
+                'descripcion' => $foto->descripcion ?: $album->descripcion,
+                'fecha' => optional($foto->created_at)->format('Y-m-d'),
+                'imagen_url' => $foto->url_publica,
+                'origen' => 'album',
+                'album_id' => $album->id,
+                'album_nombre' => $album->nombre,
+            ]));
+
+        $galeria = $galeria
+            ->concat($albumPhotos)
+            ->filter(fn ($item) => ! empty($item['imagen_url']))
+            ->unique('imagen_url')
             ->values()
             ->all();
+
+        $climas = $this->supportsClimateRelations()
+            ? $actividad->climas
+                ->map(function ($clima) {
+                    return [
+                        'id' => $clima->id,
+                        'archivo_id' => $clima->archivo_id,
+                        'temperatura_minima' => $clima->temperatura_minima !== null ? (float) $clima->temperatura_minima : null,
+                        'temperatura_maxima' => $clima->temperatura_maxima !== null ? (float) $clima->temperatura_maxima : null,
+                        'tipo_clima' => $clima->tipo_clima,
+                        'imagen_url' => $clima->archivo?->url_publica,
+                        'titulo_imagen' => $clima->archivo?->nombre_original,
+                        'descripcion_imagen' => $clima->archivo?->descripcion,
+                    ];
+                })
+                ->values()
+                ->all()
+            : [];
 
         return [
             'tipo_documento' => $type,
@@ -253,16 +317,32 @@ class DocumentoActividadController extends Controller
                 'name' => $actividad->creador?->name,
                 'username' => $actividad->creador?->username,
             ],
-            'participantes' => $participants,
             'resumen' => [
-                'total_participantes' => count($participants),
-                'total_horas_participantes' => round(collect($participants)->sum('horas_asistidas'), 2),
                 'total_evidencias' => count($galeria),
                 'total_boletas' => count($boletas),
                 'monto_total_boletas' => round(collect($boletas)->sum('monto'), 2),
             ],
             'boletas' => $boletas,
             'galeria' => $galeria,
+            'climas' => $climas,
         ];
     }
+
+    private function supportsClimateRelations(): bool
+    {
+        return Schema::hasTable('actividad_climas')
+            && Schema::hasColumns('actividad_climas', ['actividad_id', 'archivo_id']);
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+

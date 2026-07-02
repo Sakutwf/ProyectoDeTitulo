@@ -36,8 +36,8 @@
         </div>
 
         <ul class="nav flex-column">
-            <li class="nav-item" :class="{ active: activeLink === 'inicio' }">
-                <router-link to="/inicio" class="nav-link" :title="displayCompact ? 'Inicio' : null" :aria-label="displayCompact ? 'Inicio' : null">
+            <li class="nav-item nav-item--inicio" :class="{ active: activeLink === 'inicio' }">
+                <router-link to="/inicio" class="nav-link nav-link--inicio" :title="displayCompact ? 'Inicio' : null" :aria-label="displayCompact ? 'Inicio' : null">
                     <span class="nav-link__icon">
                         <i class="fa-solid fa-tachometer-alt"></i>
                     </span>
@@ -66,6 +66,14 @@
                         <i class="fa-solid fa-folder-open"></i>
                     </span>
                     <span class="nav-link__label">Documentos</span>
+                </router-link>
+            </li>
+            <li v-if="canManagePlatform" class="nav-item" :class="{ active: activeLink === 'galeria-fotos' }">
+                <router-link to="/galeria-fotos" class="nav-link" :title="displayCompact ? 'Galería de fotos' : null" :aria-label="displayCompact ? 'Galería de fotos' : null">
+                    <span class="nav-link__icon">
+                        <i class="fa-solid fa-images"></i>
+                    </span>
+                    <span class="nav-link__label">Galería de fotos</span>
                 </router-link>
             </li>
             <li v-if="canSwitchAccess" class="nav-item">
@@ -135,6 +143,7 @@ export default {
             if (path.includes('/voluntarios')) return 'voluntarios'
             if (path.includes('/actividades')) return 'actividades'
             if (path.includes('/documentos')) return 'documentos'
+            if (path.includes('/galeria-fotos')) return 'galeria-fotos'
             return 'inicio'
         }
     },
@@ -401,11 +410,12 @@ export default {
         margin-bottom: 1rem;
     }
 }
+
+@media (max-width: 575.98px) {
+    .nav-item--inicio {
+        display: none;
+    }
+}
 </style>
-
-
-
-
-
 
 

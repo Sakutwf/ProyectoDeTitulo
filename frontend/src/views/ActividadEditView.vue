@@ -1,5 +1,6 @@
 <template>
-  <div class="modal fade" id="editActividadModal" tabindex="-1" aria-labelledby="editActividadModalLabel" aria-hidden="true">
+  <div class="modal fade" id="editActividadModal" tabindex="-1" aria-labelledby="editActividadModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  
     <div class="modal-dialog modal-xl">
       <div class="modal-content">
         <div class="modal-header bg-danger text-white">
@@ -204,7 +205,7 @@ export default {
     }
   },
   mounted() {
-    this.modalInstance = new Modal(document.getElementById('editActividadModal'))
+    this.modalInstance = new Modal(document.getElementById('editActividadModal'), { backdrop: 'static', keyboard: false })
     this.loadCatalogs()
   },
   methods: {
@@ -411,3 +412,4 @@ export default {
   color: #65758a;
 }
 </style>
+

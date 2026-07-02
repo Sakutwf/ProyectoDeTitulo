@@ -54,6 +54,7 @@
                 </div>
               </div>
 
+
               <article class="hero-panel">
                 <div class="hero-top">
                   <div class="hero-copy">
@@ -157,6 +158,15 @@
                   >
                 </label>
               </div>
+
+              <button
+                v-if="showPhotoHistoryTrigger"
+                type="button"
+                class="action-button action-button--primary photo-history-trigger"
+                @click="openAnnualHistoryModal"
+              >
+                Revisar Hojas Anuales de otros años
+              </button>
             </section>
 
             <HistorialAnualEditor
@@ -168,6 +178,61 @@
               @saved="handleRecordSaved"
               @cancel="closeEditor"
             />
+
+            <div v-if="isAnnualHistoryModalOpen" class="history-modal">
+              <div class="history-modal__panel">
+                <div class="history-modal__header">
+                  <div>
+                    <p class="panel-kicker">Historial</p>
+                    <h3>Hojas anuales</h3>
+                  </div>
+                  <button type="button" class="history-modal__close" @click="closeAnnualHistoryModal" aria-label="Cerrar historial">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+
+                <div v-if="annualRecords.length" class="history-modal__controls">
+                  <span class="history-counter">
+                    {{ annualWindowStart + 1 }}-{{ annualWindowEnd }} de {{ annualRecords.length }}
+                  </span>
+                  <div class="history-nav">
+                    <button
+                      type="button"
+                      class="history-nav__button"
+                      :disabled="!canGoPrevAnnuals"
+                      @click="goToPreviousAnnualPage"
+                      aria-label="Ver hojas anuales anteriores"
+                    >
+                      <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <button
+                      type="button"
+                      class="history-nav__button"
+                      :disabled="!canGoNextAnnuals"
+                      @click="goToNextAnnualPage"
+                      aria-label="Ver hojas anuales siguientes"
+                    >
+                      <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div v-if="annualRecords.length" class="annual-list history-modal__list">
+                  <HistorialAnualCard
+                    v-for="record in visibleAnnualRecords"
+                    :key="`mobile-history-${record.id}`"
+                    :historial="record"
+                    :active="record.anio === selectedYear"
+                    :to="yearLink(record.anio)"
+                    @click="closeAnnualHistoryModal"
+                  />
+                </div>
+
+                <div v-else class="empty-inline">
+                  Este voluntario todavia no tiene hoja de vida anual registrada.
+                </div>
+              </div>
+            </div>
 
             <section class="content-grid">
               <div class="main-column">
@@ -181,7 +246,32 @@
 
                 <template v-else>
 
-                  <section v-if="showCommissionPanel" class="panel">
+                  <section v-if="filteredPersonalFacts.length" class="panel section-personal-panel">
+                    <div class="panel-header">
+                      <div>
+                        <p class="panel-kicker">Datos personales</p>
+                        <h3>Informacion del voluntario</h3>
+                      </div>
+                    </div>
+
+                    <div class="fact-grid fact-grid--personal">
+                      <article
+                        v-for="fact in filteredPersonalFacts"
+                        :key="fact.label"
+                        class="fact-tile fact-tile--personal"
+                        :class="fact.layoutClass"
+                      >
+                        <span class="fact-tile__label">{{ fact.label }}</span>
+                        <div v-if="fact.secondaryValue" class="fact-tile__split">
+                          <strong>{{ fact.value }}</strong>
+                          <strong class="fact-tile__secondary">{{ fact.secondaryValue }}</strong>
+                        </div>
+                        <strong v-else>{{ fact.value }}</strong>
+                      </article>
+                    </div>
+                  </section>
+
+                  <section v-if="showCommissionPanel" class="panel section-commission-panel">
                     <div class="panel-header">
                       <div>
                         <p class="panel-kicker">Comision de servicio</p>
@@ -217,32 +307,7 @@
                     </div>
                   </section>
 
-                  <section v-if="filteredPersonalFacts.length" class="panel">
-                    <div class="panel-header">
-                      <div>
-                        <p class="panel-kicker">Datos personales</p>
-                        <h3>Informacion del voluntario</h3>
-                      </div>
-                    </div>
-
-                    <div class="fact-grid fact-grid--personal">
-                      <article
-                        v-for="fact in filteredPersonalFacts"
-                        :key="fact.label"
-                        class="fact-tile fact-tile--personal"
-                        :class="fact.layoutClass"
-                      >
-                        <span class="fact-tile__label">{{ fact.label }}</span>
-                        <div v-if="fact.secondaryValue" class="fact-tile__split">
-                          <strong>{{ fact.value }}</strong>
-                          <strong class="fact-tile__secondary">{{ fact.secondaryValue }}</strong>
-                        </div>
-                        <strong v-else>{{ fact.value }}</strong>
-                      </article>
-                    </div>
-                  </section>
-
-                  <div class="split-grid">
+                  <div class="split-grid section-titles-group">
                     <section class="panel">
                       <div class="panel-header">
                         <div>
@@ -342,7 +407,7 @@
                     </section>
                   </div>
 
-                  <div class="split-grid">
+                  <div class="split-grid section-sanctions-group">
                     <section class="panel">
                       <div class="panel-header">
                         <div>
@@ -390,7 +455,7 @@
                     </section>
                   </div>
 
-                  <section v-if="showCommentsPanel" class="panel">
+                  <section v-if="showCommentsPanel" class="panel section-comments-panel">
                     <div class="panel-header">
                       <div>
                         <p class="panel-kicker">Comentarios</p>
@@ -406,7 +471,7 @@
               </div>
 
               <aside class="sidebar-column">
-                <section class="panel history-panel">
+                <section class="panel history-panel history-panel--sidebar">
                   <div class="panel-header panel-header--history">
                     <div>
                       <p class="panel-kicker">Historial</p>
@@ -486,7 +551,7 @@
 
 <script setup>
 import axios from 'axios'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import logoSrc from '../assets/LogoVertical.svg'
@@ -511,6 +576,8 @@ const searchTerm = ref('')
 const isUploadingPhoto = ref(false)
 const photoInput = ref(null)
 const annualWindowStart = ref(0)
+const viewportWidth = ref(typeof window === 'undefined' ? 1920 : window.innerWidth)
+const isAnnualHistoryModalOpen = ref(false)
 
 const currentUser = computed(() => store.getters.authUser)
 const canManageHojaVida = computed(() => store.getters.isAdministratorExperience && store.getters.canManagePlatform)
@@ -534,6 +601,7 @@ const annualWindowEnd = computed(() =>
   Math.min(annualWindowStart.value + annualWindowSize, annualRecords.value.length)
 )
 
+const showPhotoHistoryTrigger = computed(() => viewportWidth.value <= 1439)
 const canGoPrevAnnuals = computed(() => annualWindowStart.value > 0)
 const canGoNextAnnuals = computed(() => annualWindowEnd.value < annualRecords.value.length)
 
@@ -742,11 +810,14 @@ watch(annualRecords, () => {
   syncSelectedYear()
   syncAnnualWindow()
 })
-
-watch(selectedYear, () => syncAnnualWindow())
-
 onMounted(() => {
+  updateViewportWidth()
+  window.addEventListener('resize', updateViewportWidth)
   fetchUser()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateViewportWidth)
 })
 
 async function fetchUser() {
@@ -820,6 +891,18 @@ function yearLink(year) {
 
 function goBack() {
   router.push({ name: canManageHojaVida.value ? 'voluntarios' : 'inicio' })
+}
+
+function updateViewportWidth() {
+  viewportWidth.value = window.innerWidth
+}
+
+function openAnnualHistoryModal() {
+  isAnnualHistoryModalOpen.value = true
+}
+
+function closeAnnualHistoryModal() {
+  isAnnualHistoryModalOpen.value = false
 }
 
 function openPdfExport() {
@@ -1126,6 +1209,10 @@ function matchesSearch(value) {
   opacity: 0.65;
 }
 
+.photo-history-trigger {
+  display: none;
+}
+
 .hero-panel {
   grid-area: panel;
   padding: 1.2rem 1.35rem;
@@ -1277,6 +1364,7 @@ function matchesSearch(value) {
   padding: 0.8rem;
   min-height: 216px;
   align-content: start;
+  justify-items: center;
 }
 
 .search-shell {
@@ -1349,6 +1437,59 @@ function matchesSearch(value) {
   width: 100%;
 }
 
+.history-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 29, 55, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.history-modal__panel {
+  width: min(100%, 28rem);
+  max-height: min(78vh, 42rem);
+  overflow: auto;
+  border-radius: 22px;
+  background: #fff;
+  border: 1px solid #e4e8ee;
+  box-shadow: 0 20px 48px rgba(15, 47, 95, 0.18);
+  padding: 1rem;
+}
+
+.history-modal__header,
+.history-modal__controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.history-modal__header {
+  margin-bottom: 0.9rem;
+}
+
+.history-modal__controls {
+  margin-bottom: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.history-modal__close {
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 1px solid #d6dfeb;
+  border-radius: 999px;
+  background: #fff;
+  color: #173b70;
+}
+
+.history-modal__list {
+  padding-right: 0.1rem;
+}
+
 .panel-header--history {
   align-items: flex-start;
 }
@@ -1411,7 +1552,7 @@ function matchesSearch(value) {
 }
 
 .fact-grid--personal {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.85rem;
 }
 
@@ -1437,17 +1578,19 @@ function matchesSearch(value) {
 
 .fact-tile--personal .fact-tile__label {
   color: #7a8faa;
-  font-size: 1.12rem;
+  font-size: clamp(0.98rem, 0.9rem + 0.18vw, 1.12rem);
   line-height: 1.16;
   font-weight: 800;
   text-transform: none;
   letter-spacing: 0;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .fact-tile--personal strong {
+  min-width: 0;
   color: #163a69;
-  font-size: 1.24rem;
+  font-size: clamp(1.05rem, 0.98rem + 0.2vw, 1.24rem);
   line-height: 1.26;
   font-weight: 800;
   word-break: normal;
@@ -1459,7 +1602,7 @@ function matchesSearch(value) {
 }
 
 .fact-tile--email strong {
-  font-size: 1.1rem;
+  font-size: clamp(0.98rem, 0.92rem + 0.18vw, 1.1rem);
   line-height: 1.22;
   white-space: normal;
   overflow-wrap: anywhere;
@@ -1696,6 +1839,10 @@ function matchesSearch(value) {
 }
 
 @media (min-width: 1600px) {
+  .fact-grid--personal {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
   .hero-layout {
     grid-template-columns: 182px minmax(0, 1fr) 340px;
   }
@@ -1722,20 +1869,84 @@ function matchesSearch(value) {
     grid-template-columns: 170px minmax(0, 1fr);
     grid-template-areas:
       "rail panel"
-      "actions actions"
       "toolbar toolbar";
     align-items: start;
   }
 
-  .hero-panel,
-  .action-panel--hero {
+  .hero-panel {
     min-height: 0;
   }
 
-  .action-panel--hero {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    align-self: start;
+  .hero-top {
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    gap: 1rem;
   }
+
+  .hero-side {
+    width: 7.8rem;
+    min-width: 7.8rem;
+    align-items: center;
+    justify-self: center;
+    gap: 0.55rem;
+  }
+
+  .hero-brand {
+    width: 104px;
+    min-width: 104px;
+    height: 84px;
+    margin-left: 0;
+    align-self: center;
+  }
+
+  .hero-brand img {
+    width: 82px;
+  }
+
+  .history-panel--sidebar {
+    display: none;
+  }
+
+  .photo-history-trigger {
+    display: inline-flex;
+    width: max-content;
+    max-width: 100%;
+    min-width: 19.5rem;
+    min-height: 33px;
+    padding: 0 1rem;
+    font-size: 0.68rem;
+    white-space: nowrap;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-self: flex-start;
+  }
+
+  .hero-brand-actions {
+    display: grid;
+    justify-items: center;
+    gap: 0.65rem;
+    justify-self: center;
+    align-self: center;
+    width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+    box-sizing: border-box;
+  }
+
+  .hero-brand-action {
+    max-width: 6rem;
+    border-radius: 999px;
+    min-height: 38px;
+    padding: 0.42rem 0.52rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1.18;
+  }
+
+  .action-panel--hero {
+    display: none;
+  }
+
 }
 
 @media (max-width: 991.98px) {
@@ -1797,11 +2008,13 @@ function matchesSearch(value) {
     gap: 0.55rem 0.9rem;
     margin-bottom: 0.45rem;
   }
-
   .hero-side {
-    width: 8.6rem;
-    min-width: 8.6rem;
-    align-items: stretch;
+    width: 7.1rem;
+    min-width: 7.1rem;
+    align-items: center;
+    justify-self: center;
+    padding-left: 0;
+    padding-right: 0;
     gap: 0.55rem;
   }
 
@@ -1810,29 +2023,34 @@ function matchesSearch(value) {
     min-width: 100px;
     height: 82px;
     margin-left: 0;
-    align-self: flex-end;
+    align-self: center;
   }
 
   .hero-brand img {
-    width: 62px;
+    width: 82px;
   }
 
   .hero-brand-actions {
     display: grid;
-    justify-items: stretch;
+    justify-items: center;
     gap: 0.5rem;
     width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+    box-sizing: border-box;
   }
 
+
   .hero-brand-action {
-    max-width: none;
+    max-width: 5.65rem;
     border-radius: 999px;
-    min-height: 40px;
-    padding: 0.48rem 0.7rem;
-    font-size: 0.86rem;
+    min-height: 38px;
+    padding: 0.42rem 0.46rem;
+    font-size: 0.82rem;
     font-weight: 700;
     line-height: 1.18;
   }
+
 
   .action-panel--hero {
     display: none;
@@ -1856,95 +2074,91 @@ function matchesSearch(value) {
     justify-items: stretch;
   }
 
+  .section-personal-panel {
+    order: 1;
+  }
+
+  .section-commission-panel {
+    order: 2;
+  }
+
+  .section-titles-group {
+    order: 3;
+  }
+
+  .section-sanctions-group {
+    order: 4;
+  }
+
+  .section-comments-panel {
+    order: 5;
+  }
+
   .history-nav {
     justify-content: space-between;
   }
 }
-
 @media (max-width: 767.98px) {
+
+  .history-panel--sidebar {
+    display: none;
+  }
+
+  .history-modal {
+    display: flex;
+  }
+
   .hero-layout {
-    grid-template-columns: minmax(8rem, 8.9rem) minmax(0, 1fr);
+    grid-template-columns: minmax(5.9rem, 6.3rem) minmax(0, 1fr);
     grid-template-areas:
       "rail panel"
       "toolbar toolbar";
-    gap: 0.8rem;
+    gap: 0.7rem;
     align-items: start;
   }
 
+  .photo-history-trigger {
+    display: inline-flex;
+    grid-column: 1 / -1;
+    width: max-content;
+    max-width: 100%;
+    min-width: 19.5rem;
+    min-height: 33px;
+    padding: 0 1rem;
+    font-size: 0.68rem;
+    white-space: nowrap;
+    flex-wrap: nowrap;
+    justify-content: center;
+    justify-self: start;
+  }
+
+
   .hero-rail {
     display: grid;
-    grid-template-columns: 42px minmax(0, 1fr);
+    grid-template-columns: 34px minmax(0, 1fr);
     grid-template-areas:
       "back year"
       "photo photo";
-    gap: 0.55rem;
+    gap: 0.5rem;
     align-items: start;
   }
 
   .back-button,
   .year-card {
-    min-height: 40px;
-    border-radius: 12px;
+    min-height: 32px;
+    border-radius: 10px;
   }
 
-  .hero-panel {
-    min-height: 0;
-    padding: 1rem 1rem 1.05rem;
-  }
-
-  .hero-panel h2 {
-    font-size: clamp(2rem, 7.1vw, 2.45rem);
-    line-height: 1.1;
-  }
-
-  .hero-top {
-    align-items: flex-start;
-    flex-wrap: nowrap;
-    gap: 0.8rem;
-  }
-
-  .hero-meta {
-    gap: 0.35rem 0.7rem;
-    margin-bottom: 0.45rem;
-  }
-
-  .hero-side {
-    width: 8rem;
-    min-width: 8rem;
-    gap: 0.5rem;
-  }
-
-  .hero-brand {
-    width: 88px;
-    min-width: 88px;
-    height: 72px;
-    margin-left: 0;
-    align-self: flex-end;
-  }
-
-  .hero-brand img {
-    width: 54px;
-  }
-
-  .hero-brand-actions {
-    justify-items: stretch;
-    gap: 0.45rem;
-  }
-
-  .hero-brand-action {
-    max-width: none;
-    border-radius: 999px;
-    min-height: 38px;
-    padding: 0.45rem 0.55rem;
-    font-size: 0.8rem;
-    font-weight: 700;
+  .back-button {
+    font-size: 0.82rem;
   }
 
   .year-card {
     min-width: 0;
     width: auto;
-    padding: 0 0.8rem;
+    padding: 0 0.55rem;
     justify-self: start;
+    font-size: 0.94rem;
   }
 
   .photo-card {
@@ -1953,26 +2167,144 @@ function matchesSearch(value) {
     max-width: none;
     justify-self: stretch;
     margin-inline: 0;
+    padding: 0.28rem;
+    gap: 0.28rem;
+    border-radius: 14px;
+  }
+
+  .photo-frame {
+    border-radius: 10px;
+  }
+
+  .photo-action {
+    min-height: 31px;
+    font-size: 0.75rem;
+    font-weight: 800;
+  }
+
+  .hero-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 7.6rem;
+    align-items: start;
+    gap: 0.7rem;
+  }
+
+  .hero-copy {
+    min-width: 0;
+  }
+
+  .hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.12rem 0.45rem;
+    margin-bottom: 0.24rem;
   }
 
   .hero-kicker {
-    font-size: 0.85rem;
-    letter-spacing: 0.03em;
+    margin-bottom: 0;
+    font-size: 0.66rem;
+    line-height: 1.15;
+    letter-spacing: 0.05em;
+  }
+
+  .hero-panel h2 {
+    font-size: clamp(1.04rem, 5.1vw, 1.6rem);
+    line-height: 1.02;
+    margin-bottom: 0.34rem;
+  }
+
+  .hero-stats {
+    gap: 0.22rem;
   }
 
   .hero-stat {
-    padding-block: 0.05rem;
+    gap: 0.1rem;
+    padding-block: 0;
   }
 
   .hero-stat span {
-    font-size: 1rem;
-    line-height: 1.22;
-    margin-bottom: 0.18rem;
+    font-size: 0.68rem;
+    line-height: 1.15;
+    margin-bottom: 0.04rem;
   }
 
   .hero-stat strong {
-    font-size: 1.45rem;
-    line-height: 1.22;
+    font-size: 0.88rem;
+    line-height: 1.15;
+  }
+
+  .hero-side {
+    width: 6.2rem;
+    min-width: 6.2rem;
+    align-items: center;
+    justify-content: flex-start;
+    justify-self: center;
+    align-self: start;
+    gap: 0.2rem;
+    padding-left: 0;
+    padding-right: 0;
+    margin-top: -0.9rem;
+    box-sizing: border-box;
+  }
+
+  .hero-brand {
+    width: 100%;
+    min-width: 0;
+    height: 98px;
+    padding: 0;
+    margin-top: -0.7rem;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    align-self: center;
+    flex-direction: column;
+    gap: 0.08rem;
+    text-align: center;
+  }
+
+  .hero-brand img {
+    width: 84px;
+  }
+
+  .hero-brand-actions {
+    display: grid;
+    justify-items: center;
+    align-content: start;
+    gap: 0.34rem;
+    width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    margin-top: -0.4rem;
+    box-sizing: border-box;
+  }
+
+
+  .hero-brand-action {
+    width: 100%;
+    max-width: 5.35rem;
+    border-radius: 999px;
+    min-height: 33px;
+    padding: 0.4rem 0.42rem;
+    font-size: 0.64rem;
+    font-weight: 800;
+    line-height: 1.15;
+  }
+
+
+  .toolbar-row--hero-outside {
+    margin-top: 0.15rem;
+  }
+
+  .search-shell {
+    min-height: 48px;
+    padding: 0 0.95rem;
+    border-radius: 999px;
+  }
+
+  .search-shell input {
+    font-size: 0.9rem;
   }
 
   .fact-grid--personal {
@@ -1992,7 +2324,6 @@ function matchesSearch(value) {
     text-align: left;
     white-space: normal;
   }
-
   .search-shell,
   .status-pill,
   .history-counter {
@@ -2025,3 +2356,12 @@ function matchesSearch(value) {
   }
 }
 </style>
+
+
+
+
+
+
+
+
+

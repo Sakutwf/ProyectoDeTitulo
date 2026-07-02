@@ -223,3 +223,31 @@ h6, .h6 { font-size: 1rem; }
   transform: translateY(-2px);
   box-shadow: 0 6px 10px rgba(236, 28, 36, 0.3);
 }
+
+/* SweetAlert mas rapido */
+.swal2-container {
+  z-index: 5000 !important;
+  animation-duration: 80ms !important;
+}
+
+.swal2-popup {
+  animation-duration: 90ms !important;
+  transition-duration: 90ms !important;
+}
+
+.swal2-show {
+  animation-duration: 90ms !important;
+}
+
+.swal2-hide {
+  animation-duration: 70ms !important;
+}
+
+.swal2-backdrop-show {
+  animation-duration: 80ms !important;
+}
+
+.swal2-backdrop-hide {
+  animation-duration: 70ms !important;
+}
+

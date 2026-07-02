@@ -64,9 +64,24 @@ class Actividad extends Model
         return $this->hasMany(BoletaViatico::class, 'actividad_id');
     }
 
+    public function climas()
+    {
+        return $this->hasMany(ActividadClima::class, 'actividad_id')
+            ->orderBy('orden')
+            ->orderBy('id');
+    }
     public function documentos()
     {
         return $this->hasMany(DocumentoActividad::class, 'actividad_id');
     }
+
+    public function albumes()
+    {
+        return $this->hasMany(Album::class, 'actividad_id');
+    }
 }
+
+
+
+
 

@@ -5,25 +5,31 @@ namespace App\Http\Controllers;
 use App\Models\Actividad;
 use App\Models\Archivo;
 use App\Models\BoletaViatico;
+use App\Models\GaleriaActividad;
 use App\Models\Voluntario;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class ActividadController extends Controller
 {
-    private const RELATIONS = ['filial', 'creador', 'voluntarios.user'];
+    private const RELATIONS = ['filial', 'creador', 'voluntarios.user', 'climas.archivo'];
 
     public function index(Request $request)
     {
-        $query = Actividad::with(self::RELATIONS)->with(['documentos' => function ($documentQuery) {
-            $documentQuery
-                ->select('id', 'actividad_id', 'tipo_documento', 'estado', 'updated_at')
-                ->whereIn('tipo_documento', ['analisis_contexto', 'informe_narrativo'])
-                ->whereIn('estado', ['borrador', 'final'])
-                ->latest('updated_at')
-                ->latest('id');
-        }]);
+        $query = Actividad::with($this->activityRelations());
+
+        if ($this->supportsDocumentSummary()) {
+            $query->with(['documentos' => function ($documentQuery) {
+                $documentQuery
+                    ->select('id', 'actividad_id', 'tipo_documento', 'estado', 'updated_at')
+                    ->whereIn('tipo_documento', ['analisis_contexto', 'informe_narrativo'])
+                    ->whereIn('estado', ['borrador', 'final'])
+                    ->latest('updated_at')
+                    ->latest('id');
+            }]);
+        }
 
         if ($request->has('search') && $request->search) {
             $search = $request->search;
@@ -53,13 +59,14 @@ class ActividadController extends Controller
 
         $actividad = Actividad::create($data);
         $this->syncVoluntarios($actividad, $request);
+        $this->syncClimas($actividad, $request);
 
-        return response()->json($actividad->load(self::RELATIONS), 201);
+        return response()->json($actividad->load($this->activityRelations()), 201);
     }
 
     public function show($id)
     {
-        return response()->json(Actividad::with(self::RELATIONS)->findOrFail($id), 200);
+        return response()->json(Actividad::with($this->activityRelations())->findOrFail($id), 200);
     }
 
     public function edit(Actividad $actividad)
@@ -78,8 +85,9 @@ class ActividadController extends Controller
 
         $actividad->update($data);
         $this->syncVoluntarios($actividad, $request);
+        $this->syncClimas($actividad, $request);
 
-        return response()->json($actividad->load(self::RELATIONS), 200);
+        return response()->json($actividad->load($this->activityRelations()), 200);
     }
 
     public function destroy($id)
@@ -112,7 +120,7 @@ class ActividadController extends Controller
             ],
         ]);
 
-        return response()->json($actividad->load(self::RELATIONS), 200);
+        return response()->json($actividad->load($this->activityRelations()), 200);
     }
 
     public function desasociarVoluntario($id, Request $request)
@@ -124,19 +132,69 @@ class ActividadController extends Controller
 
         $actividad->voluntarios()->detach($data['voluntario_id']);
 
-        return response()->json($actividad->load(self::RELATIONS), 200);
+        return response()->json($actividad->load($this->activityRelations()), 200);
+    }
+
+    public function guardarClimas($id, Request $request)
+    {
+        $actividad = Actividad::findOrFail($id);
+        $this->validateClimasPayload($request);
+        $this->syncClimas($actividad, $request);
+
+        $freshActividad = $actividad->fresh();
+
+        if (! $this->supportsClimateRelations()) {
+            return response()->json($freshActividad, 200);
+        }
+
+        return response()->json(
+            $freshActividad->load(['climas.archivo']),
+            200
+        );
     }
 
     public function galeria($id)
     {
-        $actividad = Actividad::findOrFail($id);
+        $actividad = Actividad::with([
+            'galeria.archivo',
+            'galeria.subidoPor.voluntario',
+            'albumes.fotos.subidoPor.voluntario',
+        ])->findOrFail($id);
+
+        $galeria = $actividad->galeria
+            ->map(fn ($item) => [
+                'id' => $item->id,
+                'archivo_id' => $item->archivo_id,
+                'titulo' => $item->titulo,
+                'descripcion' => $item->descripcion,
+                'fecha' => optional($item->fecha)->format('Y-m-d'),
+                'imagen_url' => $item->imagen_url,
+                'archivo' => $item->archivo,
+                'subido_por' => $item->subidoPor,
+                'origen' => 'galeria_actividad',
+            ]);
+
+        $albumPhotos = $actividad->albumes
+            ->flatMap(fn ($album) => $album->fotos->map(fn ($foto) => [
+                'id' => 'album-'.$foto->id,
+                'archivo_id' => $foto->id,
+                'titulo' => $foto->nombre_original ?: $album->nombre,
+                'descripcion' => $foto->descripcion ?: $album->descripcion,
+                'fecha' => optional($foto->created_at)->format('Y-m-d'),
+                'imagen_url' => $foto->url_publica,
+                'archivo' => $foto,
+                'subido_por' => $foto->subidoPor,
+                'origen' => 'album',
+                'album_id' => $album->id,
+                'album_nombre' => $album->nombre,
+            ]));
 
         return response()->json(
-            $actividad->galeria()
-                ->with(['archivo', 'subidoPor.voluntario'])
-                ->latest('fecha')
-                ->latest('id')
-                ->get(),
+            $galeria->concat($albumPhotos)
+                ->filter(fn ($item) => ! empty($item['imagen_url']))
+                ->unique('imagen_url')
+                ->sortByDesc(fn ($item) => $item['fecha'] ?? '')
+                ->values(),
             200
         );
     }
@@ -339,7 +397,34 @@ class ActividadController extends Controller
         }
     }
 
+    private function activityRelations(): array
+    {
+        if (! $this->supportsClimateRelations()) {
+            return array_values(array_filter(
+                self::RELATIONS,
+                fn (string $relation) => $relation !== 'climas.archivo'
+            ));
+        }
 
+        return self::RELATIONS;
+    }
+
+    private function supportsClimateRelations(): bool
+    {
+        return Schema::hasTable('actividad_climas')
+            && Schema::hasColumns('actividad_climas', ['actividad_id', 'archivo_id']);
+    }
+
+    private function supportsDocumentSummary(): bool
+    {
+        return Schema::hasTable('documentos_actividad')
+            && Schema::hasColumns('documentos_actividad', [
+                'actividad_id',
+                'tipo_documento',
+                'estado',
+                'updated_at',
+            ]);
+    }
     private function validateActividad(Request $request, bool $partial = false): array
     {
         $required = $partial ? 'sometimes' : 'required';
@@ -359,12 +444,30 @@ class ActividadController extends Controller
             'lugar' => ['nullable', 'string', 'max:255'],
             'horas_totales' => ['nullable', 'numeric', 'min:0'],
             'colaborador_externo' => ['nullable', 'string', 'max:200'],
+            'climas' => ['sometimes', 'array'],
+            'climas.*.id' => ['nullable', 'integer'],
+            'climas.*.temperatura_minima' => ['nullable', 'numeric', 'between:-99.99,99.99'],
+            'climas.*.temperatura_maxima' => ['nullable', 'numeric', 'between:-99.99,99.99'],
+            'climas.*.tipo_clima' => ['nullable', 'string', 'max:150'],
+            'climas.*.archivo_id' => ['nullable', 'integer', 'exists:archivos,id'],
             'voluntarios' => ['sometimes', 'array'],
             'voluntarios.*' => ['integer', 'exists:voluntarios,id'],
             'voluntarios_detalle' => ['sometimes', 'array'],
             'voluntarios_detalle.*.voluntario_id' => ['required_with:voluntarios_detalle', 'integer', 'exists:voluntarios,id'],
             'voluntarios_detalle.*.horas_asistidas' => ['nullable', 'numeric', 'min:0'],
             'voluntarios_detalle.*.registrado_por' => ['nullable', 'integer', 'exists:users,id'],
+        ]);
+    }
+
+    private function validateClimasPayload(Request $request): array
+    {
+        return $request->validate([
+            'climas' => ['nullable', 'array'],
+            'climas.*.id' => ['nullable', 'integer'],
+            'climas.*.temperatura_minima' => ['nullable', 'numeric', 'between:-99.99,99.99'],
+            'climas.*.temperatura_maxima' => ['nullable', 'numeric', 'between:-99.99,99.99'],
+            'climas.*.tipo_clima' => ['nullable', 'string', 'max:150'],
+            'climas.*.archivo_id' => ['nullable', 'integer', 'exists:archivos,id'],
         ]);
     }
 
@@ -395,6 +498,69 @@ class ActividadController extends Controller
         }
     }
 
+    private function syncClimas(Actividad $actividad, Request $request): void
+    {
+        if (! $request->has('climas') || ! $this->supportsClimateRelations()) {
+            return;
+        }
+
+        $rows = collect($request->input('climas', []))
+            ->filter(function ($row) {
+                if (! is_array($row)) {
+                    return false;
+                }
+
+                return collect([
+                    $row['temperatura_minima'] ?? null,
+                    $row['temperatura_maxima'] ?? null,
+                    $row['tipo_clima'] ?? null,
+                    $row['archivo_id'] ?? null,
+                ])->contains(fn ($value) => $value !== null && $value !== '');
+            })
+            ->values()
+            ->map(fn (array $row, int $index) => [
+                'id' => isset($row['id']) ? (int) $row['id'] : null,
+                'orden' => $index + 1,
+                'temperatura_minima' => $row['temperatura_minima'] ?? null,
+                'temperatura_maxima' => $row['temperatura_maxima'] ?? null,
+                'tipo_clima' => isset($row['tipo_clima']) ? trim((string) $row['tipo_clima']) : null,
+                'archivo_id' => $row['archivo_id'] ?? null,
+            ]);
+
+        $this->ensureClimateFilesBelongToActivity($actividad, $rows->all());
+
+        $existingIds = $actividad->climas()->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $keptIds = $rows->pluck('id')->filter()->map(fn ($id) => (int) $id)->all();
+        $idsToDelete = array_values(array_diff($existingIds, $keptIds));
+
+        if ($idsToDelete !== []) {
+            $actividad->climas()->whereIn('id', $idsToDelete)->delete();
+        }
+
+        if ($rows->isEmpty()) {
+            $actividad->climas()->delete();
+            return;
+        }
+
+        foreach ($rows as $row) {
+            $payload = [
+                'orden' => $row['orden'],
+                'temperatura_minima' => $row['temperatura_minima'],
+                'temperatura_maxima' => $row['temperatura_maxima'],
+                'tipo_clima' => $row['tipo_clima'],
+                'archivo_id' => $row['archivo_id'],
+            ];
+
+            if ($row['id']) {
+                $actividad->climas()
+                    ->whereKey($row['id'])
+                    ->update($payload);
+                continue;
+            }
+
+            $actividad->climas()->create($payload);
+        }
+    }
 
     private function ensureVolunteerHoursWithinActivityTotal($horasTotales, array $voluntariosDetalle): void
     {
@@ -433,10 +599,37 @@ class ActividadController extends Controller
             throw ValidationException::withMessages($errors);
         }
     }
+
+    private function ensureClimateFilesBelongToActivity(Actividad $actividad, array $rows): void
+    {
+        $fileIds = collect($rows)
+            ->pluck('archivo_id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->values();
+
+        if ($fileIds->isEmpty()) {
+            return;
+        }
+
+        $validFileIds = GaleriaActividad::query()
+            ->where('actividad_id', $actividad->id)
+            ->whereIn('archivo_id', $fileIds->all())
+            ->pluck('archivo_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        foreach ($rows as $index => $row) {
+            $fileId = isset($row['archivo_id']) ? (int) $row['archivo_id'] : null;
+
+            if ($fileId && ! in_array($fileId, $validFileIds, true)) {
+                throw ValidationException::withMessages([
+                    "climas.$index.archivo_id" => ['La imagen seleccionada no pertenece a la galeria de esta actividad.'],
+                ]);
+            }
+        }
+    }
 }
-
-
-
 
 
 

@@ -1,7 +1,8 @@
 <template>
-  <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
+  <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  
+    <div class="modal-dialog modal-lg modal-dialog-scrollable volunteer-modal-dialog">
+      <div class="modal-content volunteer-modal-content">
         <div class="modal-header bg-danger text-white">
           <h5 class="modal-title" id="editUserModalLabel">
             <i class="fa-solid fa-user-edit me-2"></i>Editar perfil
@@ -9,7 +10,7 @@
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
 
-        <div class="modal-body">
+        <div class="modal-body volunteer-modal-body">
           <form @submit.prevent="guardar">
             <div class="row g-3">
               <div class="col-md-12" v-if="!esVoluntario">
@@ -210,7 +211,7 @@ export default {
     }
   },
   async mounted() {
-    this.modalInstance = new Modal(document.getElementById('editUserModal'))
+    this.modalInstance = new Modal(document.getElementById('editUserModal'), { backdrop: 'static', keyboard: false })
     await Promise.all([this.fetchRoles(), this.fetchFiliales()])
   },
   methods: {
@@ -364,6 +365,29 @@ export default {
 </script>
 
 <style scoped>
+#editUserModal {
+  padding-top: 4.75rem;
+  padding-bottom: 4.75rem;
+}
+
+.volunteer-modal-content {
+  position: relative;
+  max-height: calc(100vh - 9.5rem);
+  border-radius: 12px;
+  border: none;
+}
+
+.volunteer-modal-dialog {
+  width: min(840px, calc(100vw - 2rem));
+  max-width: min(840px, calc(100vw - 2rem));
+  margin: 0 auto;
+}
+
+.volunteer-modal-body {
+  overflow-y: auto;
+  padding: 20px 30px;
+}
+
 .role-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -391,4 +415,67 @@ export default {
   border-bottom: 1px solid #f1d7d7;
   padding-bottom: 0.35rem;
 }
+
+@media (max-width: 991.98px) {
+  #editUserModal {
+    padding: 4.25rem 0.5rem 1rem;
+  }
+
+  #editUserModal.show {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .volunteer-modal-dialog {
+    width: calc(100vw - 1rem);
+    max-width: calc(100vw - 1rem);
+    margin: auto;
+  }
+
+  .volunteer-modal-content {
+    max-height: calc(100vh - 5.25rem);
+  }
+
+  .volunteer-modal-body {
+    padding: 18px 18px 24px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  #editUserModal {
+    padding: 5.25rem 0.5rem;
+  }
+
+  #editUserModal.show {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .volunteer-modal-dialog {
+    width: calc(100vw - 1rem);
+    max-width: calc(100vw - 1rem);
+    margin: auto;
+  }
+
+  .volunteer-modal-content {
+    max-height: calc(100vh - 10.5rem);
+  }
+
+  .volunteer-modal-body {
+    padding: 14px 14px 18px;
+  }
+
+  .modal-header,
+  .modal-footer {
+    padding: 0.75rem 0.9rem;
+  }
+
+  .modal-title {
+    font-size: 1.05rem;
+  }
+}
 </style>
+
+

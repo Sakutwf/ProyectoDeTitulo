@@ -18,6 +18,10 @@ class EnsureUserHasPermission
 
         $user->loadMissing('roles.permissions');
 
+        if ($user->hasRole('administrador')) {
+            return $next($request);
+        }
+
         if (! $user->hasPermission($permission)) {
             return response()->json(['message' => 'No tiene permisos para realizar esta accion.'], 403);
         }
