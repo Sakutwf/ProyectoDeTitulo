@@ -59,6 +59,12 @@ class HojaVidaAnualController extends Controller
 
     public function store(Request $request, Voluntario $voluntario)
     {
+        if ($this->isVolunteerSelfServiceRequest($request, $voluntario->id)) {
+            return response()->json([
+                'message' => 'No puedes crear una hoja de vida anual desde tu perfil.',
+            ], 403);
+        }
+
         $validated = $this->validateRequest($request, $voluntario->id);
 
         $hojaVidaAnual = DB::transaction(function () use ($validated, $voluntario, $request) {
@@ -84,14 +90,20 @@ class HojaVidaAnualController extends Controller
 
     public function update(Request $request, HojaVidaAnual $hojaVidaAnual)
     {
+        $isVolunteerSelfService = $this->isVolunteerSelfServiceRequest($request, $hojaVidaAnual->voluntario_id);
+
+        if ($isVolunteerSelfService) {
+            $this->limitVolunteerEditableSections($request, $hojaVidaAnual);
+        }
+
         $validated = $this->validateRequest($request, $hojaVidaAnual->voluntario_id, $hojaVidaAnual);
 
-        $hojaVidaAnual = DB::transaction(function () use ($validated, $hojaVidaAnual, $request) {
+        $hojaVidaAnual = DB::transaction(function () use ($validated, $hojaVidaAnual, $request, $isVolunteerSelfService) {
             $hojaVidaAnual->update(
                 $this->buildMainPayload($validated, $hojaVidaAnual->voluntario_id, $hojaVidaAnual)
             );
 
-            $this->syncRelations($hojaVidaAnual, $validated, $request);
+            $this->syncRelations($hojaVidaAnual, $validated, $request, $isVolunteerSelfService);
 
             return $hojaVidaAnual->fresh()->load(self::RELATIONS);
         });
@@ -297,7 +309,7 @@ class HojaVidaAnualController extends Controller
         ];
     }
 
-    private function syncRelations(HojaVidaAnual $hojaVidaAnual, array $validated, Request $request): void
+    private function syncRelations(HojaVidaAnual $hojaVidaAnual, array $validated, Request $request, bool $academicOnly = false): void
     {
         $this->syncAttachmentRelation(
             $hojaVidaAnual,
@@ -321,6 +333,10 @@ class HojaVidaAnualController extends Controller
             'respaldo_curso',
             'hoja-vida/cursos'
         );
+
+        if ($academicOnly) {
+            return;
+        }
 
         $hojaVidaAnual->sanciones()->delete();
 
@@ -545,6 +561,45 @@ class HojaVidaAnualController extends Controller
         ];
     }
 
+
+    private function isVolunteerSelfServiceRequest(Request $request, int $voluntarioId): bool
+    {
+        $user = $request->user()?->loadMissing('roles', 'voluntario');
+
+        if (! $user || ! $user->hasRole('voluntario') || ! $user->voluntario) {
+            return false;
+        }
+
+        if ($user->hasRole('administrador') || $user->hasRole('secretario-directiva')) {
+            return false;
+        }
+
+        return (int) $user->voluntario->id === $voluntarioId;
+    }
+
+    private function limitVolunteerEditableSections(Request $request, HojaVidaAnual $hojaVidaAnual): void
+    {
+        $request->merge([
+            'anio' => $hojaVidaAnual->anio,
+            'asistencia_anual_ajuste_horas' => $hojaVidaAnual->asistencia_anual_ajuste_horas,
+            'asistencia_reuniones_filial_ajuste_horas' => $hojaVidaAnual->asistencia_reuniones_filial_ajuste_horas,
+            'asistencia_actividades_voluntariado_ajuste_horas' => $hojaVidaAnual->asistencia_actividades_voluntariado_ajuste_horas,
+            'asistencia_horas_filial_ajuste_horas' => $hojaVidaAnual->asistencia_horas_filial_ajuste_horas,
+            'asistencia_horas_formativas_ajuste_horas' => $hojaVidaAnual->asistencia_horas_formativas_ajuste_horas,
+            'estuvo_comision_servicio' => $hojaVidaAnual->estuvo_comision_servicio,
+            'comision_fecha_inicio' => optional($hojaVidaAnual->comision_fecha_inicio)->toDateString(),
+            'comision_fecha_termino' => optional($hojaVidaAnual->comision_fecha_termino)->toDateString(),
+            'comision_lugar' => $hojaVidaAnual->comision_lugar,
+            'comision_actividad' => $hojaVidaAnual->comision_actividad,
+            'comentarios' => $hojaVidaAnual->comentarios,
+            'cargo_clave' => $hojaVidaAnual->cargo_clave,
+            'generada_por' => $hojaVidaAnual->generada_por,
+            'fecha_generacion' => optional($hojaVidaAnual->fecha_generacion)->toDateString(),
+        ]);
+
+        $request->request->remove('sanciones');
+        $request->request->remove('reconocimiento');
+    }
     private function normalizeText(mixed $value): ?string
     {
         if ($value === null) {
@@ -556,6 +611,10 @@ class HojaVidaAnualController extends Controller
         return $normalized === '' ? null : $normalized;
     }
 }
+
+
+
+
 
 
 

@@ -602,6 +602,14 @@
               <button type="button" class="btn btn-outline-secondary" @click="saveDocument('borrador')" :disabled="isSaving || !canSubmit">
                 <i class="fa-regular fa-floppy-disk me-2"></i>Guardar borrador
               </button>
+              <button
+                type="button"
+                class="btn btn-outline-danger"
+                @click="exportDocumentPdf()"
+                :disabled="isSaving || !canSubmit"
+              >
+                <i class="fa-regular fa-file-pdf me-2"></i>{{ isSaving ? 'Preparando...' : 'Exportar PDF' }}
+              </button>
               <button type="button" class="btn btn-danger" @click="handlePrimaryDocumentAction()" :disabled="isSaving || !canSubmit">
                 <i class="fa-solid fa-circle-check me-2"></i>{{ isSaving ? 'Guardando...' : 'Guardar final' }}
               </button>
@@ -2283,6 +2291,33 @@ async function handlePrimaryDocumentAction() {
 
   form.contenido = validatedContent
   await persistDocument('final')
+}
+
+async function exportDocumentPdf() {
+  const validatedContent = validateDocumentForFinalSave()
+
+  if (!validatedContent) {
+    return
+  }
+
+  form.contenido = validatedContent
+  const documento = await persistDocument('final', {
+    showSuccess: false
+  })
+
+  if (!documento?.id) {
+    return
+  }
+
+  await router.push({
+    name: 'DocumentoActividadPdfView',
+    params: { id: documento.id },
+    query: {
+      from: 'documentos',
+      tipo: selectedType.value,
+      actividad: selectedActividadId.value || undefined
+    }
+  })
 }
 
 function actividadLabel(actividad) {

@@ -407,6 +407,118 @@
                     </section>
                   </div>
 
+                  <section v-if="showVolunteerReceiptsSection" class="panel section-receipts-panel">
+                    <div class="panel-header">
+                      <div>
+                        <p class="panel-kicker">Boletas y viaticos</p>
+                        <h3>Respaldos por actividad</h3>
+                      </div>
+                      <span class="counter-chip">
+                        {{ volunteerReceiptActivities.length }} actividad(es)
+                      </span>
+                    </div>
+
+                    <div v-if="isLoadingVolunteerActivities" class="empty-inline">
+                      Cargando actividades relacionadas para subir boletas...
+                    </div>
+
+                    <div v-else-if="!volunteerReceiptActivities.length" class="empty-inline">
+                      Aun no participas en actividades con boletas disponibles para registrar desde tu perfil.
+                    </div>
+
+                    <div v-else class="receipt-activity-list">
+                      <article
+                        v-for="activity in volunteerReceiptActivities"
+                        :key="`profile-receipt-${activity.id}`"
+                        class="receipt-activity-card"
+                      >
+                        <div class="receipt-activity-card__header">
+                          <div>
+                            <strong>{{ activity.nombre || 'Actividad sin nombre' }}</strong>
+                            <p>
+                              {{ activity.tipo || 'Sin tipo' }} · {{ formatDateRange(activity.fecha_inicio, activity.fecha_termino) }}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            class="section-upload-button"
+                            :disabled="volunteerBoletasLoadingActivityId === activity.id"
+                            @click="toggleVolunteerBoletasPanel(activity)"
+                          >
+                            <i class="fa-solid fa-receipt"></i>
+                            <span>{{ volunteerBoletasButtonLabel(activity) }}</span>
+                          </button>
+                        </div>
+
+                        <section v-if="volunteerBoletasActivityId === activity.id" class="receipt-activity-card__body">
+                          <div class="receipt-upload-form">
+                            <div class="receipt-upload-form__grid">
+                              <input
+                                v-model.trim="volunteerBoletaForm.detalle_compra"
+                                type="text"
+                                class="form-control"
+                                placeholder="Detalle de compra"
+                              >
+                              <input
+                                v-model.number="volunteerBoletaForm.monto"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                class="form-control"
+                                placeholder="Monto"
+                              >
+                            </div>
+
+                            <input
+                              v-model="volunteerBoletaForm.fecha_compra"
+                              type="date"
+                              class="form-control"
+                            >
+
+                            <input
+                              type="file"
+                              class="form-control"
+                              accept=".jpg,.jpeg,.png,.webp,.pdf"
+                              @change="onVolunteerBoletaFileSelected"
+                            >
+
+                            <div class="receipt-upload-form__actions">
+                              <button
+                                type="button"
+                                class="btn btn-danger btn-sm"
+                                :disabled="volunteerBoletaSubmitting || !isVolunteerBoletaFormValid"
+                                @click="uploadVolunteerBoleta(activity)"
+                              >
+                                {{ volunteerBoletaSubmitting ? 'Subiendo...' : 'Registrar boleta' }}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div v-if="volunteerBoletasLoadingActivityId === activity.id" class="empty-inline empty-inline--nested">
+                            Cargando boletas registradas...
+                          </div>
+
+                          <div v-else-if="volunteerBoletaItems.length" class="receipt-profile-list">
+                            <article v-for="item in volunteerBoletaItems" :key="item.id" class="receipt-profile-card">
+                              <div class="receipt-profile-card__top">
+                                <strong>{{ item.detalle_compra }}</strong>
+                                <span class="status-pill status-pill--warning">{{ item.estado || 'pendiente' }}</span>
+                              </div>
+                              <p>{{ formatCurrency(item.monto) }} · {{ formatDate(item.fecha_compra) }}</p>
+                              <a :href="item.archivo_url" target="_blank" rel="noopener" class="sheet-link">
+                                {{ item.archivo?.nombre_original || 'Ver respaldo' }}
+                              </a>
+                            </article>
+                          </div>
+
+                          <div v-else class="empty-inline empty-inline--nested">
+                            Todavia no has subido boletas para esta actividad.
+                          </div>
+                        </section>
+                      </article>
+                    </div>
+                  </section>
+
                   <div class="split-grid section-sanctions-group">
                     <section class="panel">
                       <div class="panel-header">
@@ -572,6 +684,13 @@ const selectedYear = ref(null)
 const isEditorOpen = ref(false)
 const editorRecord = ref(null)
 const editorSection = ref(null)
+const volunteerActivities = ref([])
+const isLoadingVolunteerActivities = ref(false)
+const volunteerBoletasActivityId = ref(null)
+const volunteerBoletasLoadingActivityId = ref(null)
+const volunteerBoletaSubmitting = ref(false)
+const volunteerBoletaItems = ref([])
+const volunteerBoletaForm = ref(createEmptyVolunteerBoletaForm())
 const searchTerm = ref('')
 const isUploadingPhoto = ref(false)
 const photoInput = ref(null)
@@ -580,9 +699,23 @@ const viewportWidth = ref(typeof window === 'undefined' ? 1920 : window.innerWid
 const isAnnualHistoryModalOpen = ref(false)
 
 const currentUser = computed(() => store.getters.authUser)
+const isOwnVolunteerProfile = computed(() => Boolean(currentUser.value?.id && user.value?.id) && Number(currentUser.value.id) === Number(user.value.id))
 const canManageHojaVida = computed(() => store.getters.isAdministratorExperience && store.getters.canManagePlatform)
 const canUpdatePhoto = computed(() => Boolean(user.value?.id) && (canManageHojaVida.value || currentUser.value?.id === user.value?.id))
 const canUploadAcademicRecords = computed(() => Boolean(user.value?.id) && (canManageHojaVida.value || currentUser.value?.id === user.value?.id))
+const showVolunteerReceiptsSection = computed(() => Boolean(volunteer.value?.id) && isOwnVolunteerProfile.value)
+const volunteerReceiptActivities = computed(() =>
+  volunteerActivities.value
+    .filter((activity) => (activity.voluntarios || []).some((item) => Number(item.id) === Number(volunteer.value?.id)))
+    .sort((left, right) => (left.fecha_inicio || '').localeCompare(right.fecha_inicio || ''))
+)
+const isVolunteerBoletaFormValid = computed(() =>
+  Boolean(
+    volunteerBoletaForm.value.file &&
+    volunteerBoletaForm.value.detalle_compra.trim() &&
+    Number(volunteerBoletaForm.value.monto) > 0
+  )
+)
 const photoActionLabel = computed(() => volunteer.value?.foto_perfil_url ? 'Cambiar foto' : 'Subir foto')
 
 const volunteer = computed(() => user.value?.voluntario || null)
@@ -915,6 +1048,121 @@ function openPdfExport() {
     params: { id: route.params.id },
     query: { anio: selectedAnnual.value.anio }
   })
+}
+
+function volunteerBoletasButtonLabel(activity) {
+  if (volunteerBoletasLoadingActivityId.value === activity.id) {
+    return 'Cargando boletas...'
+  }
+
+  return volunteerBoletasActivityId.value === activity.id ? 'Ocultar boletas' : 'Ver boletas'
+}
+
+function onVolunteerBoletaFileSelected(event) {
+  volunteerBoletaForm.value.file = event.target.files?.[0] || null
+}
+
+function resetVolunteerReceiptsState() {
+  volunteerActivities.value = []
+  volunteerBoletasActivityId.value = null
+  volunteerBoletasLoadingActivityId.value = null
+  volunteerBoletaItems.value = []
+  volunteerBoletaForm.value = createEmptyVolunteerBoletaForm()
+}
+
+async function loadVolunteerActivities() {
+  if (!volunteer.value?.id) {
+    resetVolunteerReceiptsState()
+    return
+  }
+
+  isLoadingVolunteerActivities.value = true
+
+  try {
+    const firstPage = await axios.get(`${API_BASE}/actividad`, { params: { page: 1 } })
+    const totalPages = Number(firstPage.data?.last_page || 1)
+    const pages = [firstPage.data]
+
+    if (totalPages > 1) {
+      const responses = await Promise.all(
+        Array.from({ length: totalPages - 1 }, (_, index) =>
+          axios.get(`${API_BASE}/actividad`, { params: { page: index + 2 } })
+        )
+      )
+
+      pages.push(...responses.map((response) => response.data))
+    }
+
+    volunteerActivities.value = pages.flatMap((page) => page.data || [])
+  } catch (error) {
+    resetVolunteerReceiptsState()
+    show_alerta('No se pudieron cargar las actividades del voluntario.', 'error')
+  } finally {
+    isLoadingVolunteerActivities.value = false
+  }
+}
+
+async function loadVolunteerBoletas(activityId) {
+  volunteerBoletasLoadingActivityId.value = activityId
+
+  try {
+    const response = await axios.get(`${API_BASE}/actividad/${activityId}/boletas`, {
+      params: { voluntario_id: volunteer.value?.id }
+    })
+    volunteerBoletaItems.value = Array.isArray(response.data) ? response.data : []
+  } catch (error) {
+    volunteerBoletaItems.value = []
+    show_alerta('No se pudieron cargar tus boletas de esta actividad.', 'error')
+  } finally {
+    volunteerBoletasLoadingActivityId.value = null
+  }
+}
+
+async function toggleVolunteerBoletasPanel(activity) {
+  if (volunteerBoletasActivityId.value === activity.id) {
+    volunteerBoletasActivityId.value = null
+    volunteerBoletaItems.value = []
+    volunteerBoletaForm.value = createEmptyVolunteerBoletaForm()
+    return
+  }
+
+  volunteerBoletasActivityId.value = activity.id
+  volunteerBoletaForm.value = createEmptyVolunteerBoletaForm()
+  await loadVolunteerBoletas(activity.id)
+}
+
+async function uploadVolunteerBoleta(activity) {
+  if (!isVolunteerBoletaFormValid.value || !volunteer.value?.id) {
+    show_alerta('Completa detalle, monto y archivo de la boleta.', 'warning')
+    return
+  }
+
+  volunteerBoletaSubmitting.value = true
+
+  try {
+    const formData = new FormData()
+    formData.append('voluntario_id', String(volunteer.value.id))
+    formData.append('archivo', volunteerBoletaForm.value.file)
+    formData.append('detalle_compra', volunteerBoletaForm.value.detalle_compra.trim())
+    formData.append('monto', String(volunteerBoletaForm.value.monto))
+
+    if (volunteerBoletaForm.value.fecha_compra) {
+      formData.append('fecha_compra', volunteerBoletaForm.value.fecha_compra)
+    }
+
+    await axios.post(`${API_BASE}/actividad/${activity.id}/boletas`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+
+    volunteerBoletaForm.value = createEmptyVolunteerBoletaForm()
+    await loadVolunteerBoletas(activity.id)
+    show_alerta('Boleta registrada correctamente.', 'success')
+  } catch (error) {
+    const message = error.response?.data?.message || 'No se pudo registrar la boleta.'
+    show_alerta(message, 'error')
+  } finally {
+    volunteerBoletaSubmitting.value = false
+  }
 }
 
 function openCreateEditor() {
@@ -1838,6 +2086,74 @@ function matchesSearch(value) {
   font-size: 1.08rem;
 }
 
+.receipt-activity-list,
+.receipt-profile-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.receipt-activity-card,
+.receipt-profile-card {
+  border: 1px solid #e3eaf2;
+  border-radius: 18px;
+  background: #fbfdff;
+}
+
+.receipt-activity-card {
+  padding: 0.95rem;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.receipt-activity-card__header,
+.receipt-profile-card__top,
+.receipt-upload-form__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.receipt-activity-card__header strong,
+.receipt-profile-card__top strong {
+  color: #163a69;
+}
+
+.receipt-activity-card__header p,
+.receipt-profile-card p {
+  margin: 0.2rem 0 0;
+  color: #617389;
+}
+
+.receipt-activity-card__body {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.receipt-upload-form {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.9rem;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid #e4ebf3;
+}
+
+.receipt-upload-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.receipt-profile-card {
+  padding: 0.9rem 0.95rem;
+}
+
+.empty-inline--nested {
+  background: #f8fafc;
+}
+
 @media (min-width: 1600px) {
   .fact-grid--personal {
     grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -2311,6 +2627,10 @@ function matchesSearch(value) {
     grid-template-columns: 1fr;
   }
 
+  .receipt-upload-form__grid {
+    grid-template-columns: 1fr;
+  }
+
   .fact-grid--personal .fact-tile--span-2 {
     grid-column: auto;
   }
@@ -2356,6 +2676,14 @@ function matchesSearch(value) {
   }
 }
 </style>
+
+
+
+
+
+
+
+
 
 
 

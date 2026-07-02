@@ -24,7 +24,10 @@
                             <button class="btn btn-danger me-3" @click="navigatePrimary">
                                 <i :class="primaryActionIcon"></i>{{ primaryActionLabel }}
                             </button>
-                            <button v-if="canManagePlatform" class="btn btn-outline-secondary" @click="navigateToActividades">
+                            <button v-if="canManagePlatform && hasVolunteerProfile" class="btn btn-outline-secondary" @click="navigateToVolunteerProfile">
+                                <i class="fa-solid fa-id-card me-2"></i>Ir a mi perfil de voluntario
+                            </button>
+                            <button v-else-if="canManagePlatform" class="btn btn-outline-secondary" @click="navigateToActividades">
                                 <i class="fa-solid fa-chart-line me-2"></i>Ver actividades
                             </button>
                             <button v-else class="btn btn-outline-secondary" @click="navigateToVolunteerActivities">
@@ -58,6 +61,9 @@
             },
             isVolunteerExperience() {
                 return this.$store.getters.isVolunteerExperience || this.$store.getters.isVolunteerOnly;
+            },
+            hasVolunteerProfile() {
+                return Boolean(this.currentUser?.voluntario?.id || this.currentUser?.voluntario);
             },
             canSwitchAccess() {
                 return this.$store.getters.requiresAccessSelection;
@@ -102,6 +108,9 @@
             },
             navigateToActividades() {
                 this.$router.push('/actividades');
+            },
+            navigateToVolunteerProfile() {
+                this.$router.push(`/historial/${this.currentUser.id}`);
             },
             navigateToVolunteerActivities() {
                 this.$router.push({ name: 'volunteer-activities' });

@@ -76,6 +76,22 @@
                     <span class="nav-link__label">Galería de fotos</span>
                 </router-link>
             </li>
+            <li v-if="isVolunteerProfileAvailable" class="nav-item" :class="{ active: activeLink === 'mi-perfil' }">
+                <router-link :to="volunteerProfileRoute" class="nav-link" :title="displayCompact ? 'Mi perfil' : null" :aria-label="displayCompact ? 'Mi perfil' : null">
+                    <span class="nav-link__icon">
+                        <i class="fa-solid fa-id-card"></i>
+                    </span>
+                    <span class="nav-link__label">Mi perfil</span>
+                </router-link>
+            </li>
+            <li v-if="isVolunteerProfileAvailable" class="nav-item" :class="{ active: activeLink === 'mis-actividades' }">
+                <router-link to="/mis-actividades" class="nav-link" :title="displayCompact ? 'Mis actividades' : null" :aria-label="displayCompact ? 'Mis actividades' : null">
+                    <span class="nav-link__icon">
+                        <i class="fa-solid fa-list-check"></i>
+                    </span>
+                    <span class="nav-link__label">Mis actividades</span>
+                </router-link>
+            </li>
             <li v-if="canSwitchAccess" class="nav-item">
                 <button type="button" class="nav-link nav-link-button" :title="displayCompact ? 'Cambiar vista' : null" :aria-label="displayCompact ? 'Cambiar vista' : null" @click="changeAccess">
                     <span class="nav-link__icon">
@@ -134,6 +150,12 @@ export default {
         canSwitchAccess() {
             return this.$store.getters.requiresAccessSelection
         },
+        isVolunteerProfileAvailable() {
+            return Boolean(this.currentUser?.id) && !this.canManagePlatform
+        },
+        volunteerProfileRoute() {
+            return this.currentUser?.id ? `/historial/${this.currentUser.id}` : '/inicio'
+        },
         roleLabel() {
             return this.canManagePlatform ? 'Administrador' : 'Perfil de voluntario'
         },
@@ -144,6 +166,8 @@ export default {
             if (path.includes('/actividades')) return 'actividades'
             if (path.includes('/documentos')) return 'documentos'
             if (path.includes('/galeria-fotos')) return 'galeria-fotos'
+            if (path.includes('/mis-actividades')) return 'mis-actividades'
+            if (path.includes('/historial')) return 'mi-perfil'
             return 'inicio'
         }
     },
@@ -417,5 +441,9 @@ export default {
     }
 }
 </style>
+
+
+
+
 
 

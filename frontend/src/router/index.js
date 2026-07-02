@@ -5,6 +5,7 @@ import UserView from '../views/UserView.vue'
 import ActividadView from '../views/ActividadView.vue'
 import HistorialView from '../views/HistorialView.vue'
 import HistorialPdfView from '../views/HistorialPdfView.vue'
+import DocumentoActividadPdfView from '../views/DocumentoActividadPdfView.vue'
 import LoginView from '../views/LoginView.vue'
 import AccessSelectionView from '../views/AccessSelectionView.vue'
 import VolunteerActivitiesView from '../views/VolunteerActivitiesView.vue'
@@ -93,6 +94,12 @@ const routes = [
     name: 'HistorialPdfView',
     component: HistorialPdfView,
     meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva', 'voluntario'] }
+  },
+  {
+    path: '/documentos-actividad/:id/pdf',
+    name: 'DocumentoActividadPdfView',
+    component: DocumentoActividadPdfView,
+    meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
   }
 ]
 

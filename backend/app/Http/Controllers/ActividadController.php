@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Actividad;
+use App\Models\Album;
 use App\Models\Archivo;
 use App\Models\BoletaViatico;
 use App\Models\GaleriaActividad;
@@ -289,15 +290,17 @@ class ActividadController extends Controller
             ], 422);
         }
 
-        Storage::disk('public')->makeDirectory('actividades/boletas');
+        $album = $this->ensureReceiptAlbum($actividad, $request->user()?->id ?? $voluntario->user_id);
+
+        Storage::disk('public')->makeDirectory('albumes/'.$album->id.'/boletas');
 
         $file = $request->file('archivo');
-        $path = $file->store('actividades/boletas', 'public');
+        $path = $file->store('albumes/'.$album->id.'/boletas', 'public');
 
         $archivo = Archivo::create([
-            'entidad' => 'actividad',
-            'entidad_id' => $actividad->id,
-            'categoria' => 'boleta_viatico',
+            'entidad' => 'album',
+            'entidad_id' => $album->id,
+            'categoria' => 'boleta_album',
             'ruta' => $path,
             'nombre_original' => $file->getClientOriginalName(),
             'extension' => $file->getClientOriginalExtension(),
@@ -319,6 +322,20 @@ class ActividadController extends Controller
         return response()->json(
             $boleta->load(['archivo', 'voluntario.user']),
             201
+        );
+    }
+
+    private function ensureReceiptAlbum(Actividad $actividad, ?int $creatorId): Album
+    {
+        return Album::query()->firstOrCreate(
+            [
+                'actividad_id' => $actividad->id,
+                'nombre' => 'Boletas de viatico',
+            ],
+            [
+                'descripcion' => 'Album generado automaticamente para respaldos de boletas y viaticos de la actividad.',
+                'creado_por' => $creatorId,
+            ]
         );
     }
 
@@ -630,6 +647,8 @@ class ActividadController extends Controller
         }
     }
 }
+
+
 
 
 
