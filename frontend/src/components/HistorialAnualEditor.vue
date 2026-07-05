@@ -10,7 +10,7 @@
 
         <div class="editor-actions">
           <span v-if="isSectionModal" class="period-chip">
-            Periodo {{ form.anio || props.record?.anio || 'sin anio' }}
+            Periodo {{ form.anio || props.activeYear || props.record?.anio || 'sin anio' }}
           </span>
           <button
             type="button"
@@ -26,8 +26,11 @@
 
       <form class="editor-grid" @submit.prevent="submit">
         <article v-if="!isSectionModal" class="editor-card">
-          <h4>Asistencia del periodo</h4>
-          <div v-if="!props.record" class="form-grid">
+          <div class="attendance-card__header">
+            <h4>Asistencia del periodo</h4>
+            <span v-if="props.record" class="attendance-card__year-badge">{{ activePeriodYearLabel }}</span>
+          </div>
+          <div v-if="!props.record" class="form-grid attendance-card__year-input-row">
             <label>
               <span>Anio</span>
               <input v-model.trim="form.anio" type="number" min="1900" max="2100" class="form-control" required>
@@ -84,9 +87,19 @@
                     </div>
                   </div>
                 </div>
-                <div class="attendance-summary__item attendance-summary__item--total-period">
-                  <span>Total horas periodo</span>
-                  <strong>{{ formatWholeHours(attendancePreview.base) }}</strong>
+                <div class="attendance-summary__item attendance-summary__item--total-period attendance-summary__item--manual-hours">
+                  <span>Horas sin clasificacion</span>
+                  <div class="attendance-summary__metric-row">
+                    <strong>{{ formatWholeHours(attendancePreview.unclassified) }}</strong>
+                    <button
+                      type="button"
+                      class="attendance-summary__manual-button"
+                      :disabled="isSubmitting"
+                      @click="openUnclassifiedHoursModal"
+                    >
+                      Ingresar
+                    </button>
+                  </div>
                 </div>
               </div>
               <div class="attendance-summary__total">
@@ -457,7 +470,7 @@
         </article>
         <article v-if="!isSectionModal" class="editor-card">
           <h4>Comentarios</h4>
-          <label>
+          <label class="comments-field">
             <span>Comentarios</span>
             <textarea v-model.trim="form.comentarios" class="form-control" rows="4"></textarea>
           </label>
@@ -472,6 +485,52 @@
         </div>
       </form>
     </section>
+
+    <div v-if="isUnclassifiedHoursModalOpen" class="inline-dialog-backdrop" @click.self="closeUnclassifiedHoursModal">
+      <section class="inline-dialog" role="dialog" aria-modal="true" aria-labelledby="unclassified-hours-title">
+        <div class="inline-dialog__header">
+          <div>
+            <p class="inline-dialog__kicker">Registro manual</p>
+            <h4 id="unclassified-hours-title">Horas sin clasificacion</h4>
+          </div>
+          <button
+            type="button"
+            class="editor-close"
+            :disabled="isSubmitting"
+            aria-label="Cerrar modal de horas sin clasificacion"
+            @click="closeUnclassifiedHoursModal"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <label class="inline-dialog__field">
+          <span>Ingresa las horas sin clasificacion del periodo</span>
+          <input
+            v-model.trim="unclassifiedHoursDraft"
+            type="number"
+            min="0"
+            step="0.25"
+            inputmode="decimal"
+            class="form-control"
+            placeholder="Ejemplo: 12"
+          >
+        </label>
+
+        <p class="inline-dialog__hint">
+          Usa este campo para cargar horas historicas de hojas anuales anteriores que no tengan detalle por categoria.
+        </p>
+
+        <div class="inline-dialog__actions">
+          <button type="button" class="btn btn-outline-secondary" :disabled="isSubmitting" @click="closeUnclassifiedHoursModal">
+            Cancelar
+          </button>
+          <button type="button" class="btn btn-danger" :disabled="isSubmitting" @click="saveUnclassifiedHours">
+            Aceptar
+          </button>
+        </div>
+      </section>
+    </div>
   </div>
 </template>
 
@@ -537,6 +596,8 @@ const titlesSectionRef = ref(null)
 const coursesSectionRef = ref(null)
 const showSanctionsSection = ref(false)
 const showCargoSelector = ref(false)
+const isUnclassifiedHoursModalOpen = ref(false)
+const unclassifiedHoursDraft = ref('')
 const state = reactive({
   isSubmitting: false
 })
@@ -571,6 +632,7 @@ const panelDescription = computed(() => {
     : 'Completa los antecedentes del nuevo periodo anual.'
 })
 
+const activePeriodYearLabel = computed(() => form.anio || props.activeYear || props.record?.anio || 'sin anio')
 const isSubmitting = computed(() => state.isSubmitting)
 const submitLabel = computed(() => {
   if (isSubmitting.value) {
@@ -594,7 +656,8 @@ const attendanceAdjustments = computed(() => ({
   reuniones: roundToTwo(nullableNumber(form.asistencia_reuniones_filial_ajuste_horas) ?? 0),
   voluntariado: roundToTwo(nullableNumber(form.asistencia_actividades_voluntariado_ajuste_horas) ?? 0),
   filial: roundToTwo(nullableNumber(form.asistencia_horas_filial_ajuste_horas) ?? 0),
-  formativas: roundToTwo(nullableNumber(form.asistencia_horas_formativas_ajuste_horas) ?? 0)
+  formativas: roundToTwo(nullableNumber(form.asistencia_horas_formativas_ajuste_horas) ?? 0),
+  unclassified: roundToTwo(nullableNumber(form.asistencia_anual_ajuste_horas) ?? 0)
 }))
 const attendancePreview = computed(() => {
   const required = roundToTwo(Number(props.record?.asistencia_anual_horas_requeridas ?? 288))
@@ -605,12 +668,13 @@ const attendancePreview = computed(() => {
   const reuniones = roundToTwo(Math.max(reunionesBase + attendanceAdjustments.value.reuniones, 0))
   const voluntariado = roundToTwo(Math.max(voluntariadoBase + attendanceAdjustments.value.voluntariado, 0))
   const filial = roundToTwo(Math.max(filialBase + attendanceAdjustments.value.filial, 0))
-  const formativas = roundToTwo(Math.max(formativasBase + attendanceAdjustments.value.formativas, 0))
+    const formativas = roundToTwo(Math.max(formativasBase + attendanceAdjustments.value.formativas, 0))
+  const unclassified = roundToTwo(Math.max(attendanceAdjustments.value.unclassified, 0))
   const base = roundToTwo(reuniones + voluntariado + filial + formativas)
-  const total = base
+  const total = roundToTwo(base + unclassified)
   const porcentaje = required > 0 ? roundToTwo(Math.min((total / required) * 100, 100)) : 0
 
-  return { reuniones, voluntariado, filial, formativas, base, total, porcentaje, requeridas: required }
+  return { reuniones, voluntariado, filial, formativas, unclassified, base, total, porcentaje, requeridas: required }
 })
 const selectedCargoDetails = computed(() => cargoOptions.find((cargo) => cargo.key === form.cargo_clave) || null)
 const selectedCargoLabel = computed(() => formatCargoLabel(selectedCargoDetails.value))
@@ -672,6 +736,38 @@ function adjustAttendance(type, delta) {
 
   const currentValue = nullableNumber(form[field]) ?? 0
   form[field] = String(roundToTwo(currentValue + delta))
+}
+
+function openUnclassifiedHoursModal() {
+  unclassifiedHoursDraft.value = form.asistencia_anual_ajuste_horas === '' || form.asistencia_anual_ajuste_horas === null || form.asistencia_anual_ajuste_horas === undefined
+    ? ''
+    : String(form.asistencia_anual_ajuste_horas)
+  isUnclassifiedHoursModalOpen.value = true
+}
+
+function closeUnclassifiedHoursModal() {
+  isUnclassifiedHoursModalOpen.value = false
+  unclassifiedHoursDraft.value = ''
+}
+
+function saveUnclassifiedHours() {
+  const rawValue = unclassifiedHoursDraft.value
+
+  if (rawValue === '') {
+    form.asistencia_anual_ajuste_horas = ''
+    closeUnclassifiedHoursModal()
+    return
+  }
+
+  const numericValue = Number(rawValue)
+
+  if (!Number.isFinite(numericValue) || numericValue < 0) {
+    show_alerta('Ingresa un numero valido de horas sin clasificacion.', 'warning')
+    return
+  }
+
+  form.asistencia_anual_ajuste_horas = String(roundToTwo(numericValue))
+  closeUnclassifiedHoursModal()
 }
 
 function focusInitialSection() {
@@ -975,8 +1071,8 @@ function sanctionHasData(row) {
 function buildFormData() {
   const formData = new FormData()
 
-  appendValue(formData, 'anio', Number(form.anio))
-  appendValue(formData, 'asistencia_anual_ajuste_horas', 0)
+    appendValue(formData, 'anio', Number(form.anio))
+  appendValue(formData, 'asistencia_anual_ajuste_horas', nullableNumber(form.asistencia_anual_ajuste_horas) ?? 0)
   appendValue(formData, 'asistencia_reuniones_filial_ajuste_horas', nullableNumber(form.asistencia_reuniones_filial_ajuste_horas) ?? 0)
   appendValue(formData, 'asistencia_actividades_voluntariado_ajuste_horas', nullableNumber(form.asistencia_actividades_voluntariado_ajuste_horas) ?? 0)
   appendValue(formData, 'asistencia_horas_filial_ajuste_horas', nullableNumber(form.asistencia_horas_filial_ajuste_horas) ?? 0)
@@ -1334,6 +1430,35 @@ async function submit() {
   line-height: 1.45;
 }
 
+.attendance-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.95rem;
+}
+
+.attendance-card__year-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 96px;
+  min-height: 46px;
+  padding: 0.45rem 1rem;
+  border-radius: 16px;
+  background: #ff3743;
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 10px 22px rgba(255, 55, 67, 0.18);
+}
+
+.attendance-card__year-input-row {
+  margin-bottom: 0.95rem;
+}
+
 .attendance-summary {
   display: grid;
   gap: 1rem;
@@ -1495,11 +1620,100 @@ async function submit() {
   line-height: 1;
 }
 
+.attendance-summary__manual-button {
+  min-width: 92px;
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 999px;
+  padding: 0.55rem 1rem;
+  background: #0f3c74;
+  color: #fff;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.attendance-summary__manual-button:hover {
+  filter: brightness(0.95);
+}
+
+.attendance-summary__manual-button:focus-visible {
+  outline: 3px solid rgba(15, 60, 116, 0.2);
+  outline-offset: 2px;
+}
+
 .attendance-summary__note {
   margin: 0;
   color: #4f6480;
   font-size: 0.98rem;
   line-height: 1.5;
+}
+
+.inline-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1210;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(8, 18, 34, 0.38);
+  backdrop-filter: blur(3px);
+}
+
+.inline-dialog {
+  width: min(100%, 430px);
+  display: grid;
+  gap: 1rem;
+  border-radius: 24px;
+  padding: 1.25rem;
+  background: #fff;
+  box-shadow: 0 26px 60px rgba(12, 30, 58, 0.22);
+}
+
+.inline-dialog__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.inline-dialog__header h4 {
+  margin: 0.2rem 0 0;
+  color: #102f57;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.inline-dialog__kicker {
+  margin: 0;
+  color: #c92a35;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.inline-dialog__field {
+  display: grid;
+  gap: 0.45rem;
+  color: #27476e;
+  font-weight: 700;
+}
+
+.inline-dialog__hint {
+  margin: 0;
+  color: #667993;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.inline-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
 }
 
 .editor-card--section {
@@ -1798,7 +2012,36 @@ async function submit() {
     grid-template-columns: 1fr;
   }
 
-  .attendance-summary {
+  .attendance-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.95rem;
+}
+
+.attendance-card__year-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 96px;
+  min-height: 46px;
+  padding: 0.45rem 1rem;
+  border-radius: 16px;
+  background: #ff3743;
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 10px 22px rgba(255, 55, 67, 0.18);
+}
+
+.attendance-card__year-input-row {
+  margin-bottom: 0.95rem;
+}
+
+.attendance-summary {
     padding: 1rem;
   }
 
@@ -1844,6 +2087,12 @@ async function submit() {
   }
 }
 </style>
+
+
+
+
+
+
 
 
 

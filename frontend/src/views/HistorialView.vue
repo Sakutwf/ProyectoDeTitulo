@@ -21,7 +21,7 @@
                 </button>
 
                 <div class="year-card">
-                  {{ selectedAnnual?.anio || '----' }}
+                  {{ activePeriodYearLabel }}
                 </div>
 
                 <div class="photo-card">
@@ -175,6 +175,7 @@
               :record="editorRecord"
               :current-user-id="currentUser?.id || null"
               :initial-section="editorSection"
+              :active-year="activePeriodYear"
               @saved="handleRecordSaved"
               @cancel="closeEditor"
             />
@@ -270,48 +271,11 @@
                       </article>
                     </div>
                   </section>
-
-                  <section v-if="showCommissionPanel" class="panel section-commission-panel">
-                    <div class="panel-header">
-                      <div>
-                        <p class="panel-kicker">Comision de servicio</p>
-                        <h3>Registro del periodo</h3>
-                      </div>
-                      <span class="counter-chip">
-                        {{ commissionInfo.inService ? 'En comision' : 'Sin comision' }}
-                      </span>
-                    </div>
-
-                    <div v-if="commissionInfo.hasAnyData" class="commission-card">
-                      <div class="commission-top">
-                        <span class="mini-pill" :class="{ 'mini-pill--active': commissionInfo.inService }">
-                          {{ commissionInfo.inService ? 'Si estuvo en comision' : 'No estuvo en comision' }}
-                        </span>
-                        <span class="mini-pill">{{ commissionInfo.dateRange }}</span>
-                      </div>
-
-                      <div class="commission-grid">
-                        <article class="commission-item">
-                          <span>Lugar</span>
-                          <strong>{{ commissionInfo.place }}</strong>
-                        </article>
-                        <article class="commission-item commission-item--wide">
-                          <span>Actividad</span>
-                          <strong>{{ commissionInfo.activity }}</strong>
-                        </article>
-                      </div>
-                    </div>
-
-                    <div v-else class="empty-inline">
-                      No hay antecedentes de comision de servicio para este periodo.
-                    </div>
-                  </section>
-
                   <div class="split-grid section-titles-group">
                     <section class="panel">
                       <div class="panel-header">
                         <div>
-                          <p class="panel-kicker">Titulos aprobados</p>
+                          <p class="panel-kicker">Titulos</p>
                           <h3>{{ filteredTitles.length }} registro(s)</h3>
                         </div>
                         <button
@@ -321,8 +285,8 @@
                           :disabled="!selectedAnnual"
                           @click="openSectionEditor('titles')"
                         >
-                          <i class="fa-solid fa-file-arrow-up"></i>
-                          <span>Subir titulo</span>
+                          <i class="fa-solid fa-pen-to-square"></i>
+                          <span>Editar registros</span>
                         </button>
                       </div>
 
@@ -370,8 +334,8 @@
                           :disabled="!selectedAnnual"
                           @click="openSectionEditor('courses')"
                         >
-                          <i class="fa-solid fa-file-arrow-up"></i>
-                          <span>Subir curso</span>
+                          <i class="fa-solid fa-pen-to-square"></i>
+                          <span>Editar registros</span>
                         </button>
                       </div>
 
@@ -520,6 +484,42 @@
                   </section>
 
                   <div class="split-grid section-sanctions-group">
+                  <section v-if="showCommissionPanel" class="panel section-commission-panel">
+                    <div class="panel-header">
+                      <div>
+                        <p class="panel-kicker">Comision de servicio</p>
+                        <h3>Registro del periodo</h3>
+                      </div>
+                      <span class="counter-chip">
+                        {{ commissionInfo.inService ? 'En comision' : 'Sin comision' }}
+                      </span>
+                    </div>
+
+                    <div v-if="commissionInfo.hasAnyData" class="commission-card">
+                      <div class="commission-top">
+                        <span class="mini-pill" :class="{ 'mini-pill--active': commissionInfo.inService }">
+                          {{ commissionInfo.inService ? 'Si estuvo en comision' : 'No estuvo en comision' }}
+                        </span>
+                        <span class="mini-pill">{{ commissionInfo.dateRange }}</span>
+                      </div>
+
+                      <div class="commission-grid">
+                        <article class="commission-item">
+                          <span>Lugar</span>
+                          <strong>{{ commissionInfo.place }}</strong>
+                        </article>
+                        <article class="commission-item commission-item--wide">
+                          <span>Actividad</span>
+                          <strong>{{ commissionInfo.activity }}</strong>
+                        </article>
+                      </div>
+                    </div>
+
+                    <div v-else class="empty-inline">
+                      No hay antecedentes de comision de servicio para este periodo.
+                    </div>
+                  </section>
+
                     <section class="panel">
                       <div class="panel-header">
                         <div>
@@ -590,30 +590,16 @@
                       <h3>Hojas anuales</h3>
                     </div>
 
-                    <div v-if="annualRecords.length" class="history-controls">
-                      <span class="history-counter">
-                        {{ annualWindowStart + 1 }}-{{ annualWindowEnd }} de {{ annualRecords.length }}
-                      </span>
-                      <div class="history-nav">
-                        <button
-                          type="button"
-                          class="history-nav__button"
-                          :disabled="!canGoPrevAnnuals"
-                          @click="goToPreviousAnnualPage"
-                          aria-label="Ver hojas anuales anteriores"
-                        >
-                          <i class="fa-solid fa-chevron-left"></i>
-                        </button>
-                        <button
-                          type="button"
-                          class="history-nav__button"
-                          :disabled="!canGoNextAnnuals"
-                          @click="goToNextAnnualPage"
-                          aria-label="Ver hojas anuales siguientes"
-                        >
-                          <i class="fa-solid fa-chevron-right"></i>
-                        </button>
-                      </div>
+                    <div v-if="canManageHojaVida && selectedAnnual" class="history-panel__actions history-panel__actions--header">
+                      <button
+                        type="button"
+                        class="history-panel__action-button history-panel__action-button--danger"
+                        @click="deleteSelectedAnnual"
+                        aria-label="Eliminar hoja anual seleccionada"
+                        title="Eliminar hoja anual seleccionada"
+                      >
+                        <i class="fa-solid fa-trash"></i>
+                      </button>
                     </div>
                   </div>
 
@@ -630,8 +616,33 @@
                   <div v-else class="empty-inline">
                     Este voluntario todavia no tiene hoja de vida anual registrada.
                   </div>
-                </section>
 
+                  <div v-if="annualRecords.length" class="history-controls history-controls--footer">
+                    <span class="history-counter">
+                      {{ annualWindowStart + 1 }}-{{ annualWindowEnd }} de {{ annualRecords.length }}
+                    </span>
+                    <div class="history-nav">
+                      <button
+                        type="button"
+                        class="history-nav__button"
+                        :disabled="!canGoPrevAnnuals"
+                        @click="goToPreviousAnnualPage"
+                        aria-label="Ver hojas anuales anteriores"
+                      >
+                        <i class="fa-solid fa-chevron-left"></i>
+                      </button>
+                      <button
+                        type="button"
+                        class="history-nav__button"
+                        :disabled="!canGoNextAnnuals"
+                        @click="goToNextAnnualPage"
+                        aria-label="Ver hojas anuales siguientes"
+                      >
+                        <i class="fa-solid fa-chevron-right"></i>
+                      </button>
+                    </div>
+                  </div>
+                </section>
                 <section v-if="filteredRecognitionItems.length" class="panel recognition-panel">
                   <div class="panel-header">
                     <div>
@@ -672,6 +683,7 @@ import HistorialAnualCard from '../components/HistorialAnualCard.vue'
 import HistorialAnualEditor from '../components/HistorialAnualEditor.vue'
 import { API_BASE } from '../config/api'
 import { show_alerta } from '../funciones'
+import Swal from 'sweetalert2'
 
 const route = useRoute()
 const router = useRouter()
@@ -684,12 +696,21 @@ const selectedYear = ref(null)
 const isEditorOpen = ref(false)
 const editorRecord = ref(null)
 const editorSection = ref(null)
+const editorActiveYear = ref(null)
 const volunteerActivities = ref([])
 const isLoadingVolunteerActivities = ref(false)
 const volunteerBoletasActivityId = ref(null)
 const volunteerBoletasLoadingActivityId = ref(null)
 const volunteerBoletaSubmitting = ref(false)
 const volunteerBoletaItems = ref([])
+function createEmptyVolunteerBoletaForm() {
+  return {
+    detalle_compra: '',
+    monto: '',
+    fecha_compra: '',
+    file: null
+  }
+}
 const volunteerBoletaForm = ref(createEmptyVolunteerBoletaForm())
 const searchTerm = ref('')
 const isUploadingPhoto = ref(false)
@@ -744,6 +765,15 @@ const selectedAnnual = computed(() => {
   }
 
   return annualRecords.value.find((record) => Number(record.anio) === Number(selectedYear.value)) || null
+})
+
+const activePeriodYear = computed(() => {
+  const year = selectedAnnual.value?.anio ?? selectedYear.value
+  return year ? Number(year) : null
+})
+
+const activePeriodYearLabel = computed(() => {
+  return activePeriodYear.value ? String(activePeriodYear.value) : ''
 })
 
 const normalizedSearch = computed(() => normalizeSearch(searchTerm.value))
@@ -803,23 +833,23 @@ const personalFacts = computed(() => {
 
   return [
     { label: 'Nombre', value: displayName.value, layoutClass: 'fact-tile--span-2 fact-tile--primary' },
-    { label: 'RUT', value: volunteer.value.rut || 'Sin registro' },
-    { label: 'Edad', value: ageLabel.value },
-    { label: 'Estado Civil', value: volunteer.value.estado_civil || 'Sin registro' },
-    { label: 'Domicilio', value: volunteer.value.domicilio || 'Sin registro', layoutClass: 'fact-tile--span-2' },
-    { label: 'Nacionalidad', value: volunteer.value.nacionalidad || 'Sin registro' },
-    { label: 'Celular', value: volunteer.value.celular || 'Sin registro' },
-    { label: 'Correo electrónico', value: volunteer.value.correo_electronico || 'Sin correo', layoutClass: 'fact-tile--email' },
-    { label: 'Fecha de nacimiento', value: formatDate(volunteer.value.fecha_nacimiento) },
-    { label: 'Alergias', value: volunteer.value.alergias || 'Sin registro' },
-    { label: 'Enfermedades', value: volunteer.value.enfermedades || 'Sin registro' },
-    { label: 'Grupo Sanguíneo', value: volunteer.value.grupo_sanguineo || 'Sin registro' },
-    { label: 'Nivel de escolaridad', value: volunteer.value.nivel_escolaridad || 'Sin registro' },
-    { label: 'Ocupación', value: volunteer.value.ocupacion || 'Sin registro' },
+    { label: 'RUT', value: volunteer.value.rut || '-' },
+    { label: 'Edad', value: ageLabel.value === 'Sin registro' ? '-' : ageLabel.value },
+    { label: 'Estado Civil', value: volunteer.value.estado_civil || '-' },
+    { label: 'Domicilio', value: volunteer.value.domicilio || '-', layoutClass: 'fact-tile--span-2' },
+    { label: 'Nacionalidad', value: volunteer.value.nacionalidad || '-' },
+    { label: 'Celular', value: volunteer.value.celular || '-' },
+    { label: 'Fecha de nacimiento', value: formatDate(volunteer.value.fecha_nacimiento) === 'Sin registro' ? '-' : formatDate(volunteer.value.fecha_nacimiento) },
+    { label: 'Correo electrónico', value: volunteer.value.correo_electronico || '-', layoutClass: 'fact-tile--span-2 fact-tile--email' },
+    { label: 'Alergias', value: volunteer.value.alergias || '-' },
+    { label: 'Enfermedades', value: volunteer.value.enfermedades || '-' },
+    { label: 'Grupo Sanguíneo', value: volunteer.value.grupo_sanguineo || '-' },
+    { label: 'Nivel de escolaridad', value: volunteer.value.nivel_escolaridad || '-' },
+    { label: 'Ocupación', value: volunteer.value.ocupacion || '-' },
     {
       label: 'Nombre y Contacto para emergencias',
-      value: volunteer.value.contacto_emergencia_nombre || 'Sin registro',
-      secondaryValue: volunteer.value.contacto_emergencia_numero || 'Sin registro',
+      value: volunteer.value.contacto_emergencia_nombre || '-',
+      secondaryValue: volunteer.value.contacto_emergencia_numero || '-',
       layoutClass: 'fact-tile--span-2 fact-tile--contact'
     },
   ]
@@ -1208,6 +1238,104 @@ async function handleRecordSaved(record) {
   })
 }
 
+async function deleteSelectedAnnual() {
+  if (!selectedAnnual.value?.id) {
+    return
+  }
+
+  const result = await Swal.fire({
+    title: `Eliminar hoja anual ${selectedAnnual.value.anio}?`,
+    text: 'Se perdera la informacion registrada para ese periodo.',
+    icon: 'warning',
+    iconHtml: '×',
+    showCancelButton: true,
+    confirmButtonText: 'Si, eliminar',
+    cancelButtonText: 'Cancelar',
+    buttonsStyling: false,
+    customClass: {
+      popup: 'annual-delete-alert',
+      icon: 'annual-delete-alert__icon',
+      title: 'annual-delete-alert__title',
+      htmlContainer: 'annual-delete-alert__text',
+      confirmButton: 'annual-delete-alert__confirm',
+      cancelButton: 'annual-delete-alert__cancel',
+      actions: 'annual-delete-alert__actions'
+    },
+    didOpen: (popup) => {
+      const icon = popup.querySelector('.swal2-icon')
+      const iconContent = popup.querySelector('.swal2-icon-content')
+      const actions = popup.querySelector('.swal2-actions')
+      const confirmButton = popup.querySelector('.annual-delete-alert__confirm')
+      const cancelButton = popup.querySelector('.annual-delete-alert__cancel')
+
+      popup.style.width = 'min(32rem, calc(100vw - 2rem))'
+      popup.style.padding = '1.75rem 1.5rem 1.6rem'
+      popup.style.borderRadius = '22px'
+
+      if (icon) {
+        icon.style.width = '5.25rem'
+        icon.style.height = '5.25rem'
+        icon.style.margin = '0 auto 1rem'
+        icon.style.border = '4px solid #ff3743'
+        icon.style.borderRadius = '999px'
+        icon.style.color = '#ff3743'
+      }
+
+      if (iconContent) {
+        iconContent.style.color = '#ff3743'
+        iconContent.style.fontSize = '3rem'
+        iconContent.style.lineHeight = '1'
+      }
+
+      if (actions) {
+        actions.style.display = 'flex'
+        actions.style.justifyContent = 'center'
+        actions.style.gap = '0.75rem'
+        actions.style.marginTop = '1.25rem'
+      }
+
+      ;[confirmButton, cancelButton].forEach((button) => {
+        if (!button) {
+          return
+        }
+
+        button.style.minWidth = '6.25rem'
+        button.style.minHeight = '2.7rem'
+        button.style.padding = '0.7rem 1.15rem'
+        button.style.border = '0'
+        button.style.borderRadius = '0.28rem'
+        button.style.fontSize = '0.98rem'
+        button.style.fontWeight = '700'
+        button.style.color = '#fff'
+      })
+
+      if (confirmButton) {
+        confirmButton.style.background = '#ff3743'
+      }
+
+      if (cancelButton) {
+        cancelButton.style.background = '#7f8a96'
+      }
+    }
+  })
+
+  if (!result.isConfirmed) {
+    return
+  }
+
+  try {
+    await axios.delete(`${API_BASE}/hoja-vida-anual/${selectedAnnual.value.id}`)
+    show_alerta('Hoja anual eliminada correctamente.', 'success')
+    await fetchUser()
+    router.replace({
+      name: 'HistorialView',
+      params: { id: route.params.id },
+      query: selectedYear.value ? { anio: selectedYear.value } : {}
+    })
+  } catch (error) {
+    show_alerta('No se pudo eliminar la hoja anual.', 'error')
+  }
+}
 function triggerPhotoInput() {
   if (!canUpdatePhoto.value || isUploadingPhoto.value) {
     return
@@ -1608,11 +1736,22 @@ function matchesSearch(value) {
 
 .action-panel--hero {
   grid-area: actions;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
   align-self: stretch;
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
   padding: 0.8rem;
   min-height: 216px;
-  align-content: start;
-  justify-items: center;
+  box-sizing: border-box;
+}
+
+.action-panel--hero .action-button {
+  align-self: center;
+  margin-inline: auto;
 }
 
 .search-shell {
@@ -1742,10 +1881,87 @@ function matchesSearch(value) {
   align-items: flex-start;
 }
 
+.history-panel__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.7rem;
+}
+
+.history-panel__actions--header {
+  align-self: flex-start;
+  margin-top: -0.35rem;
+}
+
+.history-panel__action-button {
+  width: 52px;
+  height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #c7d8ea;
+  border-radius: 16px;
+  background: #fff;
+  color: #173b70;
+  font-size: 1.2rem;
+  box-shadow: 0 10px 22px rgba(15, 47, 95, 0.08);
+}
+
+.history-panel__action-button--danger {
+  border-color: #ffb4bb;
+  color: #d3272d;
+}
+
+.history-panel__action-button:hover {
+  transform: translateY(-1px);
+}
+
+.history-panel__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.7rem;
+}
+
+.history-panel__actions--header {
+  align-self: flex-start;
+  margin-top: -0.35rem;
+}
+
+.history-panel__action-button {
+  width: 52px;
+  height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #c7d8ea;
+  border-radius: 16px;
+  background: #fff;
+  color: #173b70;
+  font-size: 1.2rem;
+  box-shadow: 0 10px 22px rgba(15, 47, 95, 0.08);
+}
+
+.history-panel__action-button--danger {
+  border-color: #ffb4bb;
+  color: #d3272d;
+}
+
+.history-panel__action-button:hover {
+  transform: translateY(-1px);
+}
+
 .history-controls {
   display: grid;
   gap: 0.65rem;
   justify-items: end;
+}
+
+.history-controls--footer {
+  margin-top: 1.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  gap: 0.65rem;
 }
 
 .history-counter {
@@ -1759,6 +1975,11 @@ function matchesSearch(value) {
   color: #173b70;
   font-size: 0.95rem;
   font-weight: 700;
+}
+
+.history-controls--footer .history-nav {
+  justify-content: flex-start;
+  flex: 0 0 auto;
 }
 
 .history-nav {
@@ -1778,7 +1999,6 @@ function matchesSearch(value) {
 .history-nav__button:disabled {
   opacity: 0.45;
 }
-
 .recognition-panel {
   min-width: 0;
   width: 100%;
@@ -2390,6 +2610,22 @@ function matchesSearch(value) {
     justify-items: stretch;
   }
 
+  .history-panel__actions,
+  .history-panel__actions-placeholder {
+    min-height: 0;
+  }
+
+  .history-panel__actions {
+    justify-content: flex-start;
+  }
+
+  .history-controls--footer {
+    justify-items: initial;
+    justify-content: flex-end;
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+
   .section-personal-panel {
     order: 1;
   }
@@ -2410,7 +2646,12 @@ function matchesSearch(value) {
     order: 5;
   }
 
-  .history-nav {
+  .history-controls--footer .history-nav {
+  justify-content: flex-start;
+  flex: 0 0 auto;
+}
+
+.history-nav {
     justify-content: space-between;
   }
 }
@@ -2651,31 +2892,113 @@ function matchesSearch(value) {
     justify-content: center;
   }
 
-  .search-shell {
-    min-height: 64px;
-    padding: 0 1rem;
-    border-radius: 20px;
-  }
-
-  .search-shell i {
-    font-size: 1.05rem;
-  }
-
-  .search-shell input {
-    font-size: 1rem;
-  }
-
-  .action-button,
-  .section-upload-button {
-    max-width: 100%;
-    justify-content: center;
-  }
-
-  .recognition-grid {
-    grid-template-columns: 1fr;
+  .history-controls--footer .history-counter {
+    width: auto;
+    flex: 0 0 auto;
   }
 }
+:deep(.annual-delete-alert) {
+  width: min(32rem, calc(100vw - 2rem));
+  padding: 1.75rem 1.5rem 1.6rem;
+  border-radius: 22px;
+}
+
+:deep(.annual-delete-alert__icon) {
+  width: 5.25rem;
+  height: 5.25rem;
+  margin: 0 auto 1rem;
+  border: 4px solid #ff3743 !important;
+  border-radius: 999px;
+  color: #ff3743 !important;
+}
+
+:deep(.annual-delete-alert__icon .swal2-icon-content) {
+  color: #ff3743 !important;
+  font-size: 3rem;
+  line-height: 1;
+}
+
+:deep(.annual-delete-alert__title) {
+  color: #4a4a4a;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+:deep(.annual-delete-alert__text) {
+  color: #666;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+:deep(.annual-delete-alert__actions) {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+:deep(.annual-delete-alert__confirm),
+:deep(.annual-delete-alert__cancel) {
+  min-width: 6.25rem;
+  min-height: 2.7rem;
+  padding: 0.7rem 1.15rem;
+  border: 0;
+  border-radius: 0.28rem;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+:deep(.annual-delete-alert__confirm) {
+  background: #ff3743;
+}
+
+:deep(.annual-delete-alert__cancel) {
+  background: #7f8a96;
+}
+
+:deep(.annual-delete-alert__confirm:focus),
+:deep(.annual-delete-alert__cancel:focus) {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(23, 59, 112, 0.12);
+}
 </style>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

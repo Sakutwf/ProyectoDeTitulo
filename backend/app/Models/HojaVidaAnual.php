@@ -108,9 +108,14 @@ class HojaVidaAnual extends Model
         return $this->belongsTo(User::class, 'generada_por');
     }
 
-    public static function calculateAttendanceMetricsForVoluntario(?int $voluntarioId, ?int $anio, array $adjustments = []): array
-    {
+    public static function calculateAttendanceMetricsForVoluntario(
+        ?int $voluntarioId,
+        ?int $anio,
+        array $adjustments = [],
+        ?float $unclassifiedHours = null
+    ): array {
         $normalizedAdjustments = self::normalizeAttendanceAdjustments($adjustments);
+        $normalizedUnclassifiedHours = self::normalizeUnclassifiedHours($unclassifiedHours);
 
         if (! $voluntarioId || ! $anio) {
             return self::composeAttendanceMetrics([
@@ -118,7 +123,7 @@ class HojaVidaAnual extends Model
                 HojaVidaAnualAjusteHora::TYPE_ACTIVIDADES_VOLUNTARIADO => 0.0,
                 HojaVidaAnualAjusteHora::TYPE_HORAS_FILIAL => 0.0,
                 HojaVidaAnualAjusteHora::TYPE_HORAS_FORMATIVAS => 0.0,
-            ], $normalizedAdjustments);
+            ], $normalizedAdjustments, $normalizedUnclassifiedHours);
         }
 
         $totals = DB::table('actividad_voluntario as actividad_voluntario')
@@ -154,7 +159,7 @@ class HojaVidaAnual extends Model
             HojaVidaAnualAjusteHora::TYPE_ACTIVIDADES_VOLUNTARIADO => (float) ($totals->voluntariado ?? 0),
             HojaVidaAnualAjusteHora::TYPE_HORAS_FILIAL => (float) ($totals->filial ?? 0),
             HojaVidaAnualAjusteHora::TYPE_HORAS_FORMATIVAS => (float) ($totals->formativas ?? 0),
-        ], $normalizedAdjustments);
+        ], $normalizedAdjustments, $normalizedUnclassifiedHours);
     }
 
     public function getAsistenciaAnualHorasAttribute($value): float
@@ -262,7 +267,8 @@ class HojaVidaAnual extends Model
             $this->attendanceMetricsCache = self::calculateAttendanceMetricsForVoluntario(
                 $this->voluntario_id ? (int) $this->voluntario_id : null,
                 $this->anio ? (int) $this->anio : null,
-                $this->attendanceAdjustments()
+                $this->attendanceAdjustments(),
+                (float) ($this->getAttribute('asistencia_anual_ajuste_horas') ?? 0)
             );
         }
 
@@ -289,7 +295,12 @@ class HojaVidaAnual extends Model
         ];
     }
 
-    private static function composeAttendanceMetrics(array $baseHours, array $adjustments): array
+    private static function normalizeUnclassifiedHours(?float $hours): float
+    {
+        return round(max((float) ($hours ?? 0), 0), 2);
+    }
+
+    private static function composeAttendanceMetrics(array $baseHours, array $adjustments, float $unclassifiedHours = 0.0): array
     {
         $reunionesBase = round((float) ($baseHours[HojaVidaAnualAjusteHora::TYPE_REUNIONES_FILIAL] ?? 0), 2);
         $voluntariadoBase = round((float) ($baseHours[HojaVidaAnualAjusteHora::TYPE_ACTIVIDADES_VOLUNTARIADO] ?? 0), 2);
@@ -302,7 +313,8 @@ class HojaVidaAnual extends Model
         $formativas = round(max($formativasBase + $adjustments[HojaVidaAnualAjusteHora::TYPE_HORAS_FORMATIVAS], 0), 2);
 
         $base = round($reunionesBase + $voluntariadoBase + $filialBase + $formativasBase, 2);
-        $total = round($reuniones + $voluntariado + $filial + $formativas, 2);
+        $totalClasificadas = round($reuniones + $voluntariado + $filial + $formativas, 2);
+        $total = round($totalClasificadas + $unclassifiedHours, 2);
         $ajustes = round(
             $adjustments[HojaVidaAnualAjusteHora::TYPE_REUNIONES_FILIAL]
             + $adjustments[HojaVidaAnualAjusteHora::TYPE_ACTIVIDADES_VOLUNTARIADO]
@@ -325,10 +337,10 @@ class HojaVidaAnual extends Model
             'formativas' => $formativas,
             'ajustes' => $ajustes,
             'base' => $base,
+            'unclassified' => $unclassifiedHours,
             'total' => $total,
             'porcentaje' => $porcentaje,
             'requeridas' => self::REQUIRED_ANNUAL_HOURS,
         ];
     }
 }
-

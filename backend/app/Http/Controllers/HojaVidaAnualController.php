@@ -249,11 +249,15 @@ class HojaVidaAnualController extends Controller
                 ? (float) ($validated['asistencia_horas_formativas_ajuste_horas'] ?? 0)
                 : (float) ($existing?->getRawOriginal('asistencia_horas_formativas_ajuste_horas') ?? 0),
         ];
+        $unclassifiedHours = array_key_exists('asistencia_anual_ajuste_horas', $validated)
+            ? (float) ($validated['asistencia_anual_ajuste_horas'] ?? 0)
+            : (float) ($existing?->getRawOriginal('asistencia_anual_ajuste_horas') ?? 0);
 
         $attendance = HojaVidaAnual::calculateAttendanceMetricsForVoluntario(
             $voluntarioId,
             (int) $validated['anio'],
-            $attendanceAdjustments
+            $attendanceAdjustments,
+            $unclassifiedHours
         );
 
         return [
@@ -261,11 +265,15 @@ class HojaVidaAnualController extends Controller
             'anio' => $validated['anio'],
             'asistencia_anual_horas' => $attendance['total'],
             'asistencia_anual_porcentaje' => $attendance['porcentaje'],
-            'asistencia_anual_ajuste_horas' => 0,
+            'asistencia_anual_ajuste_horas' => $unclassifiedHours,
             'asistencia_reuniones_filial_ajuste_horas' => $attendanceAdjustments['reuniones'],
             'asistencia_actividades_voluntariado_ajuste_horas' => $attendanceAdjustments['voluntariado'],
             'asistencia_horas_filial_ajuste_horas' => $attendanceAdjustments['filial'],
             'asistencia_horas_formativas_ajuste_horas' => $attendanceAdjustments['formativas'],
+            'cargo_clave' => $cargoPayload['cargo_clave'],
+            'cargo_nombre' => $cargoPayload['cargo_nombre'],
+            'cargo_grupo' => $cargoPayload['cargo_grupo'],
+            'cargo_direccion' => $cargoPayload['cargo_direccion'],
             'estuvo_comision_servicio' => (bool) ($validated['estuvo_comision_servicio'] ?? false),
             'comision_fecha_inicio' => $validated['comision_fecha_inicio'] ?? null,
             'comision_fecha_termino' => $validated['comision_fecha_termino'] ?? null,
@@ -561,7 +569,6 @@ class HojaVidaAnualController extends Controller
         ];
     }
 
-
     private function isVolunteerSelfServiceRequest(Request $request, int $voluntarioId): bool
     {
         $user = $request->user()?->loadMissing('roles', 'voluntario');
@@ -600,6 +607,7 @@ class HojaVidaAnualController extends Controller
         $request->request->remove('sanciones');
         $request->request->remove('reconocimiento');
     }
+
     private function normalizeText(mixed $value): ?string
     {
         if ($value === null) {
@@ -611,11 +619,3 @@ class HojaVidaAnualController extends Controller
         return $normalized === '' ? null : $normalized;
     }
 }
-
-
-
-
-
-
-
-
