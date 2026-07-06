@@ -18,18 +18,18 @@
       </label>
 
       <label class="login-field">
-        <span>Contrasena</span>
+        <span>Contraseña</span>
         <input
           v-model="form.id"
           type="password"
           autocomplete="current-password"
-          placeholder="Ingresa tu contrasena"
+          placeholder="Ingresa tu contraseña"
           required
         >
       </label>
 
       <button type="submit" class="login-submit" :disabled="isSubmitting">
-        {{ isSubmitting ? 'Ingresando...' : 'Iniciar sesion' }}
+        {{ isSubmitting ? 'Ingresando...' : 'Iniciar sesión' }}
       </button>
 
       <a href="#" class="login-recovery-link" @click.prevent>
@@ -79,7 +79,7 @@ export default {
 
         this.$router.replace(defaultRouteForUser(response.data.user))
       } catch (error) {
-        const message = error.response?.data?.errors?.user?.[0] || 'No se pudo iniciar sesion.'
+        const message = error.response?.data?.errors?.user?.[0] || 'No se pudo iniciar sesión.'
         show_alerta(message, 'error')
       } finally {
         this.isSubmitting = false

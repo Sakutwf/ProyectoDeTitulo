@@ -93,6 +93,11 @@ class HojaVidaAnual extends Model
         return $this->hasMany(CursoVoluntario::class, 'hoja_vida_anual_id');
     }
 
+    public function otrosDocumentos()
+    {
+        return $this->hasMany(OtroDocumentoVoluntario::class, 'hoja_vida_anual_id');
+    }
+
     public function sanciones()
     {
         return $this->hasMany(SancionVoluntario::class, 'hoja_vida_anual_id');

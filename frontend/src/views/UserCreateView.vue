@@ -40,7 +40,7 @@
 
               <div v-if="!selectedRoleId" class="col-12">
                 <div class="alert alert-light border mb-0">
-                  Selecciona si crearas un perfil de administrador o de voluntario.
+                  Selecciona si crearás un perfil de administrador o de voluntario.
                 </div>
               </div>
 
@@ -61,7 +61,7 @@
                 </div>
 
                 <div class="col-md-6">
-                  <label for="create-password" class="form-label">Contrasena</label>
+                  <label for="create-password" class="form-label">Contraseña</label>
                   <div class="input-group">
                     <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
                     <input
@@ -79,7 +79,7 @@
 
                 <div class="col-12">
                   <div class="alert alert-info mb-0">
-                    El perfil administrativo utilizara el nombre de usuario y la contrasena definidas aqui.
+                    El perfil administrativo utilizará el nombre de usuario y la contraseña definidas aquí.
                   </div>
                 </div>
               </template>
@@ -87,65 +87,20 @@
               <template v-if="esVoluntario">
                 <div class="col-12">
                   <div class="alert alert-warning mb-0">
-                    <strong>Clave inicial:</strong> al crear el perfil se asignara
+                    <strong>Clave inicial:</strong> al crear el perfil se asignará
                     <code>{{ volunteerDefaultPassword }}</code>.
                     <span class="d-block mt-2">
-                      Para perfiles voluntarios, el username se definira automaticamente con el RUT.
+                      Para perfil de voluntario, el username será el RUT.
                     </span>
                   </div>
                 </div>
-                <div class="col-12">
-                  <label class="form-check border rounded px-3 py-3 mb-0 d-flex align-items-start gap-2" for="create-has-cargo">
-                    <input
-                      id="create-has-cargo"
-                      v-model="hasCargo"
-                      class="form-check-input mt-1"
-                      type="checkbox"
-                    >
-                    <span>
-                      <span class="fw-semibold d-block">El voluntario tiene un cargo</span>
-                      <small class="text-muted">Si lo marcas, podras seleccionar el cargo asociado antes de completar los demas datos.</small>
-                    </span>
-                  </label>
-                </div>
-
-                <template v-if="hasCargo">
-                  <div class="col-12">
-                    <div class="volunteer-section-title">Cargo</div>
-                  </div>
-
-                  <div class="col-12">
-                    <div class="role-grid">
-                      <label
-                        v-for="cargo in cargoOptions"
-                        :key="cargo.key"
-                        class="role-card"
-                        :class="{ selected: selectedCargoKey === cargo.key }"
-                      >
-                        <input
-                          :id="`create-cargo-${cargo.key}`"
-                          v-model="selectedCargoKey"
-                          class="form-check-input"
-                          type="radio"
-                          name="create-cargo"
-                          :value="cargo.key"
-                        >
-                        <div>
-                          <div class="fw-semibold">{{ cargo.nombre }}</div>
-                          <small class="text-muted">{{ cargoDescription(cargo) }}</small>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-                </template>
-
                 <div class="col-12">
                   <div class="volunteer-section-title">Datos del voluntario</div>
                 </div>
 
                 <div class="col-md-4">
-                  <label for="create-registro-filial" class="form-label">Numero de registro</label>
-                  <input id="create-registro-filial" v-model.trim="registro_filial" type="text" class="form-control" placeholder="Ej: 00001" required>
+                  <label for="create-registro-filial" class="form-label">Número de registro</label>
+                  <input id="create-registro-filial" v-model.trim="registro_filial" type="text" class="form-control" placeholder="Ej: 623" required>
                 </div>
 
                 <div class="col-md-4">
@@ -174,18 +129,18 @@
                 </div>
 
                 <div class="col-md-6">
-                  <label for="create-correo-electronico" class="form-label">Correo electronico</label>
+                  <label for="create-correo-electronico" class="form-label">Correo electrónico</label>
                   <input id="create-correo-electronico" v-model.trim="correo_electronico" type="email" class="form-control" placeholder="correo@ejemplo.com">
                 </div>
 
                 <div class="col-md-6">
                   <label for="create-celular" class="form-label">Celular</label>
-                  <input id="create-celular" v-model.trim="celular" type="text" class="form-control" placeholder="Ej: 912345678">
+                  <input id="create-celular" v-model.trim="celular" type="text" class="form-control" placeholder="Ej: +56912345678">
                 </div>
 
                 <div class="col-md-6">
                   <label for="create-nacionalidad" class="form-label">Nacionalidad</label>
-                  <input id="create-nacionalidad" v-model.trim="nacionalidad" type="text" class="form-control" placeholder="Ej: Chilena">
+                  <input id="create-nacionalidad" v-model.trim="nacionalidad" type="text" class="form-control" placeholder="Ej: chilena">
                 </div>
 
                 <div class="col-md-6">
@@ -194,8 +149,38 @@
                 </div>
 
                 <div class="col-md-6">
-                  <label for="create-fecha-incorporacion" class="form-label">Fecha de incorporacion</label>
+                  <label for="create-fecha-incorporacion" class="form-label">Fecha de incorporación</label>
                   <input id="create-fecha-incorporacion" v-model="fecha_incorporacion" type="date" class="form-control">
+                </div>
+
+                <div class="col-md-6">
+                  <label for="create-nivel-escolaridad" class="form-label">Nivel de escolaridad</label>
+                  <select id="create-nivel-escolaridad" v-model="nivel_escolaridad" class="form-select">
+                    <option value="">Selecciona una opción</option>
+                    <option v-for="option in escolaridadOptions" :key="option" :value="option">
+                      {{ option }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="create-estado-civil" class="form-label">Estado civil</label>
+                  <select id="create-estado-civil" v-model="estado_civil" class="form-select">
+                    <option value="">Selecciona una opción</option>
+                    <option v-for="option in estadoCivilOptions" :key="option" :value="option">
+                      {{ option }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="create-ocupacion" class="form-label">Ocupación</label>
+                  <input id="create-ocupacion" v-model.trim="ocupacion" type="text" class="form-control">
+                </div>
+
+                <div class="col-md-6">
+                  <label for="create-grupo-sanguineo" class="form-label">Grupo sanguíneo</label>
+                  <input id="create-grupo-sanguineo" v-model.trim="grupo_sanguineo" type="text" class="form-control" placeholder="Ej: A+, O-, AB+">
                 </div>
 
                 <div class="col-md-6">
@@ -205,12 +190,22 @@
 
                 <div class="col-md-6">
                   <label for="create-contacto-emergencia-nombre" class="form-label">Contacto de emergencia</label>
-                  <input id="create-contacto-emergencia-nombre" v-model.trim="contacto_emergencia_nombre" type="text" class="form-control">
+                  <input id="create-contacto-emergencia-nombre" v-model.trim="contacto_emergencia_nombre" type="text" class="form-control" placeholder="Nombre del contacto">
                 </div>
 
                 <div class="col-md-6">
                   <label for="create-contacto-emergencia-numero" class="form-label">Numero de emergencia</label>
-                  <input id="create-contacto-emergencia-numero" v-model.trim="contacto_emergencia_numero" type="text" class="form-control">
+                  <input id="create-contacto-emergencia-numero" v-model.trim="contacto_emergencia_numero" type="text" class="form-control" placeholder="Número de teléfono del contacto">
+                </div>
+
+                <div class="col-md-6">
+                  <label for="create-enfermedades" class="form-label">Enfermedades</label>
+                  <textarea id="create-enfermedades" v-model.trim="enfermedades" class="form-control" rows="3"></textarea>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="create-alergias" class="form-label">Alergias</label>
+                  <textarea id="create-alergias" v-model.trim="alergias" class="form-control" rows="3"></textarea>
                 </div>
 
                 <div class="col-md-6">
@@ -248,25 +243,27 @@ import { buildApiUrl } from '../config/api'
 const ADMIN_ROLE_KEY = 'administrador'
 const VOLUNTEER_ROLE_KEY = 'voluntario'
 const VOLUNTEER_DEFAULT_PASSWORD = 'cruzRojaCco26'
-const CARGO_OPTIONS = [
-  { key: 'gobernanza_presidente', nombre: 'Presidente', grupo: 'Gobernanza', direccion: '' },
-  { key: 'gobernanza_vicepresidente', nombre: 'Vicepresidente', grupo: 'Gobernanza', direccion: '' },
-  { key: 'gobernanza_secretario', nombre: 'Secretario', grupo: 'Gobernanza', direccion: '' },
-  { key: 'gobernanza_finanzas', nombre: 'Finanzas', grupo: 'Gobernanza', direccion: '' },
-  { key: 'directorio_director_salud', nombre: 'Director', grupo: 'Directorio', direccion: 'Salud' },
-  { key: 'directorio_director_subrogante_salud', nombre: 'Director Subrogante', grupo: 'Directorio', direccion: 'Salud' },
-  { key: 'directorio_director_juventud', nombre: 'Director', grupo: 'Directorio', direccion: 'Juventud' },
-  { key: 'directorio_director_subrogante_juventud', nombre: 'Director Subrogante', grupo: 'Directorio', direccion: 'Juventud' },
-  { key: 'directorio_director_gestion', nombre: 'Director', grupo: 'Directorio', direccion: 'Gestion' },
-  { key: 'directorio_director_subrogante_gestion', nombre: 'Director Subrogante', grupo: 'Directorio', direccion: 'Gestion' },
-  { key: 'directorio_director_desarrollo', nombre: 'Director', grupo: 'Directorio', direccion: 'Desarrollo' },
-  { key: 'directorio_director_subrogante_desarrollo', nombre: 'Director Subrogante', grupo: 'Directorio', direccion: 'Desarrollo' },
-  { key: 'directorio_director_bienestar_social', nombre: 'Director', grupo: 'Directorio', direccion: 'Bienestar Social' },
-  { key: 'directorio_director_subrogante_bienestar_social', nombre: 'Director Subrogante', grupo: 'Directorio', direccion: 'Bienestar Social' },
-  { key: 'directorio_director_comunicaciones', nombre: 'Director', grupo: 'Directorio', direccion: 'Comunicaciones' },
-  { key: 'directorio_director_subrogante_comunicaciones', nombre: 'Director Subrogante', grupo: 'Directorio', direccion: 'Comunicaciones' }
+const ESCOLARIDAD_OPTIONS = [
+  'Sin escolaridad',
+  'Educación básica incompleta',
+  'Educación básica completa',
+  'Educación media incompleta',
+  'Educación media completa',
+  'Educación técnica de nivel superior incompleta',
+  'Educación técnica de nivel superior completa',
+  'Educación universitaria incompleta',
+  'Educación universitaria completa',
+  'Postítulo o diplomado',
+  'Magíster',
+  'Doctorado'
 ]
-
+const ESTADO_CIVIL_OPTIONS = [
+  'Soltero(a)',
+  'Casado(a)',
+  'Conviviente civil',
+  'Divorciado(a)',
+  'Viudo(a)'
+]
 export default {
   name: 'UserCreateView',
   data() {
@@ -276,8 +273,6 @@ export default {
       password: '',
       rolesOptions: [],
       filialesOptions: [],
-      selectedCargoKey: '',
-      hasCargo: false,
       registro_filial: '',
       filial_id: '',
       rut: '',
@@ -287,8 +282,14 @@ export default {
       nacionalidad: '',
       fecha_nacimiento: '',
       fecha_incorporacion: '',
+      nivel_escolaridad: '',
+      estado_civil: '',
+      ocupacion: '',
+      grupo_sanguineo: '',
       celular: '',
       domicilio: '',
+      enfermedades: '',
+      alergias: '',
       contacto_emergencia_nombre: '',
       contacto_emergencia_numero: '',
       foto_perfil: null,
@@ -297,7 +298,8 @@ export default {
       filialesUrl: buildApiUrl('filiales'),
       modalInstance: null,
       volunteerDefaultPassword: VOLUNTEER_DEFAULT_PASSWORD,
-      cargoOptions: CARGO_OPTIONS
+      escolaridadOptions: ESCOLARIDAD_OPTIONS,
+      estadoCivilOptions: ESTADO_CIVIL_OPTIONS
     }
   },
   computed: {
@@ -313,9 +315,6 @@ export default {
     },
     selectedRoleDetails() {
       return this.availableRoleOptions.find((role) => role.id === this.selectedRoleId) || null
-    },
-    selectedCargoDetails() {
-      return this.cargoOptions.find((cargo) => cargo.key === this.selectedCargoKey) || null
     },
     esAdministrador() {
       return this.selectedRoleDetails?.clave === ADMIN_ROLE_KEY
@@ -333,11 +332,6 @@ export default {
 
       if (this.esAdministrador) {
         this.clearVoluntarioFields()
-      }
-    },
-    hasCargo(newValue) {
-      if (!newValue) {
-        this.selectedCargoKey = ''
       }
     }
   },
@@ -368,13 +362,6 @@ export default {
       }
 
       return 'Perfil con ficha completa de voluntario'
-    },
-    cargoDescription(cargo) {
-      if (cargo.grupo === 'Gobernanza') {
-        return cargo.grupo
-      }
-
-      return `${cargo.grupo} · Direccion de ${cargo.direccion}`
     },
     onPhotoSelected(event) {
       this.foto_perfil = event.target.files?.[0] || null
@@ -436,8 +423,6 @@ export default {
       this.password = ''
     },
     clearVoluntarioFields() {
-      this.hasCargo = false
-      this.selectedCargoKey = ''
       this.registro_filial = ''
       this.filial_id = this.getDefaultFilialId()
       this.rut = ''
@@ -447,8 +432,14 @@ export default {
       this.nacionalidad = ''
       this.fecha_nacimiento = ''
       this.fecha_incorporacion = ''
+      this.nivel_escolaridad = ''
+      this.estado_civil = ''
+      this.ocupacion = ''
+      this.grupo_sanguineo = ''
       this.celular = ''
       this.domicilio = ''
+      this.enfermedades = ''
+      this.alergias = ''
       this.contacto_emergencia_nombre = ''
       this.contacto_emergencia_numero = ''
       this.clearPhotoSelection()
@@ -489,19 +480,19 @@ export default {
         formData.append('rut', this.formatRut(this.rut))
         formData.append('nombres', this.nombres.trim())
         formData.append('apellidos', this.apellidos.trim())
-        if (this.hasCargo && this.selectedCargoDetails) {
-          formData.append('cargo_clave', this.selectedCargoKey)
-          formData.append('cargo_nombre', this.selectedCargoDetails.nombre)
-          formData.append('cargo_grupo', this.selectedCargoDetails.grupo)
-          this.appendIfFilled(formData, 'cargo_direccion', this.selectedCargoDetails.direccion)
-        }
 
         this.appendIfFilled(formData, 'correo_electronico', this.correo_electronico)
         this.appendIfFilled(formData, 'nacionalidad', this.nacionalidad)
         this.appendIfFilled(formData, 'fecha_nacimiento', this.fecha_nacimiento)
         this.appendIfFilled(formData, 'fecha_incorporacion', this.fecha_incorporacion)
+        this.appendIfFilled(formData, 'nivel_escolaridad', this.nivel_escolaridad)
+        this.appendIfFilled(formData, 'estado_civil', this.estado_civil)
+        this.appendIfFilled(formData, 'ocupacion', this.ocupacion)
+        this.appendIfFilled(formData, 'grupo_sanguineo', this.grupo_sanguineo)
         this.appendIfFilled(formData, 'celular', this.celular)
         this.appendIfFilled(formData, 'domicilio', this.domicilio)
+        this.appendIfFilled(formData, 'enfermedades', this.enfermedades)
+        this.appendIfFilled(formData, 'alergias', this.alergias)
         this.appendIfFilled(formData, 'contacto_emergencia_nombre', this.contacto_emergencia_nombre)
         this.appendIfFilled(formData, 'contacto_emergencia_numero', this.contacto_emergencia_numero)
 
@@ -530,18 +521,14 @@ export default {
         }
 
         if (this.password.trim().length < 6) {
-          show_alerta('La contrasena debe tener al menos 6 caracteres.', 'warning', 'create-password')
+          show_alerta('La contraseña debe tener al menos 6 caracteres.', 'warning', 'create-password')
           return false
         }
       }
 
       if (this.esVoluntario) {
-        if (this.hasCargo && !this.selectedCargoKey) {
-          show_alerta('Debes seleccionar un cargo para el voluntario.', 'warning')
-          return false
-        }
         if (!this.registro_filial.trim()) {
-          show_alerta('Debes ingresar el numero de registro.', 'warning', 'create-registro-filial')
+          show_alerta('Debes ingresar el número de registro.', 'warning', 'create-registro-filial')
           return false
         }
         if (!this.filial_id) {
@@ -553,7 +540,7 @@ export default {
           return false
         }
         if (!this.isValidRut(this.rut)) {
-          show_alerta('Debes ingresar un RUT valido con formato XX.XXX.XXX-Y.', 'warning', 'create-rut')
+          show_alerta('Debes ingresar un RUT válido con formato XX.XXX.XXX-Y.', 'warning', 'create-rut')
           return false
         }
         this.rut = this.formatRut(this.rut)

@@ -265,12 +265,15 @@ export default {
       return this.selectedVolunteers.includes(voluntarioId)
     },
     calculateScheduledHours() {
-      if (!this.form.hora_inicio || !this.form.hora_termino) {
+      const startValue = this.normalizeTimeValue(this.form.hora_inicio)
+      const endValue = this.normalizeTimeValue(this.form.hora_termino)
+
+      if (!startValue || !endValue) {
         return null
       }
 
-      const [startHour, startMinute] = this.form.hora_inicio.split(':').map(Number)
-      const [endHour, endMinute] = this.form.hora_termino.split(':').map(Number)
+      const [startHour, startMinute] = startValue.split(':').map(Number)
+      const [endHour, endMinute] = endValue.split(':').map(Number)
 
       if (![startHour, startMinute, endHour, endMinute].every(Number.isFinite)) {
         return null
@@ -285,7 +288,29 @@ export default {
 
       return Number(((endMinutes - startMinutes) / 60).toFixed(2))
     },
+    normalizeTimeValue(value) {
+      if (typeof value !== 'string') {
+        return ''
+      }
+
+      const trimmedValue = value.trim()
+
+      if (!trimmedValue) {
+        return ''
+      }
+
+      const [hours, minutes] = trimmedValue.split(':')
+
+      if (hours === undefined || minutes === undefined) {
+        return ''
+      }
+
+      return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`
+    },
     syncHorasTotalesWithSchedule() {
+      this.form.hora_inicio = this.normalizeTimeValue(this.form.hora_inicio)
+      this.form.hora_termino = this.normalizeTimeValue(this.form.hora_termino)
+
       const scheduledHours = this.calculateScheduledHours()
 
       if (scheduledHours !== null) {
@@ -337,6 +362,9 @@ export default {
       return true
     },
     buildPayload() {
+      const horaInicio = this.normalizeTimeValue(this.form.hora_inicio)
+      const horaTermino = this.normalizeTimeValue(this.form.hora_termino)
+
       return {
         filial_id: Number(this.form.filial_id),
         nombre: this.form.nombre.trim(),
@@ -344,8 +372,8 @@ export default {
         objetivo: this.form.objetivo || null,
         fecha_inicio: this.form.fecha_inicio,
         fecha_termino: this.form.fecha_termino || null,
-        hora_inicio: this.form.hora_inicio || null,
-        hora_termino: this.form.hora_termino || null,
+        hora_inicio: horaInicio || null,
+        hora_termino: horaTermino || null,
         lugar: this.form.lugar || null,
         horas_totales: this.activityHoursLimit,
         colaborador_externo: this.form.colaborador_externo || null,
@@ -505,6 +533,7 @@ export default {
   }
 }
 </style>
+
 
 
 

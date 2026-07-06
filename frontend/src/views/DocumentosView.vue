@@ -7,9 +7,9 @@
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
           <div>
             <h3 class="m-0"><i class="fa-solid fa-folder-open me-2"></i>Documentos</h3>
-            <p class="header-copy mb-0">Selecciona un tipo de documento y abre su formulario desde el boton de acceso.</p>
+            <p class="header-copy mb-0">Selecciona un tipo de documento y abre su formulario desde el botón de acceso.</p>
           </div>
-          <span class="documents-chip">Modulo administrativo</span>
+          <span class="documents-chip">Módulo administrativo</span>
         </div>
       </div>
 
@@ -38,7 +38,7 @@
               <div>
                 <span class="form-badge">{{ selectedTypeMeta.shortLabel }}</span>
                 <h4>{{ selectedTypeMeta.formTitle }}</h4>
-                <p class="mb-0">Selecciona una actividad para precargar la informacion disponible y completar el resto manualmente.</p>
+                <p class="mb-0">Selecciona una actividad para precargar la información disponible y completar el resto manualmente.</p>
               </div>
               <button type="button" class="btn btn-outline-secondary btn-sm" @click="closeForm">
                 Cerrar
@@ -115,7 +115,7 @@
               </div>
 
               <div class="col-12">
-                <label class="form-label">Titulo</label>
+                <label class="form-label">Título</label>
                 <input v-model="form.titulo" type="text" class="form-control" :placeholder="selectedTypeMeta.placeholderTitle">
               </div>
             </div>
@@ -155,7 +155,7 @@
               <div v-if="contexto" class="row g-3 mt-1">
                 <div class="col-12 col-xl-7">
                   <div class="prefill-panel">
-                    <h5>Informacion precargada</h5>
+                    <h5>Información precargada</h5>
                     <div class="prefill-panel__block">
                       <span class="prefill-panel__label">Objetivo</span>
                       <p>{{ contexto.actividad?.objetivo || 'Sin objetivo registrado.' }}</p>
@@ -194,7 +194,7 @@
                         </div>
                       </li>
                     </ul>
-                    <p v-else class="mb-0 text-muted">Todavia no hay documentos guardados para esta actividad.</p>
+                    <p v-else class="mb-0 text-muted">Todavía no hay documentos guardados para esta actividad.</p>
                   </div>
                 </div>
               </div>
@@ -387,17 +387,17 @@
               <template v-else-if="isContextAnalysisType">
                 <div class="narrative-layout mt-4">
                   <section class="narrative-section">
-                    <h5>Objetivo del analisis</h5>
+                    <h5>Objetivo del análisis</h5>
                     <textarea
                       v-model.trim="form.contenido.proposito_documento"
                       class="form-control"
                       rows="5"
-                      placeholder="Describe el objetivo del analisis, el contexto del apoyo solicitado y el alcance del documento."
+                      placeholder="Describe el objetivo del análisis, el contexto del apoyo solicitado y el alcance del documento."
                     ></textarea>
                   </section>
 
                   <section class="narrative-section">
-                    <h5>Descripcion del evento</h5>
+                    <h5>Descripción del evento</h5>
                     <div class="row g-3">
                       <div class="col-12 col-xl-6">
                         <label class="form-label">Nombre del evento</label>
@@ -501,7 +501,7 @@
 
                   <section class="narrative-section">
                     <div class="section-headline">
-                      <h5>Identificacion de riesgos</h5>
+                      <h5>Identificación de riesgos</h5>
                       <button type="button" class="btn btn-outline-primary btn-sm" @click="addAnalysisRiskRow()">
                         <i class="fa-solid fa-plus me-2"></i>Agregar riesgo
                       </button>
@@ -547,11 +547,11 @@
                           </button>
                         </div>
                         <div class="col-12 col-xl-6">
-                          <label class="form-label">Descripcion</label>
+                          <label class="form-label">Descripción</label>
                           <textarea v-model.trim="risk.descripcion" class="form-control" rows="4"></textarea>
                         </div>
                         <div class="col-12 col-xl-6">
-                          <label class="form-label">Medidas de mitigacion</label>
+                          <label class="form-label">Medidas de mitigación</label>
                           <textarea v-model.trim="risk.mitigacion" class="form-control" rows="4"></textarea>
                         </div>
                       </div>
@@ -574,7 +574,7 @@
                   </section>
 
                   <section class="narrative-section">
-                    <h5>Conclusion</h5>
+                    <h5>Conclusión</h5>
                     <textarea v-model.trim="form.contenido.conclusion" class="form-control" rows="5"></textarea>
                   </section>
 
@@ -721,11 +721,11 @@ import { buildApiUrl } from '../config/api'
 const documentTypes = [
   {
     key: 'analisis_contexto',
-    title: 'Analisis de contexto',
-    shortLabel: 'Analisis',
-    formTitle: 'Formulario de analisis de contexto',
-    placeholderTitle: 'Ej. Analisis de contexto - Operativo invierno 2026',
-    description: 'Prepara y gestiona analisis de contexto vinculados a actividades.',
+    title: 'Análisis de contexto',
+    shortLabel: 'Análisis',
+    formTitle: 'Formulario de análisis de contexto',
+    placeholderTitle: 'Ej. Análisis de contexto - Operativo invierno 2026',
+    description: 'Prepara y gestiona análisis de contexto vinculados a actividades.',
     icon: 'fa-solid fa-map',
     sections: []
   },
@@ -734,15 +734,15 @@ const documentTypes = [
     title: 'Informe Narrativo',
     shortLabel: 'Informe',
     formTitle: 'Formulario de informe narrativo',
-    placeholderTitle: 'Ej. Informe narrativo - Operativo invierno 2026',
-    description: 'Centraliza la emision de informes narrativos vinculados a actividades.',
+    placeholderTitle: 'Ej. Operativo invierno 2026',
+    description: 'Centraliza la emisión de informes narrativos vinculados a actividades.',
     icon: 'fa-solid fa-file-lines',
     sections: [
       { key: 'resumen', label: 'Resumen', placeholder: 'Resume la actividad y sus resultados principales.' },
-      { key: 'introduccion', label: 'Introduccion', placeholder: 'Introduce el contexto general del informe.' },
-      { key: 'metodologia', label: 'Metodologia', placeholder: 'Explica la metodologia utilizada.' },
+      { key: 'introduccion', label: 'Introducción', placeholder: 'Introduce el contexto general del informe.' },
+      { key: 'metodologia', label: 'Metodología', placeholder: 'Explica la metodología utilizada.' },
       { key: 'desarrollo', label: 'Desarrollo', placeholder: 'Describe el desarrollo de la actividad.' },
-      { key: 'participacion_comunitaria', label: 'Participacion comunitaria', placeholder: 'Detalla la participacion de la comunidad o voluntariado.' },
+      { key: 'participacion_comunitaria', label: 'Participación comunitaria', placeholder: 'Detalla la participación de la comunidad o voluntariado.' },
       { key: 'resultados', label: 'Resultados', placeholder: 'Describe los resultados obtenidos.' },
       { key: 'dificultades', label: 'Dificultades', placeholder: 'Registra dificultades o incidentes.' },
       { key: 'conclusiones', label: 'Conclusiones', placeholder: 'Escribe las conclusiones finales.' },
@@ -1084,10 +1084,10 @@ function flattenLegacyAnalysisPlan(value) {
   }
 
   const blocks = [
-    ['Coordinacion con APS-SAMU 131', value.coordinacion_samu],
-    ['Punto de encuentro o ubicacion adecuada', value.punto_encuentro],
-    ['Comunicacion interna', value.comunicacion_interna],
-    ['Documentacion medica', value.documentacion_medica]
+    ['Coordinación con APS-SAMU 131', value.coordinacion_samu],
+    ['Punto de encuentro o ubicación adecuada', value.punto_encuentro],
+    ['Comunicación interna', value.comunicacion_interna],
+    ['Documentación medica', value.documentacion_medica]
   ]
 
   return blocks
@@ -1189,7 +1189,7 @@ function normalizeAnalysisRiskRows(rows, legacyRisk = '') {
 
 function joinAnalysisLegacyNotes(incoming) {
   const blocks = [
-    ['Diagnostico', incoming?.diagnostico],
+    ['Diagnóstico', incoming?.diagnostico],
     ['Oportunidades', incoming?.oportunidades],
     ['Desarrollo', incoming?.desarrollo],
     ['Resultados', incoming?.resultados],
@@ -1330,7 +1330,7 @@ function normalizeNarrativeParticipants(items, fallbackRows = []) {
     return []
   }
 
-  const hasStructuredRows = source.some((item) => item && (Object.prototype.hasOwnProperty.call(item, 'tipo') || Object.prototype.hasOwnProperty.call(item, 'numero')))
+  const hasStructuredRows = source.some((item) => item && (Object.prototype.hasOwnProperty.call(item, 'tipo') || Object.prototype.hasOwnProperty.call(item, 'número')))
 
   if (hasStructuredRows) {
     return source.map((item) => ({
@@ -1831,7 +1831,7 @@ async function openDeviceGalleryTab() {
 
 function openPhotoModal(tab = 'device') {
   if (!selectedActividadId.value) {
-    Swal.fire('Actividad requerida', 'Selecciona primero una actividad base para adjuntar fotografias.', 'warning')
+    Swal.fire('Actividad requerida', 'Selecciona primero una actividad base para adjuntar fotografías.', 'warning')
     return
   }
 
@@ -1883,7 +1883,7 @@ async function uploadNarrativePhotosFromDevice() {
   }
 
   if (!pendingNarrativePhotoFiles.value.length) {
-    Swal.fire('Sin fotografias', 'Selecciona al menos una imagen antes de subir.', 'warning')
+    Swal.fire('Sin fotografías', 'Selecciona al menos una imagen antes de subir.', 'warning')
     return
   }
 
@@ -1922,9 +1922,9 @@ async function uploadNarrativePhotosFromDevice() {
     }
 
     photoModalTab.value = 'activity'
-    Swal.fire('Fotografias cargadas', 'Las imagenes fueron subidas y agregadas al informe.', 'success')
+    Swal.fire('Fotografías cargadas', 'Las imágenes fueron subidas y agregadas al informe.', 'success')
   } catch (error) {
-    Swal.fire('Error', 'No se pudieron subir las fotografias seleccionadas.', 'error')
+    Swal.fire('Error', 'No se pudieron subir las fotografías seleccionadas.', 'error')
   } finally {
     uploadingNarrativePhotos.value = false
   }
@@ -2115,7 +2115,7 @@ async function loadPrefill() {
   } catch (error) {
     form.datos_contexto = null
     form.contenido = emptyContent(selectedType.value)
-    Swal.fire('Error', 'No se pudo precargar la informacion de la actividad.', 'error')
+    Swal.fire('Error', 'No se pudo precargar la información de la actividad.', 'error')
   } finally {
     loadingPrefill.value = false
   }
@@ -2142,7 +2142,7 @@ async function fetchSavedDocuments() {
 
 function validateNarrativeFinalContent() {
   if (!canSubmit.value) {
-    Swal.fire('Faltan datos', 'Selecciona una actividad y completa al menos el titulo del documento.', 'warning')
+    Swal.fire('Faltan datos', 'Selecciona una actividad y completa al menos el título del documento.', 'warning')
     return null
   }
 
@@ -2152,12 +2152,12 @@ function validateNarrativeFinalContent() {
 
   const narrative = ensureNarrativeContent()
   if ((narrative.fotos || []).length < 3) {
-    Swal.fire('Faltan datos', 'El informe narrativo final debe incluir al menos 3 fotografias.', 'warning')
+    Swal.fire('Faltan datos', 'El informe narrativo final debe incluir al menos 3 fotografías.', 'warning')
     return null
   }
 
   if (narrative.fotos.some((photo) => !String(photo.descripcion_informe || '').trim())) {
-    Swal.fire('Faltan datos', 'Cada fotografia del informe narrativo final debe tener una descripcion.', 'warning')
+    Swal.fire('Faltan datos', 'Cada fotografía del informe narrativo final debe tener una descripción.', 'warning')
     return null
   }
 
@@ -2244,7 +2244,7 @@ async function persistDocument(targetState, options = {}) {
 
 async function saveDocument(targetState) {
   if (!canSubmit.value) {
-    Swal.fire('Faltan datos', 'Selecciona una actividad y completa al menos el titulo del documento.', 'warning')
+    Swal.fire('Faltan datos', 'Selecciona una actividad y completa al menos el título del documento.', 'warning')
     return
   }
 
@@ -2267,7 +2267,7 @@ async function saveDocument(targetState) {
 
 function validateDocumentForFinalSave() {
   if (!canSubmit.value) {
-    Swal.fire('Faltan datos', 'Selecciona una actividad y completa al menos el titulo del documento.', 'warning')
+    Swal.fire('Faltan datos', 'Selecciona una actividad y completa al menos el título del documento.', 'warning')
     return null
   }
 

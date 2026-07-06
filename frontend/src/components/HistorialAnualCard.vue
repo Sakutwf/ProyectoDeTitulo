@@ -60,9 +60,10 @@ const summaryText = computed(() => {
 
   const titles = props.historial?.titulos?.length || 0
   const courses = props.historial?.cursos?.length || 0
+  const documents = props.historial?.otros_documentos?.length || 0
   const sanctions = props.historial?.sanciones?.length || 0
 
-  return `${titles} titulo(s) · ${courses} curso(s) · ${sanctions} sancion(es)`
+  return `${titles} titulo(s) · ${courses} curso(s) · ${documents} documento(s) · ${sanctions} sancion(es)`
 })
 </script>
 
@@ -135,6 +136,10 @@ const summaryText = computed(() => {
   color: #5f6f82;
   font-size: clamp(0.9rem, 0.16vw + 0.87rem, 0.98rem);
   line-height: 1.32;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  overflow: hidden;
 }
 </style>
 

@@ -6,7 +6,7 @@
       <div class="content-header">
         <div class="activities-header">
           <div class="activities-header__top">
-            <h3 class="m-0"><i class="fa-solid fa-list me-2"></i>Gestion de actividades</h3>
+            <h3 class="m-0"><i class="fa-solid fa-list me-2"></i>Gestión de actividades</h3>
             <button class="btn btn-danger btn-sm activity-header__create" @click="openCreateModal" aria-label="Nueva actividad">
               <i class="fa-solid fa-calendar-plus"></i>
               <span class="activity-header__create-label">Nueva actividad</span>
@@ -42,14 +42,15 @@
                       <i class="fa-solid fa-edit"></i>
                     </button>
                     <button
-                      v-if="hasAssociatedDocuments(actividad)"
                       type="button"
                       class="btn btn-sm activity-action-button document-icon-button document-icon-button--card-action"
-                      title="Ver documentos asociados"
-                      aria-label="Ver documentos asociados"
+                      :class="{ 'document-icon-button--disabled': !hasAssociatedDocuments(actividad) }"
+                      :title="hasAssociatedDocuments(actividad) ? 'Ver documentos asociados' : 'Sin documentos asociados'"
+                      :aria-label="hasAssociatedDocuments(actividad) ? 'Ver documentos asociados' : 'Sin documentos asociados'"
+                      :disabled="!hasAssociatedDocuments(actividad)"
                       @click="openAssociatedDocumentsModal(actividad)"
                     >
-                      <img :src="documentsIcon" alt="" class="document-icon-button__icon activity-card__asset-icon--blue">
+                      <img :src="documentsIcon" alt="" class="document-icon-button__icon" :class="hasAssociatedDocuments(actividad) ? 'activity-card__asset-icon--blue' : 'activity-card__asset-icon--gray'">
                     </button>
                     <button @click="deleteActividad(actividad.id)" class="btn btn-sm btn-outline-danger" title="Eliminar" aria-label="Eliminar actividad">
                       <i class="fa-solid fa-trash"></i>
@@ -62,7 +63,7 @@
                     <span class="activity-card__label"><i class="fa-regular fa-calendar-days"></i> Fecha</span>
                     <div class="activity-card__value activity-card__value--dates">
                       <span><strong>Inicio:</strong> {{ formatDate(actividad.fecha_inicio) }}</span>
-                      <span><strong>Termino:</strong> {{ formatDate(actividad.fecha_termino) }}</span>
+                      <span><strong>Término:</strong> {{ formatDate(actividad.fecha_termino) }}</span>
                     </div>
                   </div>
 
@@ -160,14 +161,15 @@
                             <i class="fa-solid fa-edit"></i>
                           </button>
                           <button
-                            v-if="hasAssociatedDocuments(actividad)"
                             type="button"
                             class="btn btn-sm activity-action-button document-icon-button document-icon-button--table"
-                            title="Ver documentos asociados"
-                            aria-label="Ver documentos asociados"
+                            :class="{ 'document-icon-button--disabled': !hasAssociatedDocuments(actividad) }"
+                            :title="hasAssociatedDocuments(actividad) ? 'Ver documentos asociados' : 'Sin documentos asociados'"
+                            :aria-label="hasAssociatedDocuments(actividad) ? 'Ver documentos asociados' : 'Sin documentos asociados'"
+                            :disabled="!hasAssociatedDocuments(actividad)"
                             @click="openAssociatedDocumentsModal(actividad)"
                           >
-                            <img :src="documentsIcon" alt="" class="document-icon-button__icon activity-card__asset-icon--blue">
+                            <img :src="documentsIcon" alt="" class="document-icon-button__icon" :class="hasAssociatedDocuments(actividad) ? 'activity-card__asset-icon--blue' : 'activity-card__asset-icon--gray'">
                           </button>
                           <button @click="deleteActividad(actividad.id)" class="btn btn-sm btn-outline-danger" title="Eliminar">
                             <i class="fa-solid fa-trash"></i>
@@ -326,11 +328,11 @@ function onActividadUpdated() {
 
 async function deleteActividad(id) {
   const confirm = await Swal.fire({
-    title: 'Esta seguro de que desea eliminar esta actividad?',
-    text: 'Esta accion eliminara la actividad y sus asociaciones.',
+    title: '¿Esta seguro de que desea eliminar esta actividad?',
+    text: 'Esta accion eliminará la actividad y sus asociaciones.',
     icon: 'warning',
     showCancelButton: true,
-    confirmButtonText: 'Si, eliminar',
+    confirmButtonText: 'Sí, eliminar',
     cancelButtonText: 'Cancelar'
   })
 
@@ -380,7 +382,7 @@ function hasAssociatedDocuments(actividad) {
 
 function documentTypeLabel(type) {
   if (type === 'analisis_contexto') {
-    return 'Analisis de contexto'
+    return 'Análisis de contexto'
   }
 
   if (type === 'informe_narrativo') {
@@ -706,6 +708,11 @@ onBeforeUnmount(() => {
   filter: brightness(0) saturate(100%) invert(18%) sepia(30%) saturate(1812%) hue-rotate(174deg) brightness(91%) contrast(93%);
 }
 
+.activity-card__asset-icon--gray {
+  filter: grayscale(1) brightness(0.7);
+  opacity: 0.75;
+}
+
 .volunteer-pill-button {
   display: inline-flex;
   align-items: center;
@@ -749,6 +756,25 @@ onBeforeUnmount(() => {
   width: 1.45rem;
   height: 1.45rem;
   object-fit: contain;
+}
+
+.document-icon-button--disabled,
+.document-icon-button:disabled {
+  border-color: #c3ceda;
+  color: #8a97a6;
+  background: #f4f6f8;
+  cursor: not-allowed;
+}
+
+.document-icon-button--disabled:hover,
+.document-icon-button--disabled:focus,
+.document-icon-button--disabled:active,
+.document-icon-button:disabled:hover,
+.document-icon-button:disabled:focus,
+.document-icon-button:disabled:active {
+  background: #f4f6f8;
+  border-color: #c3ceda;
+  color: #8a97a6;
 }
 
 :deep(.associated-document-modal) {

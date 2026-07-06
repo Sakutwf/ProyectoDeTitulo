@@ -44,6 +44,12 @@ class HojaVidaAnualApiTest extends TestCase
                     'codigo_curso' => 'GE-25',
                 ],
             ],
+            'otros_documentos' => [
+                [
+                    'nombre_documento' => 'Certificado de inhabilidades',
+                    'motivo' => 'Respaldo para trabajo con menores',
+                ],
+            ],
             'sanciones' => [
                 [
                     'tipo_sancion' => 'Amonestacion verbal',
@@ -60,6 +66,7 @@ class HojaVidaAnualApiTest extends TestCase
             ->assertJsonPath('anio', 2025)
             ->assertJsonPath('titulos.0.titulo', 'Primeros Auxilios')
             ->assertJsonPath('cursos.0.nombre_curso', 'Gestion de emergencias')
+            ->assertJsonPath('otros_documentos.0.nombre_documento', 'Certificado de inhabilidades')
             ->assertJsonPath('sanciones.0.tipo_sancion', 'Amonestacion verbal')
             ->assertJsonPath('reconocimiento.servicio_extraordinario', true)
             ->assertJsonPath('reconocimiento.promesa', true);
@@ -141,6 +148,13 @@ class HojaVidaAnualApiTest extends TestCase
                     'archivo' => UploadedFile::fake()->create('curso.png', 180, 'image/png'),
                 ],
             ],
+            'otros_documentos' => [
+                [
+                    'nombre_documento' => 'Carta de renuncia',
+                    'motivo' => 'Respaldo administrativo',
+                    'archivo' => UploadedFile::fake()->create('renuncia.pdf', 90, 'application/pdf'),
+                ],
+            ],
             'sanciones' => [],
             'reconocimiento' => [],
         ]);
@@ -148,9 +162,10 @@ class HojaVidaAnualApiTest extends TestCase
         $response
             ->assertCreated()
             ->assertJsonPath('titulos.0.archivo_nombre', 'titulo.pdf')
-            ->assertJsonPath('cursos.0.archivo_nombre', 'curso.png');
+            ->assertJsonPath('cursos.0.archivo_nombre', 'curso.png')
+            ->assertJsonPath('otros_documentos.0.archivo_nombre', 'renuncia.pdf');
 
-        $this->assertDatabaseCount('archivos', 2);
+        $this->assertDatabaseCount('archivos', 3);
 
         Archivo::query()->each(function (Archivo $archivo) {
             Storage::disk('public')->assertExists($archivo->ruta);
@@ -158,6 +173,63 @@ class HojaVidaAnualApiTest extends TestCase
         });
     }
 
+    public function test_it_updates_volunteer_personal_data_from_annual_record_editor(): void
+    {
+        Storage::fake('public');
+
+        $voluntario = $this->createVolunteer();
+        $record = HojaVidaAnual::query()->create([
+            'voluntario_id' => $voluntario->id,
+            'anio' => 2026,
+            'asistencia_anual_horas' => 10,
+            'asistencia_anual_porcentaje' => 20,
+            'fecha_generacion' => '2026-12-31',
+        ]);
+
+        $this->post("/api/hoja-vida-anual/{$record->id}", [
+            '_method' => 'PUT',
+            'anio' => 2026,
+            'registro_filial' => '00999',
+            'filial_id' => $voluntario->filial_id,
+            'rut' => '22.222.222-2',
+            'nombres' => 'Ana Maria',
+            'apellidos' => 'Voluntaria Actualizada',
+            'correo_electronico' => 'ana@example.com',
+            'celular' => '+56911112222',
+            'nacionalidad' => 'Chilena',
+            'fecha_nacimiento' => '1998-04-12',
+            'fecha_incorporacion' => '2020-03-05',
+            'nivel_escolaridad' => 'Educacion universitaria completa',
+            'estado_civil' => 'Soltero(a)',
+            'ocupacion' => 'Enfermera',
+            'grupo_sanguineo' => 'O+',
+            'domicilio' => 'Calle Falsa 123',
+            'enfermedades' => 'Ninguna',
+            'alergias' => 'Penicilina',
+            'contacto_emergencia_nombre' => 'Juan Perez',
+            'contacto_emergencia_numero' => '+56933334444',
+            'foto_perfil' => UploadedFile::fake()->image('perfil.jpg'),
+        ])
+            ->assertOk()
+            ->assertJsonPath('voluntario.rut', '22.222.222-2')
+            ->assertJsonPath('voluntario.nombres', 'Ana Maria')
+            ->assertJsonPath('voluntario.correo_electronico', 'ana@example.com');
+
+        $voluntario->refresh();
+
+        $this->assertSame('00999', $voluntario->registro_filial);
+        $this->assertSame('22.222.222-2', $voluntario->rut);
+        $this->assertSame('Ana Maria', $voluntario->nombres);
+        $this->assertSame('Voluntaria Actualizada', $voluntario->apellidos);
+        $this->assertSame('ana@example.com', $voluntario->correo_electronico);
+        $this->assertSame('+56911112222', $voluntario->celular);
+        $this->assertSame('Juan Perez', $voluntario->contacto_emergencia_nombre);
+
+        $archivo = Archivo::query()->where('entidad', 'voluntario')->where('categoria', 'foto_perfil')->first();
+
+        $this->assertNotNull($archivo);
+        Storage::disk('public')->assertExists($archivo->ruta);
+    }
     private function createVolunteer(): Voluntario
     {
         $user = User::factory()->create();
@@ -179,4 +251,6 @@ class HojaVidaAnualApiTest extends TestCase
         ]);
     }
 }
+
+
 

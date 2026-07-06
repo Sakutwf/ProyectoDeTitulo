@@ -14,6 +14,7 @@ class AuthController extends Controller
         'voluntario.filial',
         'voluntario.hojaVidaAnual.titulos',
         'voluntario.hojaVidaAnual.cursos',
+        'voluntario.hojaVidaAnual.otrosDocumentos',
         'voluntario.hojaVidaAnual.sanciones',
         'voluntario.hojaVidaAnual.reconocimiento',
     ];

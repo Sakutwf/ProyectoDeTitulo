@@ -5,7 +5,7 @@
       <div class="content-header">
         <div class="profiles-header">
           <div class="profiles-header__top">
-            <h3 class="m-0"><i class="fa-solid fa-users me-2"></i>Gestion de perfiles</h3>
+            <h3 class="m-0"><i class="fa-solid fa-users me-2"></i>Gestión de Perfiles</h3>
             <button class="btn btn-danger btn-sm profiles-header__create" @click="abrirModalNuevoUsuario" aria-label="Nuevo perfil">
               <i class="fa-solid fa-user-plus"></i>
               <span class="profiles-header__create-label">Nuevo perfil</span>
@@ -18,7 +18,7 @@
               @input="onSearch"
               type="text"
               class="form-control form-control-sm"
-              placeholder="Buscar por nombre, RUT o telefono..."
+              placeholder="Buscar por Nombre, RUT o teléfono..."
             >
           </div>
         </div>
@@ -34,13 +34,12 @@
                     <h4>{{ displayName(user) }}</h4>
                     <div class="role-badges role-badges--mobile">
                       <span
-                        v-for="role in visibleRoles(user)"
-                        :key="`mobile-role-${role.id}`"
+                        v-for="label in permissionBadges(user)"
+                        :key="`mobile-role-${user.id}-${label}`"
                         class="badge role-badge-mobile"
                       >
-                        {{ role.nombre }}
+                        {{ label }}
                       </span>
-                      <span v-if="!visibleRoles(user).length" class="text-muted small">Sin roles</span>
                     </div>
                   </div>
 
@@ -64,7 +63,20 @@
                     <strong>{{ user.voluntario?.rut || '-' }}</strong>
                   </div>
                   <div class="profile-card__row">
-                    <span class="profile-card__label"><i class="fa-solid fa-phone"></i> Telefono</span>
+                    <span class="profile-card__label"><i class="fa-solid fa-briefcase"></i> Cargo</span>
+                    <div v-if="cargoBadges(user).length" class="role-badges role-badges--mobile">
+                      <span
+                        v-for="label in cargoBadges(user)"
+                        :key="'mobile-cargo-' + user.id + '-' + label"
+                        class="badge role-badge-mobile cargo-badge-mobile"
+                      >
+                        {{ label }}
+                      </span>
+                    </div>
+                    <strong v-else>-</strong>
+                  </div>
+                  <div class="profile-card__row">
+                    <span class="profile-card__label"><i class="fa-solid fa-phone"></i> Teléfono</span>
                     <strong>{{ user.voluntario?.celular || '-' }}</strong>
                   </div>
 
@@ -89,7 +101,7 @@
             </div>
 
             <div class="table-shell table-shell--profiles">
-              <div v-if="showProfilesTableNavigation" class="table-scroll-controls" aria-label="Navegacion horizontal de tabla">
+              <div v-if="showProfilesTableNavigation" class="table-scroll-controls" aria-label="Navegación horizontal de tabla">
                 <button
                   type="button"
                   class="table-scroll-button"
@@ -117,8 +129,9 @@
                       <th class="column-mobile-hidden">N° Registro</th>
                       <th>Nombre</th>
                       <th class="column-mobile-hidden">RUT</th>
+                      <th>Cargo</th>
                       <th>Rol</th>
-                      <th class="column-mobile-hidden">Telefono</th>
+                      <th class="column-mobile-hidden">Teléfono</th>
                       <th class="text-center">Hoja de vida</th>
                       <th class="text-center">Acciones</th>
                     </tr>
@@ -128,19 +141,30 @@
                       <td data-label="N° Registro" class="column-mobile-hidden">{{ volunteerRegistrationLabel(user) }}</td>
                       <td data-label="Nombre">{{ displayName(user) }}</td>
                       <td data-label="RUT" class="column-mobile-hidden">{{ user.voluntario?.rut || '-' }}</td>
+                      <td data-label="Cargo">
+                        <div v-if="cargoBadges(user).length" class="role-badges">
+                          <span
+                            v-for="label in cargoBadges(user)"
+                            :key="user.id + '-cargo-' + label"
+                            class="badge role-badge cargo-badge"
+                          >
+                            {{ label }}
+                          </span>
+                        </div>
+                        <span v-else>-</span>
+                      </td>
                       <td data-label="Rol">
                         <div class="role-badges">
                           <span
-                            v-for="role in visibleRoles(user)"
-                            :key="role.id"
+                            v-for="label in permissionBadges(user)"
+                            :key="`${user.id}-${label}`"
                             class="badge role-badge"
                           >
-                            {{ role.nombre }}
+                            {{ label }}
                           </span>
-                          <span v-if="!visibleRoles(user).length" class="text-muted small">Sin roles</span>
                         </div>
                       </td>
-                      <td data-label="Telefono" class="column-mobile-hidden">{{ user.voluntario?.celular || '-' }}</td>
+                      <td data-label="Teléfono" class="column-mobile-hidden">{{ user.voluntario?.celular || '-' }}</td>
                       <td data-label="Hoja de Vida">
                         <div class="d-flex justify-content-center history-cell">
                           <button
@@ -166,7 +190,7 @@
                       </td>
                     </tr>
                     <tr v-if="!users.length" class="no-results-row">
-                      <td colspan="7" class="text-center py-3 no-results-cell">No hay perfiles disponibles.</td>
+                      <td colspan="8" class="text-center py-3 no-results-cell">No hay perfiles disponibles.</td>
                     </tr>
                   </tbody>
                 </table>
@@ -307,10 +331,10 @@ export default {
     async eliminar(id, nombre) {
       const result = await Swal.fire({
         title: `Eliminar a ${nombre}?`,
-        text: 'Se perdera la informacion del perfil.',
+        text: 'Se perderá la información del perfil.',
         icon: 'question',
         showCancelButton: true,
-        confirmButtonText: 'Si, eliminar',
+        confirmButtonText: 'Sí, eliminar',
         cancelButtonText: 'Cancelar'
       })
 
@@ -352,15 +376,48 @@ export default {
         .replace(/^filial\s+/i, '')
         .trim()
     },
-    visibleRoles(user) {
-      const roles = user?.roles || []
-      const hasAdditionalRole = roles.some((role) => role?.nombre?.toLowerCase() !== 'voluntario')
-
-      if (!hasAdditionalRole) {
-        return roles
+    currentYearRecord(user) {
+      const currentYear = new Date().getFullYear()
+      const annualRecords = user?.voluntario?.hoja_vida_anual || user?.voluntario?.hojaVidaAnual || []
+      return annualRecords.find((record) => Number(record?.anio) === currentYear) || null
+    },
+    currentCargoLabel(user) {
+      if (!user?.voluntario) {
+        return '-'
       }
 
-      return roles.filter((role) => role?.nombre?.toLowerCase() !== 'voluntario')
+      const record = this.currentYearRecord(user)
+      if (!record || !record.cargo_clave) {
+        return 'Voluntario'
+      }
+
+      return this.formatCargoLabel(record)
+    },
+    cargoBadges(user) {
+      const label = this.currentCargoLabel(user)
+      return label === '-' ? [] : [label]
+    },
+    formatCargoLabel(record) {
+      const nombre = (record?.cargo_nombre || '').trim()
+      const grupo = (record?.cargo_grupo || '').trim()
+      const direccion = (record?.cargo_direccion || '').trim()
+
+      if (grupo === 'Gobernanza') {
+        return nombre || 'Voluntario'
+      }
+
+      if (nombre && direccion) {
+        return `${nombre}
+(${direccion})`
+      }
+
+      return nombre || 'Voluntario'
+    },
+    permissionBadges(user) {
+      return [this.hasAdminPermission(user) ? 'Administrador' : 'Usuario']
+    },
+    hasAdminPermission(user) {
+      return (user?.roles || []).some((role) => role?.clave === 'administrador')
     }
   }
 }
@@ -387,7 +444,7 @@ export default {
   display: flex;
   align-items: center;
   min-height: 56px;
-  font-size: 2rem;
+  font-size: 1.75rem;
   line-height: 1.05;
 }
 
@@ -540,6 +597,16 @@ export default {
   text-align: left;
 }
 
+.cargo-badge,
+.role-badges--mobile .badge.cargo-badge-mobile {
+  background: #fff;
+  border-color: #dc3545;
+  color: #dc3545;
+  white-space: pre-line;
+  line-height: 1.15;
+  text-align: center;
+}
+
 .actions-cell {
   flex-wrap: nowrap;
   white-space: nowrap;
@@ -660,6 +727,12 @@ export default {
 
   .role-badges .badge {
     max-width: 100%;
+  }
+}
+
+@media (min-width: 1200px) {
+  .profiles-header__top h3 {
+    font-size: 2rem;
   }
 }
 
@@ -800,6 +873,7 @@ export default {
   }
 }
 </style>
+
 
 
 

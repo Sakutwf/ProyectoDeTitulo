@@ -40,8 +40,11 @@ class UserController extends Controller
         'roles.permissions',
         'voluntario.filial',
         'voluntario.archivoFotoPerfil',
+        'voluntario.actividades.filial',
         'voluntario.hojaVidaAnual.titulos.archivo',
+        'voluntario.hojaVidaAnual.titulos.archivosAdjuntos',
         'voluntario.hojaVidaAnual.cursos.archivo',
+        'voluntario.hojaVidaAnual.cursos.archivosAdjuntos',
         'voluntario.hojaVidaAnual.sanciones',
         'voluntario.hojaVidaAnual.reconocimiento',
     ];
@@ -447,6 +450,8 @@ class UserController extends Controller
         }
     }
 }
+
+
 
 
 

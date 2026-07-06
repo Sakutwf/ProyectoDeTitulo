@@ -81,7 +81,7 @@
                 <section v-if="galleryActivityId === actividad.id" class="asset-panel">
                   <div class="asset-panel__header">
                     <div>
-                      <h4>Galeria de la actividad</h4>
+                      <h4>Galería de la actividad</h4>
                       <p>Las imágenes quedan visibles para los voluntarios inscritos en esta actividad.</p>
                     </div>
                   </div>
@@ -92,7 +92,7 @@
                         v-model.trim="galleryForm.titulo"
                         type="text"
                         class="form-control"
-                        placeholder="Titulo de la imagen"
+                        placeholder="Título de la imagen"
                       >
                       <input
                         v-model="galleryForm.fecha"
@@ -105,7 +105,7 @@
                       v-model.trim="galleryForm.descripcion"
                       class="form-control"
                       rows="2"
-                      placeholder="Descripcion breve"
+                      placeholder="Descripción breve"
                     ></textarea>
 
                     <input
@@ -128,31 +128,31 @@
                   </div>
 
                   <div v-if="galleryLoadingActivityId === actividad.id" class="asset-empty">
-                    Cargando galeria...
+                    Cargando galería...
                   </div>
 
                   <div v-else-if="galleryItems.length" class="gallery-grid">
                     <article v-for="item in galleryItems" :key="item.id" class="gallery-card">
                       <img :src="item.imagen_url" :alt="item.titulo || 'Imagen de actividad'" class="gallery-card__image">
                       <div class="gallery-card__body">
-                        <strong>{{ item.titulo || 'Imagen sin titulo' }}</strong>
+                        <strong>{{ item.titulo || 'Imagen sin título' }}</strong>
                         <small>{{ item.subido_por?.name || item.subido_por?.username || 'Voluntario' }}</small>
                         <small>{{ formatDate(item.fecha) }}</small>
-                        <p>{{ item.descripcion || 'Sin descripcion.' }}</p>
+                        <p>{{ item.descripcion || 'Sin descripción.' }}</p>
                       </div>
                     </article>
                   </div>
 
                   <div v-else class="asset-empty">
-                    Todavia no hay imagenes registradas para esta actividad.
+                    Todavía no hay imágenes registradas para esta actividad.
                   </div>
                 </section>
 
                 <section v-if="boletasActivityId === actividad.id" class="asset-panel">
                   <div class="asset-panel__header">
                     <div>
-                      <h4>Boletas de viatico</h4>
-                      <p>Sube aqui tus respaldos para solicitar reembolso de viatico en esta actividad.</p>
+                      <h4>Boletas de viático</h4>
+                      <p>Sube aquí tus respaldos para solicitar reembolso de viático en esta actividad.</p>
                     </div>
                   </div>
 
@@ -352,10 +352,10 @@ async function loadActivities() {
 
 function galleryButtonLabel(actividad) {
   if (galleryLoadingActivityId.value === actividad.id) {
-    return 'Cargando galeria...'
+    return 'Cargando galería...'
   }
 
-  return galleryActivityId.value === actividad.id ? 'Ocultar galeria' : 'Galeria'
+  return galleryActivityId.value === actividad.id ? 'Ocultar galería' : 'Galería'
 }
 
 function boletasButtonLabel(actividad) {
@@ -382,7 +382,7 @@ async function loadGallery(actividadId) {
     galleryItems.value = Array.isArray(response.data) ? response.data : []
   } catch (error) {
     galleryItems.value = []
-    show_alerta('No se pudo cargar la galeria de la actividad.', 'error')
+    show_alerta('No se pudo cargar la galería de la actividad.', 'error')
   } finally {
     galleryLoadingActivityId.value = null
   }
@@ -398,7 +398,7 @@ async function loadBoletas(actividadId) {
     boletaItems.value = Array.isArray(response.data) ? response.data : []
   } catch (error) {
     boletaItems.value = []
-    show_alerta('No se pudieron cargar tus boletas de viatico.', 'error')
+    show_alerta('No se pudieron cargar tus boletas.', 'error')
   } finally {
     boletasLoadingActivityId.value = null
   }

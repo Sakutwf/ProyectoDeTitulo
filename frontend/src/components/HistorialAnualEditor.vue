@@ -25,6 +25,124 @@
       </div>
 
       <form class="editor-grid" @submit.prevent="submit">
+        <article v-if="shouldShowPersonalSection" class="editor-card editor-card--section">
+          <div class="section-header">
+            <div>
+              <h4>Datos personales del voluntario</h4>
+              <p class="section-note">Edita aqui la ficha personal que hoy se mantiene en el perfil del voluntario.</p>
+            </div>
+          </div>
+
+          <div class="form-grid personal-profile-grid">
+            <label>
+              <span>Numero de registro</span>
+              <input v-model.trim="form.registro_filial" type="text" class="form-control" required>
+            </label>
+            <label>
+              <span>RUT</span>
+              <input v-model.trim="form.rut" type="text" class="form-control" required>
+            </label>
+            <label>
+              <span>Filial</span>
+              <select v-model="form.filial_id" class="form-control" required>
+                <option value="">Selecciona una filial</option>
+                <option v-for="filial in filialesOptions" :key="filial.id" :value="String(filial.id)">
+                  {{ filial.nombre }}
+                </option>
+              </select>
+            </label>
+            <label>
+              <span>Nombres</span>
+              <input v-model.trim="form.nombres" type="text" class="form-control" required>
+            </label>
+            <label>
+              <span>Apellidos</span>
+              <input v-model.trim="form.apellidos" type="text" class="form-control" required>
+            </label>
+            <label>
+              <span>Correo electronico</span>
+              <input v-model.trim="form.correo_electronico" type="email" class="form-control">
+            </label>
+            <label>
+              <span>Celular</span>
+              <input v-model.trim="form.celular" type="text" class="form-control">
+            </label>
+            <label>
+              <span>Nacionalidad</span>
+              <input v-model.trim="form.nacionalidad" type="text" class="form-control">
+            </label>
+            <label>
+              <span>Fecha de nacimiento</span>
+              <input v-model="form.fecha_nacimiento" type="date" class="form-control">
+            </label>
+            <label>
+              <span>Fecha de incorporacion</span>
+              <input v-model="form.fecha_incorporacion" type="date" class="form-control">
+            </label>
+            <label>
+              <span>Nivel de escolaridad</span>
+              <select v-model="form.nivel_escolaridad" class="form-control">
+                <option value="">Selecciona una opcion</option>
+                <option v-for="option in escolaridadOptions" :key="option" :value="option">{{ option }}</option>
+              </select>
+            </label>
+            <label>
+              <span>Estado civil</span>
+              <select v-model="form.estado_civil" class="form-control">
+                <option value="">Selecciona una opcion</option>
+                <option v-for="option in estadoCivilOptions" :key="option" :value="option">{{ option }}</option>
+              </select>
+            </label>
+            <label>
+              <span>Ocupacion</span>
+              <input v-model.trim="form.ocupacion" type="text" class="form-control">
+            </label>
+            <label>
+              <span>Grupo sanguineo</span>
+              <input v-model.trim="form.grupo_sanguineo" type="text" class="form-control">
+            </label>
+            <label class="form-grid__wide">
+              <span>Domicilio</span>
+              <input v-model.trim="form.domicilio" type="text" class="form-control">
+            </label>
+            <label>
+              <span>Contacto de emergencia</span>
+              <input v-model.trim="form.contacto_emergencia_nombre" type="text" class="form-control">
+            </label>
+            <label>
+              <span>Numero de emergencia</span>
+              <input v-model.trim="form.contacto_emergencia_numero" type="text" class="form-control">
+            </label>
+            <label class="form-grid__wide">
+              <span>Enfermedades</span>
+              <textarea v-model.trim="form.enfermedades" class="form-control" rows="3"></textarea>
+            </label>
+            <label class="form-grid__wide">
+              <span>Alergias</span>
+              <textarea v-model.trim="form.alergias" class="form-control" rows="3"></textarea>
+            </label>
+            <label class="form-grid__wide">
+              <span>Foto de perfil</span>
+              <input type="file" class="form-control" accept=".jpg,.jpeg,.png,.webp" @change="onPhotoSelected">
+            </label>
+          </div>
+
+          <div v-if="props.volunteer?.foto_perfil_url || form.foto_perfil" class="attachment-row">
+            <a
+              v-if="props.volunteer?.foto_perfil_url"
+              :href="props.volunteer.foto_perfil_url"
+              target="_blank"
+              rel="noopener"
+              class="attachment-link"
+            >
+              Ver foto actual
+            </a>
+            <span v-if="form.foto_perfil" class="attachment-badge">
+              Nueva foto: {{ form.foto_perfil.name }}
+            </span>
+          </div>
+        </article>
+
         <article v-if="!isSectionModal" class="editor-card">
           <div class="attendance-card__header">
             <h4>Asistencia del periodo</h4>
@@ -220,66 +338,68 @@
                 <label>
                   <span>Codigo del titulo</span>
                   <input v-model.trim="title.codigo_titulo" type="text" class="form-control">
-                </label>
-                <label class="form-grid__wide">
-                  <span>Imagen, foto o documento del titulo aprobado</span>
-                  <input
-                    type="file"
-                    class="form-control"
-                    accept=".jpg,.jpeg,.png,.webp,.pdf"
-                    @change="onTitleFileSelected(index, $event)"
-                  >
-                </label>
-              </div>
-              <div v-if="title.archivo || title.archivo_url" class="attachment-row">
-                <a
-                  v-if="title.archivo_url && !title.eliminar_archivo"
-                  :href="title.archivo_url"
-                  target="_blank"
-                  rel="noopener"
-                  class="attachment-link"
+                </label>              </div>
+              <div class="attachment-stack">
+                <div
+                  v-for="(attachment, attachmentIndex) in title.archivos_adjuntos"
+                  :key="`title-${index}-attachment-${attachment.id ?? attachmentIndex}`"
+                  class="attachment-panel"
+                >                  <label class="form-grid__wide">
+                    <span>{{ attachmentIndex === 0 ? 'Imagen, foto o documento del titulo aprobado' : 'Archivo adicional' }}</span>
+                    <input
+                      type="file"
+                      class="form-control"
+                      accept=".jpg,.jpeg,.png,.webp,.pdf"
+                      @change="onTitleFileSelected(index, attachmentIndex, $event)"
+                    >
+                  </label>
+                  <p v-if="attachment.error" class="attachment-error">
+                    {{ attachment.error }}
+                  </p>
+                  <div v-if="attachment.file || attachment.url" class="attachment-row">
+                    <a
+                      v-if="attachment.url"
+                      :href="attachment.url"
+                      target="_blank"
+                      rel="noopener"
+                      class="attachment-link"
+                    >
+                      {{ attachmentDisplayName(attachment, 'Ver respaldo actual') }}
+                    </a>
+                    <span v-if="attachment.file" class="attachment-badge">
+                      Nuevo archivo: {{ attachment.file.name }}
+                    </span>
+                  </div>
+                  <div v-if="hasAttachmentPreview(attachment)" class="attachment-preview">
+                    <img
+                      v-if="attachmentPreviewKind(attachment) === 'image'"
+                      :src="attachmentPreviewUrl(attachment)"
+                      :alt="`Vista previa de ${attachmentDisplayName(attachment, 'titulo')}`"
+                      class="attachment-preview__image"
+                    >
+                    <iframe
+                      v-else-if="attachmentPreviewKind(attachment) === 'pdf'"
+                      :src="attachmentPreviewUrl(attachment)"
+                      class="attachment-preview__frame"
+                      title="Vista previa del respaldo del titulo"
+                    ></iframe>
+                    <a
+                      :href="attachmentPreviewUrl(attachment)"
+                      target="_blank"
+                      rel="noopener"
+                      class="attachment-preview__open"
+                    >
+                      Abrir vista completa
+                    </a>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary attachment-add-button"
+                  @click="addTitleAttachment(index)"
                 >
-                  {{ title.archivo_nombre || 'Ver respaldo actual' }}
-                </a>
-                <span v-if="title.archivo" class="attachment-badge">
-                  Nuevo archivo: {{ title.archivo.name }}
-                </span>
-                <span v-else-if="title.eliminar_archivo" class="attachment-badge attachment-badge--warning">
-                  El respaldo se eliminara al guardar
-                </span>
-                <button type="button" class="btn btn-sm btn-outline-secondary" @click="clearTitleAttachment(index)">
-                  {{
-                    title.archivo
-                      ? 'Quitar nuevo archivo'
-                      : title.eliminar_archivo
-                        ? 'Restaurar respaldo'
-                        : title.archivo_url
-                          ? 'Quitar respaldo'
-                          : 'Limpiar'
-                  }}
+                  Archivo adicional
                 </button>
-              </div>
-              <div v-if="hasAttachmentPreview(title)" class="attachment-preview">
-                <img
-                  v-if="attachmentPreviewKind(title) === 'image'"
-                  :src="attachmentPreviewUrl(title)"
-                  :alt="`Vista previa de ${attachmentDisplayName(title, 'titulo')}`"
-                  class="attachment-preview__image"
-                >
-                <iframe
-                  v-else-if="attachmentPreviewKind(title) === 'pdf'"
-                  :src="attachmentPreviewUrl(title)"
-                  class="attachment-preview__frame"
-                  title="Vista previa del respaldo del titulo"
-                ></iframe>
-                <a
-                  :href="attachmentPreviewUrl(title)"
-                  target="_blank"
-                  rel="noopener"
-                  class="attachment-preview__open"
-                >
-                  Abrir vista completa
-                </a>
               </div>
               <button
   type="button"
@@ -319,66 +439,68 @@
                 <label>
                   <span>Codigo del curso</span>
                   <input v-model.trim="course.codigo_curso" type="text" class="form-control">
-                </label>
-                <label class="form-grid__wide">
-                  <span>Imagen, foto o documento del curso aprobado</span>
-                  <input
-                    type="file"
-                    class="form-control"
-                    accept=".jpg,.jpeg,.png,.webp,.pdf"
-                    @change="onCourseFileSelected(index, $event)"
-                  >
-                </label>
-              </div>
-              <div v-if="course.archivo || course.archivo_url" class="attachment-row">
-                <a
-                  v-if="course.archivo_url && !course.eliminar_archivo"
-                  :href="course.archivo_url"
-                  target="_blank"
-                  rel="noopener"
-                  class="attachment-link"
+                </label>              </div>
+              <div class="attachment-stack">
+                <div
+                  v-for="(attachment, attachmentIndex) in course.archivos_adjuntos"
+                  :key="`course-${index}-attachment-${attachment.id ?? attachmentIndex}`"
+                  class="attachment-panel"
+                >                  <label class="form-grid__wide">
+                    <span>{{ attachmentIndex === 0 ? 'Imagen, foto o documento del curso aprobado' : 'Archivo adicional' }}</span>
+                    <input
+                      type="file"
+                      class="form-control"
+                      accept=".jpg,.jpeg,.png,.webp,.pdf"
+                      @change="onCourseFileSelected(index, attachmentIndex, $event)"
+                    >
+                  </label>
+                  <p v-if="attachment.error" class="attachment-error">
+                    {{ attachment.error }}
+                  </p>
+                  <div v-if="attachment.file || attachment.url" class="attachment-row">
+                    <a
+                      v-if="attachment.url"
+                      :href="attachment.url"
+                      target="_blank"
+                      rel="noopener"
+                      class="attachment-link"
+                    >
+                      {{ attachmentDisplayName(attachment, 'Ver respaldo actual') }}
+                    </a>
+                    <span v-if="attachment.file" class="attachment-badge">
+                      Nuevo archivo: {{ attachment.file.name }}
+                    </span>
+                  </div>
+                  <div v-if="hasAttachmentPreview(attachment)" class="attachment-preview">
+                    <img
+                      v-if="attachmentPreviewKind(attachment) === 'image'"
+                      :src="attachmentPreviewUrl(attachment)"
+                      :alt="`Vista previa de ${attachmentDisplayName(attachment, 'curso')}`"
+                      class="attachment-preview__image"
+                    >
+                    <iframe
+                      v-else-if="attachmentPreviewKind(attachment) === 'pdf'"
+                      :src="attachmentPreviewUrl(attachment)"
+                      class="attachment-preview__frame"
+                      title="Vista previa del respaldo del curso"
+                    ></iframe>
+                    <a
+                      :href="attachmentPreviewUrl(attachment)"
+                      target="_blank"
+                      rel="noopener"
+                      class="attachment-preview__open"
+                    >
+                      Abrir vista completa
+                    </a>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary attachment-add-button"
+                  @click="addCourseAttachment(index)"
                 >
-                  {{ course.archivo_nombre || 'Ver respaldo actual' }}
-                </a>
-                <span v-if="course.archivo" class="attachment-badge">
-                  Nuevo archivo: {{ course.archivo.name }}
-                </span>
-                <span v-else-if="course.eliminar_archivo" class="attachment-badge attachment-badge--warning">
-                  El respaldo se eliminara al guardar
-                </span>
-                <button type="button" class="btn btn-sm btn-outline-secondary" @click="clearCourseAttachment(index)">
-                  {{
-                    course.archivo
-                      ? 'Quitar nuevo archivo'
-                      : course.eliminar_archivo
-                        ? 'Restaurar respaldo'
-                        : course.archivo_url
-                          ? 'Quitar respaldo'
-                          : 'Limpiar'
-                  }}
+                  Archivo adicional
                 </button>
-              </div>
-              <div v-if="hasAttachmentPreview(course)" class="attachment-preview">
-                <img
-                  v-if="attachmentPreviewKind(course) === 'image'"
-                  :src="attachmentPreviewUrl(course)"
-                  :alt="`Vista previa de ${attachmentDisplayName(course, 'curso')}`"
-                  class="attachment-preview__image"
-                >
-                <iframe
-                  v-else-if="attachmentPreviewKind(course) === 'pdf'"
-                  :src="attachmentPreviewUrl(course)"
-                  class="attachment-preview__frame"
-                  title="Vista previa del respaldo del curso"
-                ></iframe>
-                <a
-                  :href="attachmentPreviewUrl(course)"
-                  target="_blank"
-                  rel="noopener"
-                  class="attachment-preview__open"
-                >
-                  Abrir vista completa
-                </a>
               </div>
               <button
   type="button"
@@ -386,6 +508,98 @@
   @click="removeCourseRow(index)"
   :aria-label="`Eliminar curso ${index + 1}`"
   :title="`Eliminar curso ${index + 1}`"
+>
+  <i class="fa-solid fa-trash"></i>
+</button>
+            </div>
+          </div>
+        </article>
+
+        <article
+          v-if="shouldShowOtherDocumentsSection"
+          ref="otherDocumentsSectionRef"
+          class="editor-card"
+          :class="{ 'editor-card--highlight': props.initialSection === 'documents' }"
+        >
+          <div class="section-header">
+            <h4>Otros documentos</h4>
+            <button type="button" class="btn btn-sm btn-outline-danger" @click="addOtherDocumentRow">Agregar</button>
+          </div>
+
+          <div class="stack-list">
+            <div v-for="(document, index) in form.otros_documentos" :key="`other-document-${index}`" class="stack-item">
+              <div class="form-grid">
+                <label>
+                  <span>Nombre del documento</span>
+                  <input v-model.trim="document.nombre_documento" type="text" class="form-control">
+                </label>
+                <label>
+                  <span>Motivo</span>
+                  <input v-model.trim="document.motivo" type="text" class="form-control">
+                </label>
+              </div>
+              <div class="attachment-stack">
+                <div
+                  v-for="(attachment, attachmentIndex) in document.archivos_adjuntos"
+                  :key="`other-document-${index}-attachment-${attachment.id ?? attachmentIndex}`"
+                  class="attachment-panel"
+                >
+                  <label class="form-grid__wide">
+                    <span>Archivo</span>
+                    <input
+                      type="file"
+                      class="form-control"
+                      accept=".jpg,.jpeg,.png,.webp,.pdf"
+                      @change="onOtherDocumentFileSelected(index, attachmentIndex, $event)"
+                    >
+                  </label>
+                  <p v-if="attachment.error" class="attachment-error">
+                    {{ attachment.error }}
+                  </p>
+                  <div v-if="attachment.file || attachment.url" class="attachment-row">
+                    <a
+                      v-if="attachment.url"
+                      :href="attachment.url"
+                      target="_blank"
+                      rel="noopener"
+                      class="attachment-link"
+                    >
+                      {{ attachmentDisplayName(attachment, 'Ver respaldo actual') }}
+                    </a>
+                    <span v-if="attachment.file" class="attachment-badge">
+                      Nuevo archivo: {{ attachment.file.name }}
+                    </span>
+                  </div>
+                  <div v-if="hasAttachmentPreview(attachment)" class="attachment-preview">
+                    <img
+                      v-if="attachmentPreviewKind(attachment) === 'image'"
+                      :src="attachmentPreviewUrl(attachment)"
+                      :alt="`Vista previa de ${attachmentDisplayName(attachment, 'documento')}`"
+                      class="attachment-preview__image"
+                    >
+                    <iframe
+                      v-else-if="attachmentPreviewKind(attachment) === 'pdf'"
+                      :src="attachmentPreviewUrl(attachment)"
+                      class="attachment-preview__frame"
+                      title="Vista previa del documento"
+                    ></iframe>
+                    <a
+                      :href="attachmentPreviewUrl(attachment)"
+                      target="_blank"
+                      rel="noopener"
+                      class="attachment-preview__open"
+                    >
+                      Abrir vista completa
+                    </a>
+                  </div>
+                </div>
+              </div>
+              <button
+  type="button"
+  class="icon-delete-button"
+  @click="removeOtherDocumentRow(index)"
+  :aria-label="`Eliminar documento ${index + 1}`"
+  :title="`Eliminar documento ${index + 1}`"
 >
   <i class="fa-solid fa-trash"></i>
 </button>
@@ -469,10 +683,9 @@
           </div>
         </article>
         <article v-if="!isSectionModal" class="editor-card">
-          <h4>Comentarios</h4>
+          <h4>Labor Efectuada y Observaciones</h4>
           <label class="comments-field">
-            <span>Comentarios</span>
-            <textarea v-model.trim="form.comentarios" class="form-control" rows="4"></textarea>
+            <textarea v-model.trim="form.comentarios" class="form-control comments-textarea" rows="8"></textarea>
           </label>
         </article>
         <div class="editor-footer">
@@ -536,9 +749,35 @@
 
 <script setup>
 import axios from 'axios'
-import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { API_BASE } from '../config/api'
 import { show_alerta } from '../funciones'
+
+const MAX_ATTACHMENT_SIZE_KB = 5120
+const MAX_ATTACHMENT_SIZE_BYTES = MAX_ATTACHMENT_SIZE_KB * 1024
+
+const ESCOLARIDAD_OPTIONS = [
+  'Sin escolaridad',
+  'Educacion basica incompleta',
+  'Educacion basica completa',
+  'Educacion media incompleta',
+  'Educacion media completa',
+  'Educacion tecnica de nivel superior incompleta',
+  'Educacion tecnica de nivel superior completa',
+  'Educacion universitaria incompleta',
+  'Educacion universitaria completa',
+  'Postitulo o diplomado',
+  'Magister',
+  'Doctorado'
+]
+
+const ESTADO_CIVIL_OPTIONS = [
+  'Soltero(a)',
+  'Casado(a)',
+  'Conviviente civil',
+  'Divorciado(a)',
+  'Viudo(a)'
+]
 
 const props = defineProps({
   volunteerId: {
@@ -551,6 +790,10 @@ const props = defineProps({
   },
   currentUserId: {
     type: [Number, String, null],
+    default: null
+  },
+  volunteer: {
+    type: Object,
     default: null
   },
   initialSection: {
@@ -592,8 +835,12 @@ const cargoOptions = [
 ]
 
 const form = reactive(createEmptyForm())
+const filialesOptions = ref([])
+const escolaridadOptions = ESCOLARIDAD_OPTIONS
+const estadoCivilOptions = ESTADO_CIVIL_OPTIONS
 const titlesSectionRef = ref(null)
 const coursesSectionRef = ref(null)
+const otherDocumentsSectionRef = ref(null)
 const showSanctionsSection = ref(false)
 const showCargoSelector = ref(false)
 const isUnclassifiedHoursModalOpen = ref(false)
@@ -603,11 +850,17 @@ const state = reactive({
 })
 
 const dialogTitleId = 'historial-anual-editor-title'
-const isSectionModal = computed(() => ['titles', 'courses'].includes(props.initialSection))
+const isSectionModal = computed(() => ['personal', 'titles', 'courses', 'documents'].includes(props.initialSection))
+const shouldShowPersonalSection = computed(() => !isSectionModal.value || props.initialSection === 'personal')
 const shouldShowTitlesSection = computed(() => !isSectionModal.value || props.initialSection === 'titles')
 const shouldShowCoursesSection = computed(() => !isSectionModal.value || props.initialSection === 'courses')
+const shouldShowOtherDocumentsSection = computed(() => !isSectionModal.value || props.initialSection === 'documents')
 const panelKicker = computed(() => isSectionModal.value ? 'Carga de respaldo' : 'Edicion administrativa')
 const panelTitle = computed(() => {
+  if (props.initialSection === 'personal') {
+    return 'Editar mis datos personales'
+  }
+
   if (props.initialSection === 'titles') {
     return 'Subir titulo aprobado'
   }
@@ -616,15 +869,27 @@ const panelTitle = computed(() => {
     return 'Subir curso aprobado'
   }
 
+  if (props.initialSection === 'documents') {
+    return 'Subir otro documento'
+  }
+
   return props.record ? `Editar periodo ${props.record.anio}` : 'Nuevo periodo anual'
 })
 const panelDescription = computed(() => {
+  if (props.initialSection === 'personal') {
+    return 'Actualiza tu informacion personal desde tu propia hoja de vida.'
+  }
+
   if (props.initialSection === 'titles') {
     return 'Adjunta la imagen, foto o documento del titulo aprobado y completa los datos del registro.'
   }
 
   if (props.initialSection === 'courses') {
     return 'Adjunta la imagen, foto o documento del curso aprobado y completa los datos del registro.'
+  }
+
+  if (props.initialSection === 'documents') {
+    return 'Adjunta el documento relevante del voluntario y completa el contexto del registro.'
   }
 
   return props.record
@@ -639,12 +904,20 @@ const submitLabel = computed(() => {
     return 'Guardando...'
   }
 
+  if (props.initialSection === 'personal') {
+    return 'Guardar mis datos'
+  }
+
   if (props.initialSection === 'titles') {
     return 'Guardar titulo'
   }
 
   if (props.initialSection === 'courses') {
     return 'Guardar curso'
+  }
+
+  if (props.initialSection === 'documents') {
+    return 'Guardar documento'
   }
 
   return 'Guardar hoja de vida'
@@ -679,14 +952,18 @@ const attendancePreview = computed(() => {
 const selectedCargoDetails = computed(() => cargoOptions.find((cargo) => cargo.key === form.cargo_clave) || null)
 const selectedCargoLabel = computed(() => formatCargoLabel(selectedCargoDetails.value))
 
+onMounted(() => {
+  fetchFiliales()
+})
+
 onBeforeUnmount(() => {
   cleanupAttachmentPreviews()
 })
 
 watch(
-  () => props.record,
-  async (record) => {
-    applyRecord(record)
+  () => [props.record, props.volunteer],
+  async ([record, volunteer]) => {
+    applyRecord(record, volunteer)
     await nextTick()
     focusInitialSection()
   },
@@ -773,7 +1050,8 @@ function saveUnclassifiedHours() {
 function focusInitialSection() {
   const targetMap = {
     titles: titlesSectionRef.value,
-    courses: coursesSectionRef.value
+    courses: coursesSectionRef.value,
+    documents: otherDocumentsSectionRef.value
   }
 
   const target = targetMap[props.initialSection]
@@ -783,17 +1061,49 @@ function focusInitialSection() {
   }
 }
 
+function createEmptyAttachment() {
+  return {
+    id: null,
+    file: null,
+    url: '',
+    name: '',
+    mime_type: '',
+    preview_url: '',
+    error: ''
+  }
+}
+
+function createAttachmentFromExisting(attachment) {
+  return {
+    id: attachment?.id ?? null,
+    file: null,
+    url: attachment?.url ?? attachment?.url_publica ?? '',
+    name: attachment?.name ?? attachment?.nombre ?? attachment?.nombre_original ?? '',
+    mime_type: attachment?.mime_type ?? '',
+    preview_url: '',
+    error: ''
+  }
+}
+
+function normalizeAttachmentList(attachments = [], legacyAttachment = null) {
+  if (Array.isArray(attachments) && attachments.length) {
+    return attachments.map((attachment) => createAttachmentFromExisting(attachment))
+  }
+
+  if (legacyAttachment && (legacyAttachment.url || legacyAttachment.id)) {
+    return [createAttachmentFromExisting(legacyAttachment)]
+  }
+
+  return [createEmptyAttachment()]
+}
+
 function createEmptyTitleRow() {
   return {
     id: null,
     titulo: '',
     entregado_por: '',
     codigo_titulo: '',
-    archivo: null,
-    archivo_url: '',
-    archivo_nombre: '',
-    archivo_preview_url: '',
-    eliminar_archivo: false
+    archivos_adjuntos: [createEmptyAttachment()]
   }
 }
 
@@ -803,11 +1113,16 @@ function createEmptyCourseRow() {
     nombre_curso: '',
     entregado_por: '',
     codigo_curso: '',
-    archivo: null,
-    archivo_url: '',
-    archivo_nombre: '',
-    archivo_preview_url: '',
-    eliminar_archivo: false
+    archivos_adjuntos: [createEmptyAttachment()]
+  }
+}
+
+function createEmptyOtherDocumentRow() {
+  return {
+    id: null,
+    nombre_documento: '',
+    motivo: '',
+    archivos_adjuntos: [createEmptyAttachment()]
   }
 }
 
@@ -837,6 +1152,26 @@ function createEmptyRecognition() {
 
 function createEmptyForm() {
   return {
+    registro_filial: '',
+    filial_id: '',
+    rut: '',
+    nombres: '',
+    apellidos: '',
+    correo_electronico: '',
+    nacionalidad: '',
+    fecha_nacimiento: '',
+    fecha_incorporacion: '',
+    nivel_escolaridad: '',
+    estado_civil: '',
+    ocupacion: '',
+    grupo_sanguineo: '',
+    celular: '',
+    domicilio: '',
+    enfermedades: '',
+    alergias: '',
+    contacto_emergencia_nombre: '',
+    contacto_emergencia_numero: '',
+    foto_perfil: null,
     anio: String(new Date().getFullYear()),
     asistencia_anual_ajuste_horas: '',
     asistencia_reuniones_filial_ajuste_horas: '',
@@ -853,13 +1188,36 @@ function createEmptyForm() {
     comentarios: '',
     titulos: [createEmptyTitleRow()],
     cursos: [createEmptyCourseRow()],
+    otros_documentos: [createEmptyOtherDocumentRow()],
     sanciones: [createEmptySanctionRow()],
     reconocimiento: createEmptyRecognition()
   }
 }
 
-function applyRecord(record) {
+function applyRecord(record, volunteer = props.volunteer) {
   const next = createEmptyForm()
+
+  if (volunteer) {
+    next.registro_filial = volunteer.registro_filial || ''
+    next.filial_id = volunteer.filial_id ? String(volunteer.filial_id) : ''
+    next.rut = volunteer.rut || ''
+    next.nombres = volunteer.nombres || ''
+    next.apellidos = volunteer.apellidos || ''
+    next.correo_electronico = volunteer.correo_electronico || ''
+    next.nacionalidad = volunteer.nacionalidad || ''
+    next.fecha_nacimiento = formatDateInput(volunteer.fecha_nacimiento)
+    next.fecha_incorporacion = formatDateInput(volunteer.fecha_incorporacion)
+    next.nivel_escolaridad = volunteer.nivel_escolaridad || ''
+    next.estado_civil = volunteer.estado_civil || ''
+    next.ocupacion = volunteer.ocupacion || ''
+    next.grupo_sanguineo = volunteer.grupo_sanguineo || ''
+    next.celular = volunteer.celular || ''
+    next.domicilio = volunteer.domicilio || ''
+    next.enfermedades = volunteer.enfermedades || ''
+    next.alergias = volunteer.alergias || ''
+    next.contacto_emergencia_nombre = volunteer.contacto_emergencia_nombre || ''
+    next.contacto_emergencia_numero = volunteer.contacto_emergencia_numero || ''
+  }
 
   if (record) {
     next.anio = String(record.anio || '')
@@ -881,22 +1239,32 @@ function applyRecord(record) {
       titulo: row.titulo || '',
       entregado_por: row.entregado_por || '',
       codigo_titulo: row.codigo_titulo || '',
-      archivo: null,
-      archivo_url: row.archivo_url || '',
-      archivo_nombre: row.archivo_nombre || '',
-      archivo_preview_url: '',
-      eliminar_archivo: false
+      archivos_adjuntos: normalizeAttachmentList(row.archivos_adjuntos, {
+        id: row.archivo_id ?? null,
+        url: row.archivo_url || '',
+        name: row.archivo_nombre || ''
+      })
     }))
     next.cursos = (record.cursos?.length ? record.cursos : [createEmptyCourseRow()]).map((row) => ({
       id: row.id ?? null,
       nombre_curso: row.nombre_curso || '',
       entregado_por: row.entregado_por || '',
       codigo_curso: row.codigo_curso || '',
-      archivo: null,
-      archivo_url: row.archivo_url || '',
-      archivo_nombre: row.archivo_nombre || '',
-      archivo_preview_url: '',
-      eliminar_archivo: false
+      archivos_adjuntos: normalizeAttachmentList(row.archivos_adjuntos, {
+        id: row.archivo_id ?? null,
+        url: row.archivo_url || '',
+        name: row.archivo_nombre || ''
+      })
+    }))
+    next.otros_documentos = (record.otros_documentos?.length ? record.otros_documentos : [createEmptyOtherDocumentRow()]).map((row) => ({
+      id: row.id ?? null,
+      nombre_documento: row.nombre_documento || '',
+      motivo: row.motivo || '',
+      archivos_adjuntos: normalizeAttachmentList(row.archivos_adjuntos, {
+        id: row.archivo_id ?? null,
+        url: row.archivo_url || '',
+        name: row.archivo_nombre || ''
+      })
     }))
     next.sanciones = (record.sanciones?.length ? record.sanciones : [createEmptySanctionRow()]).map((row) => ({
       tipo_sancion: row.tipo_sancion || '',
@@ -982,61 +1350,86 @@ function formatCargoLabel(cargo) {
 }
 
 function cleanupAttachmentPreviews() {
-  form.titulos.forEach((row) => revokeAttachmentPreview(row))
-  form.cursos.forEach((row) => revokeAttachmentPreview(row))
+  ;[...form.titulos, ...form.cursos, ...form.otros_documentos].forEach((row) => {
+    row.archivos_adjuntos?.forEach((attachment) => revokeAttachmentPreview(attachment))
+  })
 }
 
-function revokeAttachmentPreview(row) {
-  if (row?.archivo_preview_url && String(row.archivo_preview_url).startsWith('blob:')) {
-    URL.revokeObjectURL(row.archivo_preview_url)
+function revokeAttachmentPreview(attachment) {
+  if (attachment?.preview_url && String(attachment.preview_url).startsWith('blob:')) {
+    URL.revokeObjectURL(attachment.preview_url)
   }
 
-  if (row) {
-    row.archivo_preview_url = ''
+  if (attachment) {
+    attachment.preview_url = ''
   }
 }
 
-function setAttachmentFile(row, file) {
-  if (!row) {
+function setAttachmentFile(attachment, file) {
+  if (!attachment) {
     return
   }
 
-  revokeAttachmentPreview(row)
-  row.archivo = file
-  row.archivo_preview_url = file ? URL.createObjectURL(file) : ''
-  row.eliminar_archivo = false
+  revokeAttachmentPreview(attachment)
+  attachment.id = null
+  attachment.file = file
+  attachment.url = ''
+  attachment.name = file?.name || ''
+  attachment.mime_type = file?.type || ''
+  attachment.error = ''
+  attachment.preview_url = file ? URL.createObjectURL(file) : ''
 }
 
-function attachmentPreviewUrl(row) {
-  if (!row || row.eliminar_archivo) {
+function attachmentPreviewUrl(attachment) {
+  if (!attachment) {
     return ''
   }
 
-  if (row.archivo && row.archivo_preview_url) {
-    return row.archivo_preview_url
+  if (attachment.file && attachment.preview_url) {
+    return attachment.preview_url
   }
 
-  return row.archivo_url || ''
+  return attachment.url || ''
 }
 
-function attachmentDisplayName(row, fallback = 'archivo') {
-  return row?.archivo?.name || row?.archivo_nombre || fallback
+function attachmentDisplayName(attachment, fallback = 'archivo') {
+  return attachment?.file?.name || attachment?.name || fallback
 }
 
-function attachmentPreviewKind(row) {
-  if (!row || row.eliminar_archivo) {
+function validateAttachmentFile(attachment, file) {
+  if (!attachment) {
+    return false
+  }
+
+  if (!file) {
+    attachment.error = ''
+    return true
+  }
+
+  if (file.size > MAX_ATTACHMENT_SIZE_BYTES) {
+    attachment.file = null
+    attachment.error = `El archivo supera el tamano maximo permitido de ${MAX_ATTACHMENT_SIZE_KB / 1024} MB.`
+    return false
+  }
+
+  attachment.error = ''
+  return true
+}
+
+function attachmentPreviewKind(attachment) {
+  if (!attachment) {
     return null
   }
 
-  if (row.archivo?.type?.startsWith('image/')) {
+  if (attachment.file?.type?.startsWith('image/')) {
     return 'image'
   }
 
-  if (row.archivo?.type === 'application/pdf') {
+  if (attachment.file?.type === 'application/pdf' || attachment.mime_type === 'application/pdf') {
     return 'pdf'
   }
 
-  const reference = attachmentDisplayName(row, row?.archivo_url || '')
+  const reference = attachmentDisplayName(attachment, attachment.url || '')
 
   if (/\.(jpg|jpeg|png|webp|gif|bmp|svg)$/i.test(reference)) {
     return 'image'
@@ -1049,12 +1442,76 @@ function attachmentPreviewKind(row) {
   return null
 }
 
-function hasAttachmentPreview(row) {
-  return Boolean(attachmentPreviewUrl(row) && attachmentPreviewKind(row))
+function hasAttachmentPreview(attachment) {
+  return Boolean(attachmentPreviewUrl(attachment) && attachmentPreviewKind(attachment))
+}
+
+function addAttachmentSlot(row) {
+  if (!row?.archivos_adjuntos) {
+    return
+  }
+
+  row.archivos_adjuntos.push(createEmptyAttachment())
+}
+
+function removeAttachmentSlot(row, attachmentIndex) {
+  if (!row?.archivos_adjuntos?.length) {
+    return
+  }
+
+  const attachment = row.archivos_adjuntos[attachmentIndex]
+
+  if (attachment) {
+    revokeAttachmentPreview(attachment)
+  }
+
+  if (row.archivos_adjuntos.length === 1) {
+    row.archivos_adjuntos.splice(0, 1, createEmptyAttachment())
+    return
+  }
+
+  row.archivos_adjuntos.splice(attachmentIndex, 1)
+}
+
+function clearAttachmentSlot(row, attachmentIndex) {
+  const attachment = row?.archivos_adjuntos?.[attachmentIndex]
+
+  if (!attachment) {
+    return
+  }
+
+  revokeAttachmentPreview(attachment)
+  Object.assign(attachment, createEmptyAttachment())
+}
+
+function appendAttachmentPayload(formData, key, attachments = []) {
+  let existingIndex = 0
+  let newIndex = 0
+
+  attachments.forEach((attachment) => {
+    if (attachment?.id && attachment.url && !attachment.file) {
+      appendValue(formData, `${key}[archivo_ids][${existingIndex}]`, attachment.id)
+      existingIndex += 1
+    }
+
+    if (attachment?.file) {
+      formData.append(`${key}[archivos][${newIndex}]`, attachment.file)
+      newIndex += 1
+    }
+  })
 }
 
 function appendValue(formData, key, value) {
   formData.append(key, value === null || value === undefined ? '' : String(value))
+}
+
+async function fetchFiliales() {
+  try {
+    const response = await axios.get(`${API_BASE}/filiales`)
+    filialesOptions.value = Array.isArray(response.data) ? response.data : []
+  } catch (error) {
+    filialesOptions.value = []
+  }
 }
 
 function sanctionHasData(row) {
@@ -1071,7 +1528,33 @@ function sanctionHasData(row) {
 function buildFormData() {
   const formData = new FormData()
 
-    appendValue(formData, 'anio', Number(form.anio))
+  if (!isSectionModal.value || props.initialSection === 'personal') {
+    appendValue(formData, 'registro_filial', nullableText(form.registro_filial))
+    appendValue(formData, 'filial_id', nullableText(form.filial_id))
+    appendValue(formData, 'rut', nullableText(form.rut))
+    appendValue(formData, 'nombres', nullableText(form.nombres))
+    appendValue(formData, 'apellidos', nullableText(form.apellidos))
+    appendValue(formData, 'correo_electronico', nullableText(form.correo_electronico))
+    appendValue(formData, 'nacionalidad', nullableText(form.nacionalidad))
+    appendValue(formData, 'fecha_nacimiento', nullableText(form.fecha_nacimiento))
+    appendValue(formData, 'fecha_incorporacion', nullableText(form.fecha_incorporacion))
+    appendValue(formData, 'nivel_escolaridad', nullableText(form.nivel_escolaridad))
+    appendValue(formData, 'estado_civil', nullableText(form.estado_civil))
+    appendValue(formData, 'ocupacion', nullableText(form.ocupacion))
+    appendValue(formData, 'grupo_sanguineo', nullableText(form.grupo_sanguineo))
+    appendValue(formData, 'celular', nullableText(form.celular))
+    appendValue(formData, 'domicilio', nullableText(form.domicilio))
+    appendValue(formData, 'enfermedades', nullableText(form.enfermedades))
+    appendValue(formData, 'alergias', nullableText(form.alergias))
+    appendValue(formData, 'contacto_emergencia_nombre', nullableText(form.contacto_emergencia_nombre))
+    appendValue(formData, 'contacto_emergencia_numero', nullableText(form.contacto_emergencia_numero))
+
+    if (form.foto_perfil) {
+      formData.append('foto_perfil', form.foto_perfil)
+    }
+  }
+
+  appendValue(formData, 'anio', Number(form.anio))
   appendValue(formData, 'asistencia_anual_ajuste_horas', nullableNumber(form.asistencia_anual_ajuste_horas) ?? 0)
   appendValue(formData, 'asistencia_reuniones_filial_ajuste_horas', nullableNumber(form.asistencia_reuniones_filial_ajuste_horas) ?? 0)
   appendValue(formData, 'asistencia_actividades_voluntariado_ajuste_horas', nullableNumber(form.asistencia_actividades_voluntariado_ajuste_horas) ?? 0)
@@ -1096,11 +1579,7 @@ function buildFormData() {
     appendValue(formData, `titulos[${index}][titulo]`, nullableText(row.titulo))
     appendValue(formData, `titulos[${index}][entregado_por]`, nullableText(row.entregado_por))
     appendValue(formData, `titulos[${index}][codigo_titulo]`, nullableText(row.codigo_titulo))
-    appendValue(formData, `titulos[${index}][eliminar_archivo]`, row.eliminar_archivo ? '1' : '0')
-
-    if (row.archivo) {
-      formData.append(`titulos[${index}][archivo]`, row.archivo)
-    }
+    appendAttachmentPayload(formData, `titulos[${index}]`, row.archivos_adjuntos)
   })
 
   form.cursos.forEach((row, index) => {
@@ -1108,11 +1587,14 @@ function buildFormData() {
     appendValue(formData, `cursos[${index}][nombre_curso]`, nullableText(row.nombre_curso))
     appendValue(formData, `cursos[${index}][entregado_por]`, nullableText(row.entregado_por))
     appendValue(formData, `cursos[${index}][codigo_curso]`, nullableText(row.codigo_curso))
-    appendValue(formData, `cursos[${index}][eliminar_archivo]`, row.eliminar_archivo ? '1' : '0')
+    appendAttachmentPayload(formData, `cursos[${index}]`, row.archivos_adjuntos)
+  })
 
-    if (row.archivo) {
-      formData.append(`cursos[${index}][archivo]`, row.archivo)
-    }
+  form.otros_documentos.forEach((row, index) => {
+    appendValue(formData, `otros_documentos[${index}][id]`, row.id)
+    appendValue(formData, `otros_documentos[${index}][nombre_documento]`, nullableText(row.nombre_documento))
+    appendValue(formData, `otros_documentos[${index}][motivo]`, nullableText(row.motivo))
+    appendAttachmentPayload(formData, `otros_documentos[${index}]`, row.archivos_adjuntos)
   })
 
   if (showSanctionsSection.value) {
@@ -1137,12 +1619,18 @@ function addTitleRow() {
   form.titulos.push(createEmptyTitleRow())
 }
 
+function addTitleAttachment(index) {
+  addAttachmentSlot(form.titulos[index])
+}
+
+function removeTitleAttachment(index, attachmentIndex) {
+  removeAttachmentSlot(form.titulos[index], attachmentIndex)
+}
+
 function removeTitleRow(index) {
   const row = form.titulos[index]
 
-  if (row) {
-    revokeAttachmentPreview(row)
-  }
+  row?.archivos_adjuntos?.forEach((attachment) => revokeAttachmentPreview(attachment))
 
   if (form.titulos.length === 1) {
     form.titulos.splice(0, 1, createEmptyTitleRow())
@@ -1156,12 +1644,18 @@ function addCourseRow() {
   form.cursos.push(createEmptyCourseRow())
 }
 
+function addCourseAttachment(index) {
+  addAttachmentSlot(form.cursos[index])
+}
+
+function removeCourseAttachment(index, attachmentIndex) {
+  removeAttachmentSlot(form.cursos[index], attachmentIndex)
+}
+
 function removeCourseRow(index) {
   const row = form.cursos[index]
 
-  if (row) {
-    revokeAttachmentPreview(row)
-  }
+  row?.archivos_adjuntos?.forEach((attachment) => revokeAttachmentPreview(attachment))
 
   if (form.cursos.length === 1) {
     form.cursos.splice(0, 1, createEmptyCourseRow())
@@ -1169,6 +1663,23 @@ function removeCourseRow(index) {
   }
 
   form.cursos.splice(index, 1)
+}
+
+function addOtherDocumentRow() {
+  form.otros_documentos.push(createEmptyOtherDocumentRow())
+}
+
+function removeOtherDocumentRow(index) {
+  const row = form.otros_documentos[index]
+
+  row?.archivos_adjuntos?.forEach((attachment) => revokeAttachmentPreview(attachment))
+
+  if (form.otros_documentos.length === 1) {
+    form.otros_documentos.splice(0, 1, createEmptyOtherDocumentRow())
+    return
+  }
+
+  form.otros_documentos.splice(index, 1)
 }
 
 function addSanctionRow() {
@@ -1207,67 +1718,87 @@ function requestClose() {
   emit('cancel')
 }
 
-function onTitleFileSelected(index, event) {
-  const file = event.target.files?.[0] || null
-  const row = form.titulos[index]
+function onPhotoSelected(event) {
+  form.foto_perfil = event.target.files?.[0] || null
+}
 
-  if (!row) {
+function onTitleFileSelected(index, attachmentIndex, event) {
+  const file = event.target.files?.[0] || null
+  const attachment = form.titulos[index]?.archivos_adjuntos?.[attachmentIndex]
+
+  if (!attachment) {
     return
   }
 
-  setAttachmentFile(row, file)
+  if (!validateAttachmentFile(attachment, file)) {
+    event.target.value = ''
+    return
+  }
+
+  setAttachmentFile(attachment, file)
   event.target.value = ''
 }
 
-function onCourseFileSelected(index, event) {
+function onCourseFileSelected(index, attachmentIndex, event) {
   const file = event.target.files?.[0] || null
-  const row = form.cursos[index]
+  const attachment = form.cursos[index]?.archivos_adjuntos?.[attachmentIndex]
 
-  if (!row) {
+  if (!attachment) {
     return
   }
 
-  setAttachmentFile(row, file)
+  if (!validateAttachmentFile(attachment, file)) {
+    event.target.value = ''
+    return
+  }
+
+  setAttachmentFile(attachment, file)
   event.target.value = ''
 }
 
-function clearTitleAttachment(index) {
-  const row = form.titulos[index]
+function onOtherDocumentFileSelected(index, attachmentIndex, event) {
+  const file = event.target.files?.[0] || null
+  const attachment = form.otros_documentos[index]?.archivos_adjuntos?.[attachmentIndex]
 
-  if (!row) {
+  if (!attachment) {
     return
   }
 
-  if (row.archivo) {
-    revokeAttachmentPreview(row)
-    row.archivo = null
+  if (!validateAttachmentFile(attachment, file)) {
+    event.target.value = ''
     return
   }
 
-  if (row.archivo_url) {
-    row.eliminar_archivo = !row.eliminar_archivo
-  }
+  setAttachmentFile(attachment, file)
+  event.target.value = ''
 }
 
-function clearCourseAttachment(index) {
-  const row = form.cursos[index]
+function clearTitleAttachment(index, attachmentIndex) {
+  clearAttachmentSlot(form.titulos[index], attachmentIndex)
+}
 
-  if (!row) {
-    return
-  }
-
-  if (row.archivo) {
-    revokeAttachmentPreview(row)
-    row.archivo = null
-    return
-  }
-
-  if (row.archivo_url) {
-    row.eliminar_archivo = !row.eliminar_archivo
-  }
+function clearCourseAttachment(index, attachmentIndex) {
+  clearAttachmentSlot(form.cursos[index], attachmentIndex)
 }
 
 async function submit() {
+  if (!isSectionModal.value || props.initialSection === 'personal') {
+    if (!nullableText(form.registro_filial)) {
+      show_alerta('Debes ingresar el numero de registro.', 'warning')
+      return
+    }
+
+    if (!nullableText(form.filial_id)) {
+      show_alerta('Debes seleccionar una filial.', 'warning')
+      return
+    }
+
+    if (!nullableText(form.rut) || !nullableText(form.nombres) || !nullableText(form.apellidos)) {
+      show_alerta('Completa RUT, nombres y apellidos del voluntario.', 'warning')
+      return
+    }
+  }
+
   if (!form.anio || Number.isNaN(Number(form.anio))) {
     show_alerta('Debes ingresar un anio valido.', 'warning')
     return
@@ -1789,6 +2320,10 @@ async function submit() {
   margin-top: 1rem;
 }
 
+.personal-profile-grid {
+  margin-top: 1rem;
+}
+
 .role-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -1881,6 +2416,18 @@ async function submit() {
   flex-wrap: wrap;
 }
 
+.attachment-error {
+  margin: 0.2rem 0 0;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid #f3b7bd;
+  border-radius: 12px;
+  background: #fff1f2;
+  color: #b42318;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
 .attachment-preview {
   display: grid;
   gap: 0.65rem;
@@ -1940,6 +2487,21 @@ async function submit() {
 .attachment-badge--warning {
   background: #fff1d9;
   color: #936d00;
+}
+
+.comments-field {
+  display: grid;
+  width: 100%;
+  margin-top: 0.75rem;
+}
+
+.comments-textarea {
+  width: 100%;
+  min-width: 100%;
+  min-height: 220px;
+  display: block;
+  box-sizing: border-box;
+  resize: vertical;
 }
 
 .editor-footer {
@@ -2087,6 +2649,21 @@ async function submit() {
   }
 }
 </style>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

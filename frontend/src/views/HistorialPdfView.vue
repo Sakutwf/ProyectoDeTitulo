@@ -139,7 +139,7 @@
               <td colspan="5">{{ volunteer.contacto_emergencia_nombre || '' }}</td>
             </tr>
             <tr>
-              <td class="label-cell" colspan="3">Numero de contacto</td>
+              <td class="label-cell" colspan="3">Número de contacto</td>
               <td colspan="5">{{ volunteer.contacto_emergencia_numero || '' }}</td>
             </tr>
           </tbody>
@@ -154,7 +154,7 @@
             <tr>
               <td class="label-cell">Título</td>
               <td class="label-cell">Entregado por</td>
-              <td class="label-cell">Código del titulo</td>
+              <td class="label-cell">Código del título</td>
             </tr>
             <tr v-for="(row, index) in titleRows" :key="`title-${index}`">
               <td>{{ row.titulo }}</td>
@@ -227,7 +227,7 @@
               <th class="filler-cell" colspan="3"></th>
             </tr>
             <tr>
-              <td class="label-cell">Servicios Extraordinario</td>
+              <td class="label-cell">Servicios Extraordinarios</td>
               <td class="check-cell">{{ mark(recognition.servicio_extraordinario) }}</td>
               <td class="label-cell">Abnegación</td>
               <td class="check-cell">{{ mark(recognition.abnegacion) }}</td>
@@ -241,7 +241,7 @@
             <tr>
               <td class="label-cell">1 medalla de honor</td>
               <td class="check-cell">{{ mark(recognition.medalla_honor_1) }}</td>
-              <td class="label-cell">Vittorio cucchini</td>
+              <td class="label-cell">Vittorio Cucchini</td>
               <td class="check-cell">{{ mark(recognition.vittorio_cucchini) }}</td>
             </tr>
             <tr>

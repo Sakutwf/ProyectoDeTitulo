@@ -80,7 +80,7 @@
               <table class="table custom-table custom-table--responsive align-middle">
                 <thead>
                   <tr>
-                    <th>ID album</th>
+                    <th>ID álbum</th>
                     <th>Nombre álbum</th>
                     <th>Actividad asociada</th>
                     <th>Cantidad de fotos</th>
@@ -580,7 +580,7 @@ async function deletePhoto(photo) {
   }
 
   if (!getActorId()) {
-    Swal.fire('Sesion requerida', 'Vuelve a iniciar sesion para confirmar tus permisos antes de eliminar fotos.', 'warning')
+    Swal.fire('Sesión requerida', 'Vuelve a iniciar sesión para confirmar tus permisos antes de eliminar fotos.', 'warning')
     return
   }
 
@@ -615,7 +615,7 @@ async function deleteAlbum(album) {
   }
 
   if (!getActorId()) {
-    Swal.fire('Sesion requerida', 'Vuelve a iniciar sesion para confirmar tus permisos antes de eliminar albumes.', 'warning')
+    Swal.fire('Sesión requerida', 'Vuelve a iniciar sesión para confirmar tus permisos antes de eliminar álbumes.', 'warning')
     return
   }
 

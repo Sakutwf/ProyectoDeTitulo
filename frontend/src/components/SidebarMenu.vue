@@ -92,6 +92,22 @@
                     <span class="nav-link__label">Mis actividades</span>
                 </router-link>
             </li>
+            <li v-if="isVolunteerProfileAvailable" class="nav-item" :class="{ active: activeLink === 'mi-galeria' }">
+                <router-link to="/mi-galeria" class="nav-link" :title="displayCompact ? 'Mi galeria' : null" :aria-label="displayCompact ? 'Mi galeria' : null">
+                    <span class="nav-link__icon">
+                        <i class="fa-solid fa-images"></i>
+                    </span>
+                    <span class="nav-link__label">Galería</span>
+                </router-link>
+            </li>
+            <li v-if="isVolunteerProfileAvailable" class="nav-item" :class="{ active: activeLink === 'mis-boletas' }">
+                <router-link to="/mis-boletas" class="nav-link" :title="displayCompact ? 'Mis boletas' : null" :aria-label="displayCompact ? 'Mis boletas' : null">
+                    <span class="nav-link__icon">
+                        <i class="fa-solid fa-receipt"></i>
+                    </span>
+                    <span class="nav-link__label">Boletas</span>
+                </router-link>
+            </li>
             <li v-if="canSwitchAccess" class="nav-item">
                 <button type="button" class="nav-link nav-link-button" :title="displayCompact ? 'Cambiar vista' : null" :aria-label="displayCompact ? 'Cambiar vista' : null" @click="changeAccess">
                     <span class="nav-link__icon">
@@ -167,6 +183,8 @@ export default {
             if (path.includes('/documentos')) return 'documentos'
             if (path.includes('/galeria-fotos')) return 'galeria-fotos'
             if (path.includes('/mis-actividades')) return 'mis-actividades'
+            if (path.includes('/mi-galeria')) return 'mi-galeria'
+            if (path.includes('/mis-boletas')) return 'mis-boletas'
             if (path.includes('/historial')) return 'mi-perfil'
             return 'inicio'
         }

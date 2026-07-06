@@ -4,16 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class CursoVoluntario extends Model
+class OtroDocumentoVoluntario extends Model
 {
-    protected $table = 'cursos_voluntario';
+    protected $table = 'otros_documentos_voluntario';
 
     protected $fillable = [
         'hoja_vida_anual_id',
         'archivo_id',
-        'nombre_curso',
-        'entregado_por',
-        'codigo_curso',
+        'nombre_documento',
+        'motivo',
     ];
 
     protected $appends = [
@@ -34,8 +33,8 @@ class CursoVoluntario extends Model
     public function archivosAdjuntos()
     {
         return $this->hasMany(Archivo::class, 'entidad_id')
-            ->where('entidad', 'curso_voluntario')
-            ->where('categoria', 'respaldo_curso')
+            ->where('entidad', 'otro_documento_voluntario')
+            ->where('categoria', 'respaldo_otro_documento')
             ->orderBy('id');
     }
 

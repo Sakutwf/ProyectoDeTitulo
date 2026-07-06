@@ -7,7 +7,7 @@
         <p class="access-eyebrow">Acceso disponible</p>
         <h1>Elige como quieres ingresar</h1>
         <p>
-          Tu cuenta tiene acceso tanto al perfil de voluntario como a la vista de administracion.
+          Tu cuenta tiene acceso tanto al perfil de voluntario como a la vista de administración.
         </p>
       </div>
 

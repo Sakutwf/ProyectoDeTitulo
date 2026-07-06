@@ -225,6 +225,25 @@ export default {
         colaborador_externo: ''
       }
     },
+    normalizeTimeValue(value) {
+      if (typeof value !== 'string') {
+        return ''
+      }
+
+      const trimmedValue = value.trim()
+
+      if (!trimmedValue) {
+        return ''
+      }
+
+      const [hours, minutes] = trimmedValue.split(':')
+
+      if (hours === undefined || minutes === undefined) {
+        return ''
+      }
+
+      return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`
+    },
     async loadCatalogs() {
       try {
         const [filialesResponse, volunteersResponse] = await Promise.all([
@@ -308,8 +327,8 @@ export default {
           objetivo: activity.objetivo || '',
           fecha_inicio: activity.fecha_inicio ? String(activity.fecha_inicio).slice(0, 10) : '',
           fecha_termino: activity.fecha_termino ? String(activity.fecha_termino).slice(0, 10) : '',
-          hora_inicio: activity.hora_inicio || '',
-          hora_termino: activity.hora_termino || '',
+          hora_inicio: this.normalizeTimeValue(activity.hora_inicio),
+          hora_termino: this.normalizeTimeValue(activity.hora_termino),
           lugar: activity.lugar || '',
           horas_totales: activity.horas_totales ?? '',
           colaborador_externo: activity.colaborador_externo || ''
@@ -326,6 +345,9 @@ export default {
       }
     },
     buildPayload() {
+      const horaInicio = this.normalizeTimeValue(this.form.hora_inicio)
+      const horaTermino = this.normalizeTimeValue(this.form.hora_termino)
+
       return {
         filial_id: Number(this.form.filial_id),
         nombre: this.form.nombre.trim(),
@@ -333,8 +355,8 @@ export default {
         objetivo: this.form.objetivo || null,
         fecha_inicio: this.form.fecha_inicio,
         fecha_termino: this.form.fecha_termino || null,
-        hora_inicio: this.form.hora_inicio || null,
-        hora_termino: this.form.hora_termino || null,
+        hora_inicio: horaInicio || null,
+        hora_termino: horaTermino || null,
         lugar: this.form.lugar || null,
         horas_totales: this.activityHoursLimit,
         colaborador_externo: this.form.colaborador_externo || null,
@@ -412,4 +434,7 @@ export default {
   color: #65758a;
 }
 </style>
+
+
+
 

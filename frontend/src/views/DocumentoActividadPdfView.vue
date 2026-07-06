@@ -225,7 +225,7 @@
               </div>
               <div class="document-cover__titles document-cover__titles--analysis">
                 <div class="document-cover__eyebrow">COMUNICADO FILIAL {{ filialName.toUpperCase() }}</div>
-                <h1>ANALISIS DE CONTEXTO</h1>
+                <h1>ANÁLISIS DE CONTEXTO</h1>
                 <h2>{{ analysisTitleLine }}</h2>
               </div>
             </header>
@@ -235,7 +235,7 @@
             </section>
 
             <section class="print-section narrative-block analysis-section analysis-section--compact">
-              <div class="analysis-section__heading">DESCRIPCION DEL EVENTO</div>
+              <div class="analysis-section__heading">DESCRIPCIÓN DEL EVENTO</div>
               <div class="analysis-event-grid analysis-event-grid--compact">
                 <div class="analysis-event-card">
                   <div class="analysis-event-card__label">NOMBRE DEL EVENTO</div>
@@ -269,11 +269,11 @@
               <div class="analysis-climate-card analysis-climate-card--compact">
                 <div class="analysis-climate-card__meta analysis-climate-card__meta--inline">
                   <div class="analysis-climate-card__metric">
-                    <div class="analysis-climate-card__label">MINIMA:</div>
+                    <div class="analysis-climate-card__label">MÍNIMA:</div>
                     <div class="analysis-climate-card__value">{{ formatTemperature(primaryClimate.temperatura_minima) }}</div>
                   </div>
                   <div class="analysis-climate-card__metric">
-                    <div class="analysis-climate-card__label">MAXIMA:</div>
+                    <div class="analysis-climate-card__label">MÁXIMA:</div>
                     <div class="analysis-climate-card__value">{{ formatTemperature(primaryClimate.temperatura_maxima) }}</div>
                   </div>
                   <div class="analysis-climate-card__metric">
@@ -298,11 +298,11 @@
               <div v-for="(item, itemIndex) in page" :key="item.id || `${pageIndex}-${itemIndex}`" class="analysis-climate-card">
                 <div class="analysis-climate-card__meta">
                   <div class="analysis-climate-card__metric">
-                    <div class="analysis-climate-card__label">MINIMA:</div>
+                    <div class="analysis-climate-card__label">MÍNIMA:</div>
                     <div class="analysis-climate-card__value">{{ formatTemperature(item.temperatura_minima) }}</div>
                   </div>
                   <div class="analysis-climate-card__metric">
-                    <div class="analysis-climate-card__label">MAXIMA:</div>
+                    <div class="analysis-climate-card__label">MÁXIMA:</div>
                     <div class="analysis-climate-card__value">{{ formatTemperature(item.temperatura_maxima) }}</div>
                   </div>
                   <div class="analysis-climate-card__metric">
@@ -324,7 +324,7 @@
         <article v-for="(page, pageIndex) in analysisRiskPages" :key="`analysis-risk-${pageIndex}`" class="print-page">
           <div class="print-page__content">
             <section class="print-section print-section--tight-top analysis-section">
-              <div class="analysis-section__heading">IDENTIFICACION DE RIESGOS</div>
+              <div class="analysis-section__heading">IDENTIFICACIÓN DE RIESGOS</div>
               <div v-if="page.length" class="analysis-risk-list">
                 <article v-for="(risk, riskIndex) in page" :key="risk.id || `${pageIndex}-${riskIndex}`" class="analysis-risk-card">
                   <div class="analysis-risk-card__header">
@@ -335,8 +335,8 @@
                     </div>
                   </div>
                   <div class="analysis-risk-card__body">
-                    <p><strong>Descripcion:</strong> {{ risk.descripcion || '-' }}</p>
-                    <p><strong>Medidas de mitigacion:</strong> {{ risk.mitigacion || '-' }}</p>
+                    <p><strong>Descripción:</strong> {{ risk.descripcion || '-' }}</p>
+                    <p><strong>Medidas de mitigación:</strong> {{ risk.mitigacion || '-' }}</p>
                   </div>
                 </article>
               </div>
@@ -364,7 +364,7 @@
             </section>
 
             <section class="print-section analysis-narrative-section">
-              <div class="analysis-section__heading">CONCLUSION</div>
+              <div class="analysis-section__heading">CONCLUSIÓN</div>
               <div class="analysis-narrative-copy multiline-cell">{{ analysis.conclusion || 'Sin información registrada.' }}</div>
             </section>
 
@@ -373,7 +373,7 @@
             </section>
 
             <section class="print-section analysis-narrative-section analysis-narrative-section--meta">
-              <div class="analysis-narrative-meta"><strong>Elaboracion del documento:</strong> {{ signoffDateLabel }}</div>
+              <div class="analysis-narrative-meta"><strong>Elaboración del documento:</strong> {{ signoffDateLabel }}</div>
             </section>
           </div>
           <footer class="page-footer">{{ analysisPageNumber(analysisTotalPages) }}</footer>

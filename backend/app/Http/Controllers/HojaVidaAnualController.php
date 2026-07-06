@@ -38,9 +38,14 @@ class HojaVidaAnualController extends Controller
 
     private const RELATIONS = [
         'voluntario.filial',
+        'voluntario.archivoFotoPerfil',
         'voluntario.user.roles.permissions',
         'titulos.archivo',
+        'titulos.archivosAdjuntos',
         'cursos.archivo',
+        'cursos.archivosAdjuntos',
+        'otrosDocumentos.archivo',
+        'otrosDocumentos.archivosAdjuntos',
         'sanciones',
         'reconocimiento',
         'generador',
@@ -50,7 +55,7 @@ class HojaVidaAnualController extends Controller
     {
         return response()->json(
             $voluntario->hojaVidaAnual()
-                ->with(['titulos.archivo', 'cursos.archivo', 'sanciones', 'reconocimiento', 'generador'])
+                ->with(['titulos.archivo', 'titulos.archivosAdjuntos', 'cursos.archivo', 'cursos.archivosAdjuntos', 'otrosDocumentos.archivo', 'otrosDocumentos.archivosAdjuntos', 'sanciones', 'reconocimiento', 'generador'])
                 ->orderByDesc('anio')
                 ->get(),
             200
@@ -73,6 +78,7 @@ class HojaVidaAnualController extends Controller
             );
 
             $this->syncRelations($record, $validated, $request);
+            $this->syncVolunteerProfile($voluntario, $validated, $request);
 
             return $record->fresh()->load(self::RELATIONS);
         });
@@ -104,6 +110,7 @@ class HojaVidaAnualController extends Controller
             );
 
             $this->syncRelations($hojaVidaAnual, $validated, $request, $isVolunteerSelfService);
+            $this->syncVolunteerProfile($hojaVidaAnual->voluntario, $validated, $request);
 
             return $hojaVidaAnual->fresh()->load(self::RELATIONS);
         });
@@ -150,12 +157,36 @@ class HojaVidaAnualController extends Controller
             'cargo_clave' => ['nullable', 'string', Rule::in(array_keys(self::VOLUNTEER_CARGO_CATALOG))],
             'generada_por' => ['nullable', 'integer', 'exists:users,id'],
             'fecha_generacion' => ['nullable', 'date'],
+            'registro_filial' => ['sometimes', 'required', 'string', 'max:50'],
+            'filial_id' => ['sometimes', 'required', 'integer', 'exists:filiales,id'],
+            'rut' => ['sometimes', 'required', 'string', 'max:20', Rule::unique('voluntarios', 'rut')->ignore($voluntarioId)],
+            'nombres' => ['sometimes', 'required', 'string', 'max:150'],
+            'apellidos' => ['sometimes', 'required', 'string', 'max:150'],
+            'nacionalidad' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'fecha_nacimiento' => ['sometimes', 'nullable', 'date'],
+            'fecha_incorporacion' => ['sometimes', 'nullable', 'date'],
+            'nivel_escolaridad' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'estado_civil' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'ocupacion' => ['sometimes', 'nullable', 'string', 'max:150'],
+            'grupo_sanguineo' => ['sometimes', 'nullable', 'string', 'max:20'],
+            'correo_electronico' => ['sometimes', 'nullable', 'email', 'max:150'],
+            'celular' => ['sometimes', 'nullable', 'string', 'max:30'],
+            'domicilio' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'enfermedades' => ['sometimes', 'nullable', 'string'],
+            'alergias' => ['sometimes', 'nullable', 'string'],
+            'contacto_emergencia_nombre' => ['sometimes', 'nullable', 'string', 'max:150'],
+            'contacto_emergencia_numero' => ['sometimes', 'nullable', 'string', 'max:30'],
+            'foto_perfil' => ['sometimes', 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'titulos' => ['sometimes', 'array'],
             'titulos.*.id' => ['nullable', 'integer'],
             'titulos.*.titulo' => ['nullable', 'string', 'max:150'],
             'titulos.*.entregado_por' => ['nullable', 'string', 'max:150'],
             'titulos.*.codigo_titulo' => ['nullable', 'string', 'max:100'],
             'titulos.*.archivo' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+            'titulos.*.archivos' => ['sometimes', 'array'],
+            'titulos.*.archivos.*' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+            'titulos.*.archivo_ids' => ['sometimes', 'array'],
+            'titulos.*.archivo_ids.*' => ['nullable', 'integer', 'exists:archivos,id'],
             'titulos.*.eliminar_archivo' => ['nullable', 'boolean'],
             'cursos' => ['sometimes', 'array'],
             'cursos.*.id' => ['nullable', 'integer'],
@@ -163,7 +194,21 @@ class HojaVidaAnualController extends Controller
             'cursos.*.entregado_por' => ['nullable', 'string', 'max:150'],
             'cursos.*.codigo_curso' => ['nullable', 'string', 'max:100'],
             'cursos.*.archivo' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+            'cursos.*.archivos' => ['sometimes', 'array'],
+            'cursos.*.archivos.*' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+            'cursos.*.archivo_ids' => ['sometimes', 'array'],
+            'cursos.*.archivo_ids.*' => ['nullable', 'integer', 'exists:archivos,id'],
             'cursos.*.eliminar_archivo' => ['nullable', 'boolean'],
+            'otros_documentos' => ['sometimes', 'array'],
+            'otros_documentos.*.id' => ['nullable', 'integer'],
+            'otros_documentos.*.nombre_documento' => ['nullable', 'string', 'max:150'],
+            'otros_documentos.*.motivo' => ['nullable', 'string', 'max:255'],
+            'otros_documentos.*.archivo' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+            'otros_documentos.*.archivos' => ['sometimes', 'array'],
+            'otros_documentos.*.archivos.*' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+            'otros_documentos.*.archivo_ids' => ['sometimes', 'array'],
+            'otros_documentos.*.archivo_ids.*' => ['nullable', 'integer', 'exists:archivos,id'],
+            'otros_documentos.*.eliminar_archivo' => ['nullable', 'boolean'],
             'sanciones' => ['sometimes', 'array'],
             'sanciones.*.tipo_sancion' => ['nullable', 'string', 'max:150'],
             'sanciones.*.fecha' => ['nullable', 'date'],
@@ -193,6 +238,12 @@ class HojaVidaAnualController extends Controller
             ['nombre_curso', 'entregado_por', 'codigo_curso'],
             'nombre_curso',
             'cursos'
+        );
+        $validated['otros_documentos'] = $this->normalizeAttachmentRows(
+            $validated['otros_documentos'] ?? [],
+            ['nombre_documento', 'motivo'],
+            'nombre_documento',
+            'otros_documentos'
         );
         $validated['sanciones'] = $this->normalizeRows(
             $validated['sanciones'] ?? [],
@@ -342,6 +393,18 @@ class HojaVidaAnualController extends Controller
             'hoja-vida/cursos'
         );
 
+        $this->syncAttachmentRelation(
+            $hojaVidaAnual,
+            $validated['otros_documentos'],
+            $request,
+            'otrosDocumentos',
+            OtroDocumentoVoluntario::class,
+            ['nombre_documento', 'motivo'],
+            'otro_documento_voluntario',
+            'respaldo_otro_documento',
+            'hoja-vida/otros-documentos'
+        );
+
         if ($academicOnly) {
             return;
         }
@@ -397,10 +460,12 @@ class HojaVidaAnualController extends Controller
                 $record = $hojaVidaAnual->{$relation}()->create($payload);
             }
 
-            $archivoId = $this->syncAttachmentFile(
+            $archivoId = $this->syncAttachmentFiles(
                 $record,
                 $row,
                 $request,
+                $relation,
+                $index,
                 $entity,
                 $category,
                 $directory
@@ -420,61 +485,82 @@ class HojaVidaAnualController extends Controller
             });
     }
 
-    private function syncAttachmentFile(
+    private function syncAttachmentFiles(
         Model $record,
         array $row,
         Request $request,
+        string $relation,
+        int $index,
         string $entity,
         string $category,
         string $directory
     ): ?int {
-        $archivoActual = $record->relationLoaded('archivo')
-            ? $record->getRelation('archivo')
-            : $record->archivo()->first();
+        $archivosActuales = $record->relationLoaded('archivosAdjuntos')
+            ? $record->getRelation('archivosAdjuntos')
+            : $record->archivosAdjuntos()->get();
 
-        if (($row['eliminar_archivo'] ?? false) && $archivoActual instanceof Archivo) {
-            $this->deleteArchivo($archivoActual);
-            $archivoActual = null;
+        $archivosActuales = $archivosActuales->keyBy('id');
+        $archivoIds = collect($row['archivo_ids'] ?? [])
+            ->filter(fn ($value) => $value !== null && $value !== '')
+            ->map(fn ($value) => (int) $value)
+            ->unique()
+            ->values();
+
+        $invalidIds = $archivoIds->diff($archivosActuales->keys());
+
+        if ($invalidIds->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                "{$relation}.{$index}.archivo_ids" => 'Uno o más archivos seleccionados no pertenecen a este registro.',
+            ]);
         }
 
-        if (! isset($row['archivo'])) {
-            return $archivoActual?->id;
+        $archivosActuales
+            ->except($archivoIds->all())
+            ->each(fn (Archivo $archivo) => $this->deleteArchivo($archivo));
+
+        $nuevosArchivos = collect($row['archivos'] ?? [])
+            ->filter()
+            ->values();
+
+        if ($nuevosArchivos->isNotEmpty()) {
+            Storage::disk('public')->makeDirectory($directory);
+
+            $nuevosArchivos->each(function ($file) use ($record, $request, $entity, $category, $directory) {
+                $path = $file->store($directory, 'public');
+
+                Archivo::create([
+                    'entidad' => $entity,
+                    'entidad_id' => $record->id,
+                    'categoria' => $category,
+                    'ruta' => $path,
+                    'nombre_original' => $file->getClientOriginalName(),
+                    'extension' => $file->getClientOriginalExtension(),
+                    'mime_type' => $file->getClientMimeType(),
+                    'tamano' => $file->getSize(),
+                    'subido_por' => $request->user()?->id,
+                ]);
+            });
         }
 
-        if ($archivoActual instanceof Archivo) {
-            $this->deleteArchivo($archivoActual, false);
-        }
+        $archivoPrincipal = $record->archivosAdjuntos()->orderBy('id')->first();
 
-        Storage::disk('public')->makeDirectory($directory);
-
-        $file = $row['archivo'];
-        $path = $file->store($directory, 'public');
-
-        $archivo = $archivoActual instanceof Archivo ? $archivoActual : new Archivo();
-        $archivo->fill([
-            'entidad' => $entity,
-            'entidad_id' => $record->id,
-            'categoria' => $category,
-            'ruta' => $path,
-            'nombre_original' => $file->getClientOriginalName(),
-            'extension' => $file->getClientOriginalExtension(),
-            'mime_type' => $file->getClientMimeType(),
-            'tamano' => $file->getSize(),
-            'subido_por' => $request->user()?->id,
-        ]);
-        $archivo->save();
-
-        return $archivo->id;
+        return $archivoPrincipal?->id;
     }
 
     private function deleteAttachmentRecord(Model $record): void
     {
-        $archivo = $record->relationLoaded('archivo')
+        $archivos = $record->relationLoaded('archivosAdjuntos')
+            ? $record->getRelation('archivosAdjuntos')
+            : $record->archivosAdjuntos()->get();
+
+        $archivos->each(fn (Archivo $archivo) => $this->deleteArchivo($archivo));
+
+        $archivoPrincipal = $record->relationLoaded('archivo')
             ? $record->getRelation('archivo')
             : $record->archivo()->first();
 
-        if ($archivo instanceof Archivo) {
-            $this->deleteArchivo($archivo);
+        if ($archivoPrincipal instanceof Archivo && ! $archivos->contains('id', $archivoPrincipal->id)) {
+            $this->deleteArchivo($archivoPrincipal);
         }
 
         $record->delete();
@@ -496,11 +582,30 @@ class HojaVidaAnualController extends Controller
         $normalized = [];
 
         foreach ($rows as $index => $row) {
+            $legacyArchivo = $row['archivo'] ?? null;
+            $uploadedFiles = collect($row['archivos'] ?? [])
+                ->filter()
+                ->values();
+
+            if ($legacyArchivo !== null) {
+                $uploadedFiles->prepend($legacyArchivo);
+            }
+
             $normalizedRow = [
                 'id' => isset($row['id']) && $row['id'] !== '' ? (int) $row['id'] : null,
-                'archivo' => $row['archivo'] ?? null,
+                'archivos' => $uploadedFiles->all(),
+                'archivo_ids' => collect($row['archivo_ids'] ?? [])
+                    ->filter(fn ($value) => $value !== null && $value !== '')
+                    ->map(fn ($value) => (int) $value)
+                    ->unique()
+                    ->values()
+                    ->all(),
                 'eliminar_archivo' => filter_var($row['eliminar_archivo'] ?? false, FILTER_VALIDATE_BOOLEAN),
             ];
+
+            if ($normalizedRow['eliminar_archivo']) {
+                $normalizedRow['archivo_ids'] = [];
+            }
 
             foreach ($fields as $field) {
                 $normalizedRow[$field] = $this->normalizeText($row[$field] ?? null);
@@ -510,7 +615,7 @@ class HojaVidaAnualController extends Controller
                 ->map(fn (string $field) => $normalizedRow[$field])
                 ->contains(fn ($value) => $value !== null);
 
-            if (! $hasAnyValue && ! $normalizedRow['archivo']) {
+            if (! $hasAnyValue && $normalizedRow['archivos'] === [] && $normalizedRow['archivo_ids'] === []) {
                 continue;
             }
 
@@ -608,6 +713,89 @@ class HojaVidaAnualController extends Controller
         $request->request->remove('reconocimiento');
     }
 
+
+    private function syncVolunteerProfile(Voluntario $voluntario, array $validated, Request $request): void
+    {
+        $profilePayload = $this->extractVolunteerProfilePayload($validated);
+
+        if ($profilePayload !== []) {
+            $voluntario->update($profilePayload);
+        }
+
+        if ($request->hasFile('foto_perfil')) {
+            $this->syncVolunteerPhoto($request, $voluntario);
+        }
+    }
+
+    private function extractVolunteerProfilePayload(array $validated): array
+    {
+        $fields = [
+            'registro_filial',
+            'filial_id',
+            'rut',
+            'nombres',
+            'apellidos',
+            'nacionalidad',
+            'fecha_nacimiento',
+            'fecha_incorporacion',
+            'nivel_escolaridad',
+            'estado_civil',
+            'ocupacion',
+            'grupo_sanguineo',
+            'correo_electronico',
+            'celular',
+            'domicilio',
+            'enfermedades',
+            'alergias',
+            'contacto_emergencia_nombre',
+            'contacto_emergencia_numero',
+        ];
+
+        $payload = [];
+
+        foreach ($fields as $field) {
+            if (array_key_exists($field, $validated)) {
+                $payload[$field] = $validated[$field];
+            }
+        }
+
+        return $payload;
+    }
+
+    private function syncVolunteerPhoto(Request $request, Voluntario $voluntario): void
+    {
+        $file = $request->file('foto_perfil');
+
+        if (! $file) {
+            return;
+        }
+
+        $archivoActual = $voluntario->archivoFotoPerfil()->first();
+
+        if ($archivoActual?->ruta) {
+            Storage::disk('public')->delete($archivoActual->ruta);
+        }
+
+        Storage::disk('public')->makeDirectory('voluntarios/fotos');
+
+        $path = $file->store('voluntarios/fotos', 'public');
+
+        $voluntario->archivoFotoPerfil()->updateOrCreate(
+            [
+                'entidad' => self::VOLUNTEER_PROFILE_ENTITY,
+                'entidad_id' => $voluntario->id,
+                'categoria' => self::VOLUNTEER_PROFILE_PHOTO_CATEGORY,
+            ],
+            [
+                'ruta' => $path,
+                'nombre_original' => $file->getClientOriginalName(),
+                'extension' => $file->getClientOriginalExtension(),
+                'mime_type' => $file->getClientMimeType(),
+                'tamano' => $file->getSize(),
+                'subido_por' => $request->user()?->id,
+            ]
+        );
+    }
     private function normalizeText(mixed $value): ?string
     {
         if ($value === null) {
@@ -619,3 +807,12 @@ class HojaVidaAnualController extends Controller
         return $normalized === '' ? null : $normalized;
     }
 }
+
+
+
+
+
+
+
+
+

@@ -24,7 +24,7 @@
                 </div>
 
                 <div class="col-md-4">
-                  <label for="edit-registro-filial" class="form-label">Numero de registro</label>
+                  <label for="edit-registro-filial" class="form-label">Número de registro</label>
                   <input id="edit-registro-filial" v-model.trim="registro_filial" type="text" class="form-control" required>
                 </div>
 
@@ -54,7 +54,7 @@
                 </div>
 
                 <div class="col-md-6">
-                  <label for="edit-correo-electronico" class="form-label">Correo electronico</label>
+                  <label for="edit-correo-electronico" class="form-label">Correo electrónico</label>
                   <input id="edit-correo-electronico" v-model.trim="correo_electronico" type="email" class="form-control">
                 </div>
 
@@ -74,8 +74,38 @@
                 </div>
 
                 <div class="col-md-6">
-                  <label for="edit-fecha-incorporacion" class="form-label">Fecha de incorporacion</label>
+                  <label for="edit-fecha-incorporacion" class="form-label">Fecha de incorporación</label>
                   <input id="edit-fecha-incorporacion" v-model="fecha_incorporacion" type="date" class="form-control">
+                </div>
+
+                <div class="col-md-6">
+                  <label for="edit-nivel-escolaridad" class="form-label">Nivel de escolaridad</label>
+                  <select id="edit-nivel-escolaridad" v-model="nivel_escolaridad" class="form-select">
+                    <option value="">Selecciona una opción</option>
+                    <option v-for="option in escolaridadOptions" :key="option" :value="option">
+                      {{ option }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="edit-estado-civil" class="form-label">Estado civil</label>
+                  <select id="edit-estado-civil" v-model="estado_civil" class="form-select">
+                    <option value="">Selecciona una opción</option>
+                    <option v-for="option in estadoCivilOptions" :key="option" :value="option">
+                      {{ option }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="edit-ocupacion" class="form-label">Ocupación</label>
+                  <input id="edit-ocupacion" v-model.trim="ocupacion" type="text" class="form-control">
+                </div>
+
+                <div class="col-md-6">
+                  <label for="edit-grupo-sanguineo" class="form-label">Grupo sanguíneo</label>
+                  <input id="edit-grupo-sanguineo" v-model.trim="grupo_sanguineo" type="text" class="form-control" placeholder="Ej: A+, O-, AB+">
                 </div>
 
                 <div class="col-md-6">
@@ -85,12 +115,22 @@
 
                 <div class="col-md-6">
                   <label for="edit-contacto-emergencia-nombre" class="form-label">Contacto de emergencia</label>
-                  <input id="edit-contacto-emergencia-nombre" v-model.trim="contacto_emergencia_nombre" type="text" class="form-control">
+                  <input id="edit-contacto-emergencia-nombre" v-model.trim="contacto_emergencia_nombre" type="text" class="form-control" placeholder="Nombre del contacto">
                 </div>
 
                 <div class="col-md-6">
-                  <label for="edit-contacto-emergencia-numero" class="form-label">Numero de emergencia</label>
-                  <input id="edit-contacto-emergencia-numero" v-model.trim="contacto_emergencia_numero" type="text" class="form-control">
+                  <label for="edit-contacto-emergencia-numero" class="form-label">Número de emergencia</label>
+                  <input id="edit-contacto-emergencia-numero" v-model.trim="contacto_emergencia_numero" type="text" class="form-control" placeholder="Número de teléfono del contacto">
+                </div>
+
+                <div class="col-md-6">
+                  <label for="edit-enfermedades" class="form-label">Enfermedades</label>
+                  <textarea id="edit-enfermedades" v-model.trim="enfermedades" class="form-control" rows="3"></textarea>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="edit-alergias" class="form-label">Alergias</label>
+                  <textarea id="edit-alergias" v-model.trim="alergias" class="form-control" rows="3"></textarea>
                 </div>
 
                 <div class="col-md-6">
@@ -103,16 +143,24 @@
                     @change="onPhotoSelected"
                   >
                 </div>
+
+                <div class="col-md-6">
+                  <label for="edit-permission-level" class="form-label">Rol</label>
+                  <select id="edit-permission-level" v-model="permissionLevel" class="form-select">
+                    <option value="usuario">Usuario</option>
+                    <option value="administrador">Administrador</option>
+                  </select>
+                </div>
               </template>
 
               <div class="col-12">
-                <label for="edit-password" class="form-label">Nueva contrasena</label>
+                <label for="edit-password" class="form-label">Nueva contraseña</label>
                 <input
                   id="edit-password"
                   v-model.trim="password"
                   type="password"
                   class="form-control"
-                  placeholder="Dejala vacia si no quieres cambiarla"
+                  placeholder="Déjala vacía si no quieres cambiarla"
                 >
               </div>
             </div>
@@ -135,6 +183,28 @@ import axios from 'axios'
 import { show_alerta } from '../funciones'
 import { Modal } from 'bootstrap'
 import { buildApiUrl } from '../config/api'
+
+const ESCOLARIDAD_OPTIONS = [
+  'Sin escolaridad',
+  'Educación básica incompleta',
+  'Educación básica completa',
+  'Educación media incompleta',
+  'Educación media completa',
+  'Educación técnica de nivel superior incompleta',
+  'Educación técnica de nivel superior completa',
+  'Educación universitaria incompleta',
+  'Educación universitaria completa',
+  'Postítulo o diplomado',
+  'Magíster',
+  'Doctorado'
+]
+const ESTADO_CIVIL_OPTIONS = [
+  'Soltero(a)',
+  'Casado(a)',
+  'Conviviente civil',
+  'Divorciado(a)',
+  'Viudo(a)'
+]
 
 export default {
   name: 'UserEditView',
@@ -160,16 +230,25 @@ export default {
       nacionalidad: '',
       fecha_nacimiento: '',
       fecha_incorporacion: '',
+      nivel_escolaridad: '',
+      estado_civil: '',
+      ocupacion: '',
+      grupo_sanguineo: '',
       celular: '',
       domicilio: '',
+      enfermedades: '',
+      alergias: '',
       contacto_emergencia_nombre: '',
       contacto_emergencia_numero: '',
       foto_perfil: null,
+      permissionLevel: 'usuario',
       password: '',
       url: buildApiUrl('user'),
       rolesUrl: buildApiUrl('role'),
       filialesUrl: buildApiUrl('filiales'),
-      modalInstance: null
+      modalInstance: null,
+      escolaridadOptions: ESCOLARIDAD_OPTIONS,
+      estadoCivilOptions: ESTADO_CIVIL_OPTIONS
     }
   },
   computed: {
@@ -233,8 +312,8 @@ export default {
       const descriptions = {
         administrador: 'Acceso administrativo del sistema',
         voluntario: 'Perfil con ficha completa de voluntario',
-        'secretario-directiva': 'Gestion de voluntarios, actividades y actas',
-        'encargada-finanzas': 'Acceso a reportes y gestion financiera'
+        'secretario-directiva': 'Gestión de voluntarios, actividades y actas',
+        'encargada-finanzas': 'Acceso a reportes y gestión financiera'
       }
 
       return descriptions[role.clave] || role.clave
@@ -247,6 +326,9 @@ export default {
         formData.append(key, String(value).trim())
       }
     },
+    getRoleIdByKey(roleKey) {
+      return this.rolesOptions.find((role) => role.clave === roleKey)?.id || null
+    },
     async getUser() {
       if (this.rolesOptions.length === 0 || this.filialesOptions.length === 0) {
         await Promise.all([this.fetchRoles(), this.fetchFiliales()])
@@ -258,6 +340,7 @@ export default {
 
       this.username = user.username || ''
       this.selectedRoles = (user.roles || []).map((role) => role.id)
+      this.permissionLevel = (user.roles || []).some((role) => role?.clave === 'administrador') ? 'administrador' : 'usuario'
       this.registro_filial = voluntario?.registro_filial || ''
       this.filial_id = voluntario?.filial_id || ''
       this.rut = voluntario?.rut || ''
@@ -267,8 +350,14 @@ export default {
       this.nacionalidad = voluntario?.nacionalidad || ''
       this.fecha_nacimiento = voluntario?.fecha_nacimiento || ''
       this.fecha_incorporacion = voluntario?.fecha_incorporacion || ''
+      this.nivel_escolaridad = voluntario?.nivel_escolaridad || ''
+      this.estado_civil = voluntario?.estado_civil || ''
+      this.ocupacion = voluntario?.ocupacion || ''
+      this.grupo_sanguineo = voluntario?.grupo_sanguineo || ''
       this.celular = voluntario?.celular || ''
       this.domicilio = voluntario?.domicilio || ''
+      this.enfermedades = voluntario?.enfermedades || ''
+      this.alergias = voluntario?.alergias || ''
       this.contacto_emergencia_nombre = voluntario?.contacto_emergencia_nombre || ''
       this.contacto_emergencia_numero = voluntario?.contacto_emergencia_numero || ''
       this.foto_perfil = null
@@ -282,7 +371,11 @@ export default {
         formData.append('username', this.username.trim())
       }
 
-      this.selectedRoles.forEach((roleId) => formData.append('roles[]', roleId))
+      const roleIds = this.esVoluntario
+        ? [this.getRoleIdByKey('voluntario'), this.permissionLevel === 'administrador' ? this.getRoleIdByKey('administrador') : null]
+        : [...this.selectedRoles]
+
+      ;[...new Set(roleIds.filter(Boolean))].forEach((roleId) => formData.append('roles[]', roleId))
 
       if (this.esVoluntario) {
         formData.append('registro_filial', this.registro_filial.trim())
@@ -295,8 +388,14 @@ export default {
         this.appendIfFilled(formData, 'nacionalidad', this.nacionalidad)
         this.appendIfFilled(formData, 'fecha_nacimiento', this.fecha_nacimiento)
         this.appendIfFilled(formData, 'fecha_incorporacion', this.fecha_incorporacion)
+        this.appendIfFilled(formData, 'nivel_escolaridad', this.nivel_escolaridad)
+        this.appendIfFilled(formData, 'estado_civil', this.estado_civil)
+        this.appendIfFilled(formData, 'ocupacion', this.ocupacion)
+        this.appendIfFilled(formData, 'grupo_sanguineo', this.grupo_sanguineo)
         this.appendIfFilled(formData, 'celular', this.celular)
         this.appendIfFilled(formData, 'domicilio', this.domicilio)
+        this.appendIfFilled(formData, 'enfermedades', this.enfermedades)
+        this.appendIfFilled(formData, 'alergias', this.alergias)
         this.appendIfFilled(formData, 'contacto_emergencia_nombre', this.contacto_emergencia_nombre)
         this.appendIfFilled(formData, 'contacto_emergencia_numero', this.contacto_emergencia_numero)
 
@@ -312,8 +411,13 @@ export default {
       return formData
     },
     validateForm() {
-      if (!this.selectedRoles.length) {
+      if (!this.esVoluntario && !this.selectedRoles.length) {
         show_alerta('Debes seleccionar al menos un rol.', 'warning')
+        return false
+      }
+
+      if (this.esVoluntario && !this.getRoleIdByKey('voluntario')) {
+        show_alerta('No se encontró el rol base de voluntario.', 'error')
         return false
       }
 
@@ -324,7 +428,7 @@ export default {
 
       if (this.esVoluntario) {
         if (!this.registro_filial.trim()) {
-          show_alerta('Debes ingresar el numero de registro.', 'warning', 'edit-registro-filial')
+          show_alerta('Debes ingresar el número de registro.', 'warning', 'edit-registro-filial')
           return false
         }
         if (!this.filial_id) {

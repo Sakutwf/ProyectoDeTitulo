@@ -14,173 +14,698 @@
           </div>
 
           <template v-else-if="volunteer">
-            <section class="hero-layout">
-              <div class="hero-rail">
-                <button type="button" class="back-button" @click="goBack" aria-label="Volver">
-                  <i class="fa-solid fa-arrow-left"></i>
-                </button>
+            <section class="hero-stage">
+              <aside class="hero-history-column">
+                <section class="panel history-panel hero-history-panel">
+                  <div class="panel-header panel-header--history">
+                    <div>
+                      <p class="panel-kicker">Historial</p>
+                      <h3>Hojas anuales</h3>
+                    </div>
 
-                <div class="year-card">
-                  {{ activePeriodYearLabel }}
-                </div>
-
-                <div class="photo-card">
-                  <div class="photo-frame">
-                    <img
-                      v-if="volunteer.foto_perfil_url"
-                      :src="volunteer.foto_perfil_url"
-                      :alt="`Foto de ${displayName}`"
-                    >
-                    <span v-else>Sin foto</span>
+                    <div v-if="canManageHojaVida && selectedAnnual" class="history-panel__actions history-panel__actions--header">
+                      <button
+                        type="button"
+                        class="history-panel__action-button history-panel__action-button--danger"
+                        @click="deleteSelectedAnnual"
+                        aria-label="Eliminar hoja anual seleccionada"
+                        title="Eliminar hoja anual seleccionada"
+                      >
+                        <i class="fa-solid fa-trash"></i>
+                      </button>
+                    </div>
                   </div>
+
+                  <div v-if="annualRecords.length" class="annual-list">
+                    <HistorialAnualCard
+                      v-for="record in visibleAnnualRecords"
+                      :key="record.id"
+                      :historial="record"
+                      :active="record.anio === selectedYear"
+                      :to="yearLink(record.anio)"
+                    />
+                  </div>
+
+                  <div v-else class="empty-inline">
+                    Este voluntario todavía no tiene hoja de vida anual registrada.
+                  </div>
+
+                  <div v-if="annualRecords.length" class="history-controls history-controls--footer">
+                    <span class="history-counter">
+                      {{ annualWindowStart + 1 }}-{{ annualWindowEnd }} de {{ annualRecords.length }}
+                    </span>
+                    <div class="history-nav">
+                      <button
+                        type="button"
+                        class="history-nav__button"
+                        :disabled="!canGoPrevAnnuals"
+                        @click="goToPreviousAnnualPage"
+                        aria-label="Ver hojas anuales anteriores"
+                      >
+                        <i class="fa-solid fa-chevron-left"></i>
+                      </button>
+                      <button
+                        type="button"
+                        class="history-nav__button"
+                        :disabled="!canGoNextAnnuals"
+                        @click="goToNextAnnualPage"
+                        aria-label="Ver hojas anuales siguientes"
+                      >
+                        <i class="fa-solid fa-chevron-right"></i>
+                      </button>
+                    </div>
+                  </div>
+                </section>
+
+                <section v-if="selectedAnnual && filteredRecognitionItems.length" class="panel recognition-panel hero-recognition-panel">
+                  <div class="panel-header">
+                    <div>
+                      <p class="panel-kicker">Reconocimiento anual</p>
+                      <h3>Estado del periodo</h3>
+                    </div>
+                  </div>
+
+                  <div class="recognition-grid recognition-grid--sidebar">
+                    <article
+                      v-for="recognition in filteredRecognitionItems"
+                      :key="recognition.label"
+                      class="recognition-item"
+                      :class="{ active: recognition.value }"
+                    >
+                      <span>{{ recognition.label }}</span>
+                      <strong>{{ recognition.value ? 'Si' : 'No' }}</strong>
+                    </article>
+                  </div>
+                </section>
+              </aside>
+
+              <div class="hero-main">
+                <section class="hero-layout">
+                  <div class="hero-rail">
+                    <button type="button" class="back-button" @click="goBack" aria-label="Volver">
+                      <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+
+                    <div class="year-card">
+                      {{ activePeriodYearLabel }}
+                    </div>
+
+                    <div class="photo-card">
+                      <div class="photo-frame">
+                        <img
+                          v-if="volunteer.foto_perfil_url"
+                          :src="volunteer.foto_perfil_url"
+                          :alt="`Foto de ${displayName}`"
+                        >
+                        <span v-else>Sin foto</span>
+                      </div>
+
+                      <button
+                        v-if="canUpdatePhoto"
+                        type="button"
+                        class="photo-action"
+                        :disabled="isUploadingPhoto"
+                        @click="triggerPhotoInput"
+                      >
+                        {{ isUploadingPhoto ? 'Actualizando...' : photoActionLabel }}
+                      </button>
+
+                      <input
+                        ref="photoInput"
+                        type="file"
+                        class="d-none"
+                        accept=".jpg,.jpeg,.png,.webp"
+                        @change="onProfilePhotoSelected"
+                      >
+
+                      <button
+                        v-if="showPhotoHistoryTrigger"
+                        type="button"
+                        class="action-button action-button--primary photo-history-trigger"
+                        @click="openAnnualHistoryModal"
+                      >
+                        Revisar Hojas Anuales de otros años
+                      </button>
+                    </div>
+                  </div>
+
+                  <article class="hero-panel">
+                    <div class="hero-top">
+                      <div class="hero-copy">
+                        <div class="hero-meta">
+                          <p class="hero-kicker">
+                            N. registro {{ volunteer.registro_filial || 'Sin registro' }}
+                          </p>
+                          <p class="hero-kicker">
+                            Filial {{ volunteer.filial?.nombre || 'Sin filial' }}
+                          </p>
+                        </div>
+                        <h2>{{ displayName }}</h2>
+
+                        <div class="hero-stats">
+                          <article
+                            v-for="stat in heroSummaryItems"
+                            :key="stat.label"
+                            class="hero-stat"
+                          >
+                            <span>{{ stat.label }}</span>
+                            <strong>{{ stat.value }}</strong>
+                          </article>
+                        </div>
+                      </div>
+
+                      <div class="hero-side">
+                        <div class="hero-brand">
+                          <img :src="logoSrc" alt="Cruz Roja Chilena">
+                        </div>
+
+                        <div class="hero-brand-actions">
+                          <button
+                            type="button"
+                            class="action-button action-button--primary hero-brand-action"
+                            :disabled="!selectedAnnual"
+                            @click="openPdfExport"
+                          >
+                            Exportar PDF
+                          </button>
+
+                          <button
+                            v-if="canManageHojaVida"
+                            type="button"
+                            class="action-button hero-brand-action"
+                            @click="openCreateEditor"
+                          >
+                            Agregar hoja anual
+                          </button>
+
+                          <button
+                            v-if="canManageHojaVida"
+                            type="button"
+                            class="action-button action-button--ghost hero-brand-action"
+                            :disabled="!selectedAnnual"
+                            @click="openEditEditor"
+                          >
+                            Editar periodo
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+
+                <div class="hero-actions-row">
+                  <button
+                    type="button"
+                    class="action-button action-button--primary hero-brand-action"
+                    :disabled="!selectedAnnual"
+                    @click="openPdfExport"
+                  >
+                    Exportar PDF
+                  </button>
 
                   <button
-                    v-if="canUpdatePhoto"
-                  type="button"
-                  class="photo-action"
-                  :disabled="isUploadingPhoto"
-                  @click="triggerPhotoInput"
-                >
-                  {{ isUploadingPhoto ? 'Actualizando...' : photoActionLabel }}
-                </button>
-
-                  <input
-                    ref="photoInput"
-                    type="file"
-                    class="d-none"
-                    accept=".jpg,.jpeg,.png,.webp"
-                    @change="onProfilePhotoSelected"
+                    v-if="canManageHojaVida"
+                    type="button"
+                    class="action-button hero-brand-action"
+                    @click="openCreateEditor"
                   >
+                    Agregar hoja anual
+                  </button>
+
+                  <button
+                    v-if="canManageHojaVida"
+                    type="button"
+                    class="action-button action-button--ghost hero-brand-action"
+                    :disabled="!selectedAnnual"
+                    @click="openEditEditor"
+                  >
+                    Editar periodo
+                  </button>
                 </div>
-              </div>
+                </section>
 
+                <div class="toolbar-row toolbar-row--hero-outside">
+                  <label class="search-shell">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input
+                      v-model.trim="searchTerm"
+                      type="text"
+                      placeholder="Buscar datos personales, cursos, documentos, sanciones o comentarios del año seleccionado"
+                    >
+                  </label>
+                </div>
 
-              <article class="hero-panel">
-                <div class="hero-top">
-                  <div class="hero-copy">
-                    <div class="hero-meta">
-                      <p class="hero-kicker">
-                        N. registro {{ volunteer.registro_filial || 'Sin registro' }}
-                      </p>
-                      <p class="hero-kicker">
-                        Filial {{ volunteer.filial?.nombre || 'Sin filial' }}
-                      </p>
-                    </div>
-                    <h2>{{ displayName }}</h2>
+            <section class="content-grid">
+              <div class="main-column">
+                <div v-if="!selectedAnnual" class="panel-empty panel-empty--soft">
+                  Este voluntario todavía no tiene una hoja de vida anual para mostrar.
+                </div>
 
-                    <div class="hero-stats">
-                      <article
-                        v-for="stat in heroSummaryItems"
-                        :key="stat.label"
-                        class="hero-stat"
+                <div v-else-if="!hasSearchResults" class="panel-empty panel-empty--soft">
+                  No encontramos coincidencias en la hoja de vida del periodo {{ selectedAnnual?.anio || 'seleccionado' }}.
+                </div>
+
+                <template v-else>
+
+                  <section v-if="filteredPersonalFacts.length" class="panel section-personal-panel">
+                    <div class="panel-header">
+                      <div>
+                        <p class="panel-kicker panel-kicker--section-title">Datos Personales</p>
+                        <h3 class="section-personal-panel__title">Información del Voluntario</h3>
+                      </div>
+                      <button
+                        v-if="canEditOwnPersonalData"
+                        type="button"
+                        class="section-upload-button"
+                        :disabled="!selectedAnnual"
+                        @click="openPersonalDataEditor"
                       >
-                        <span>{{ stat.label }}</span>
-                        <strong>{{ stat.value }}</strong>
+                        <i class="fa-solid fa-pen-to-square"></i>
+                        <span>Editar mis datos</span>
+                      </button>
+                    </div>
+
+                    <div class="fact-grid fact-grid--personal">
+                      <article
+                        v-for="fact in filteredPersonalFacts"
+                        :key="fact.label"
+                        class="fact-tile fact-tile--personal"
+                        :class="fact.layoutClass"
+                      >
+                        <span class="fact-tile__label">{{ fact.label }}</span>
+                        <div v-if="fact.secondaryValue" class="fact-tile__split">
+                          <strong>{{ fact.value }}</strong>
+                          <strong class="fact-tile__secondary">{{ fact.secondaryValue }}</strong>
+                        </div>
+                        <strong v-else>{{ fact.value }}</strong>
                       </article>
                     </div>
-                  </div>
+                  </section>
 
-                  <div class="hero-side">
-                    <div class="hero-brand">
-                      <img :src="logoSrc" alt="Cruz Roja Chilena">
+                  <section v-if="selectedAnnual" class="panel volunteer-activities-panel">
+                    <div class="panel-header">
+                      <div>
+                        <p class="panel-kicker panel-kicker--section-title">Actividades del voluntario</p>
+                        <span class="panel-record-count">{{ filteredVolunteerActivities.length }} registro(s)</span>
+                      </div>
                     </div>
 
-                    <div class="hero-brand-actions">
-                      <button
-                        type="button"
-                        class="action-button action-button--primary hero-brand-action"
-                        :disabled="!selectedAnnual"
-                        @click="openPdfExport"
+                    <div v-if="filteredVolunteerActivities.length" class="stack-list volunteer-activities-grid">
+                      <article
+                        v-for="activity in visibleVolunteerActivities"
+                        :key="activity.id || `${activity.nombre}-${activity.fecha_inicio}`"
+                        class="stack-card volunteer-activity-card"
                       >
-                        Exportar PDF
-                      </button>
+                        <header class="volunteer-activity-card__header">
+                          <h4 class="volunteer-activity-card__name">{{ activity.nombre || 'Actividad sin registro' }}</h4>
+                          <span class="volunteer-activity-card__type">{{ activity.tipo || 'Sin registro' }}</span>
+                        </header>
 
-                      <button
-                        v-if="canManageHojaVida"
-                        type="button"
-                        class="action-button hero-brand-action"
-                        @click="openCreateEditor"
-                      >
-                        Agregar hoja anual
-                      </button>
+                        <div class="volunteer-activity-card__details">
+                          <div class="volunteer-activity-card__item">
+                            <span class="volunteer-activity-card__icon" aria-hidden="true">
+                              <i class="fa-regular fa-calendar-days"></i>
+                            </span>
+                            <div class="volunteer-activity-card__content">
+                              <span class="volunteer-activity-card__label">Fecha</span>
+                              <strong class="volunteer-activity-card__value">{{ formatActivityDateRange(activity.fecha_inicio, activity.fecha_termino) }}</strong>
+                            </div>
+                          </div>
 
+                          <div class="volunteer-activity-card__item">
+                            <span class="volunteer-activity-card__icon" aria-hidden="true">
+                              <i class="fa-solid fa-building"></i>
+                            </span>
+                            <div class="volunteer-activity-card__content">
+                              <span class="volunteer-activity-card__label">Filial</span>
+                              <strong class="volunteer-activity-card__value">{{ activity.filial?.nombre || 'Sin registro' }}</strong>
+                            </div>
+                          </div>
+
+                          <div class="volunteer-activity-card__item">
+                            <span class="volunteer-activity-card__icon" aria-hidden="true">
+                              <i class="fa-solid fa-location-dot"></i>
+                            </span>
+                            <div class="volunteer-activity-card__content">
+                              <span class="volunteer-activity-card__label">Lugar</span>
+                              <strong class="volunteer-activity-card__value">{{ activity.lugar || 'Sin registro' }}</strong>
+                            </div>
+                          </div>
+
+                          <div class="volunteer-activity-card__item">
+                            <span class="volunteer-activity-card__icon" aria-hidden="true">
+                              <i class="fa-regular fa-clock"></i>
+                            </span>
+                            <div class="volunteer-activity-card__content">
+                              <span class="volunteer-activity-card__label">Horas asistidas</span>
+                              <strong class="volunteer-activity-card__value">{{ formatVolunteerActivityHours(activity.pivot?.horas_asistidas) }}</strong>
+                            </div>
+                          </div>
+                        </div>
+                      </article>
+                    </div>
+
+                    <div v-else class="empty-inline">
+                      No hay actividades inscritas registradas para este periodo.
+                    </div>
+
+                    <div v-if="filteredVolunteerActivities.length > volunteerActivitiesWindowSize" class="history-controls history-controls--footer volunteer-activities-pagination">
+                      <span class="history-counter">
+                        {{ volunteerActivitiesWindowStart + 1 }}-{{ volunteerActivitiesWindowEnd }} de {{ filteredVolunteerActivities.length }}
+                      </span>
+                      <div class="history-nav">
+                        <button
+                          type="button"
+                          class="history-nav__button"
+                          :disabled="!canGoPrevVolunteerActivities"
+                          @click="goToPreviousVolunteerActivitiesPage"
+                          aria-label="Ver actividades anteriores"
+                        >
+                          <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <button
+                          type="button"
+                          class="history-nav__button"
+                          :disabled="!canGoNextVolunteerActivities"
+                          @click="goToNextVolunteerActivitiesPage"
+                          aria-label="Ver actividades siguientes"
+                        >
+                          <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </section>
+                  <div class="split-grid section-titles-group">
+                    <section class="panel">
+                      <div class="panel-header">
+                        <div>
+                          <p class="panel-kicker panel-kicker--section-title">Títulos</p>
+                          <span class="panel-record-count">{{ filteredTitles.length }} registro(s)</span>
+                        </div>
+                        <button
+                          v-if="canUploadAcademicRecords"
+                          type="button"
+                          class="section-upload-button"
+                          :disabled="!selectedAnnual"
+                          @click="openSectionEditor('titles')"
+                        >
+                          <i class="fa-solid fa-pen-to-square"></i>
+                          <span>Editar registros</span>
+                        </button>
+                      </div>
+
+                      <div v-if="filteredTitles.length" class="table-responsive">
+                        <table class="sheet-table">
+                          <thead>
+                            <tr>
+                              <th>Título</th>
+                              <th>Entregado por</th>
+                              <th>Código</th>
+                              <th>Respaldo</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr v-for="title in filteredTitles" :key="title.id || `${title.titulo}-${title.codigo_titulo}`">
+                              <td>{{ title.titulo || 'Sin registro' }}</td>
+                              <td>{{ title.entregado_por || 'Sin registro' }}</td>
+                              <td>{{ title.codigo_titulo || 'Sin registro' }}</td>
+                              <td>
+                                <div v-if="attachmentLinks(title).length" class="sheet-link-list">
+                                  <a
+                                    v-for="attachment in attachmentLinks(title)"
+                                    :key="attachment.id"
+                                    :href="attachment.url"
+                                    target="_blank"
+                                    rel="noopener"
+                                    class="sheet-link"
+                                  >
+                                    {{ attachment.name }}
+                                  </a>
+                                </div>
+                                <span v-else>Sin respaldo</span>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div v-else class="empty-inline">
+                        No hay títulos aprobados registrados para este periodo.
+                      </div>
+                    </section>
+
+                    <section class="panel">
+                      <div class="panel-header">
+                        <div>
+                          <p class="panel-kicker panel-kicker--section-title">Cursos aprobados</p>
+                          <span class="panel-record-count">{{ filteredCourses.length }} registro(s)</span>
+                        </div>
+                        <button
+                          v-if="canUploadAcademicRecords"
+                          type="button"
+                          class="section-upload-button"
+                          :disabled="!selectedAnnual"
+                          @click="openSectionEditor('courses')"
+                        >
+                          <i class="fa-solid fa-pen-to-square"></i>
+                          <span>Editar registros</span>
+                        </button>
+                      </div>
+
+                      <div v-if="filteredCourses.length" class="table-responsive">
+                        <table class="sheet-table">
+                          <thead>
+                            <tr>
+                              <th>Curso</th>
+                              <th>Entregado por</th>
+                              <th>Código</th>
+                              <th>Respaldo</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr v-for="course in filteredCourses" :key="course.id || `${course.nombre_curso}-${course.codigo_curso}`">
+                              <td>{{ course.nombre_curso || 'Sin registro' }}</td>
+                              <td>{{ course.entregado_por || 'Sin registro' }}</td>
+                              <td>{{ course.codigo_curso || 'Sin registro' }}</td>
+                              <td>
+                                <div v-if="attachmentLinks(course).length" class="sheet-link-list">
+                                  <a
+                                    v-for="attachment in attachmentLinks(course)"
+                                    :key="attachment.id"
+                                    :href="attachment.url"
+                                    target="_blank"
+                                    rel="noopener"
+                                    class="sheet-link"
+                                  >
+                                    {{ attachment.name }}
+                                  </a>
+                                </div>
+                                <span v-else>Sin respaldo</span>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div v-else class="empty-inline">
+                        No hay cursos aprobados registrados para este periodo.
+                      </div>
+                    </section>
+                  </div>
+
+                  <section class="panel section-other-documents-panel">
+                    <div class="panel-header">
+                      <div>
+                        <p class="panel-kicker panel-kicker--section-title">Otros documentos</p>
+                        <span class="panel-record-count">{{ filteredOtherDocuments.length }} registro(s)</span>
+                      </div>
                       <button
-                        v-if="canManageHojaVida"
+                        v-if="canUploadAcademicRecords"
                         type="button"
-                        class="action-button action-button--ghost hero-brand-action"
+                        class="section-upload-button"
                         :disabled="!selectedAnnual"
-                        @click="openEditEditor"
+                        @click="openSectionEditor('documents')"
                       >
-                        Editar periodo
+                        <i class="fa-solid fa-pen-to-square"></i>
+                        <span>Editar registros</span>
                       </button>
                     </div>
+
+                    <div v-if="filteredOtherDocuments.length" class="table-responsive">
+                      <table class="sheet-table">
+                        <thead>
+                          <tr>
+                            <th>Documento</th>
+                            <th>Motivo</th>
+                            <th>Archivo</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr v-for="document in filteredOtherDocuments" :key="document.id || `${document.nombre_documento}-${document.motivo}`">
+                            <td>{{ document.nombre_documento || 'Sin registro' }}</td>
+                            <td>{{ document.motivo || 'Sin registro' }}</td>
+                            <td>
+                              <div v-if="attachmentLinks(document).length" class="sheet-link-list">
+                                <a
+                                  v-for="attachment in attachmentLinks(document)"
+                                  :key="attachment.id"
+                                  :href="attachment.url"
+                                  target="_blank"
+                                  rel="noopener"
+                                  class="sheet-link"
+                                >
+                                  {{ attachment.name }}
+                                </a>
+                              </div>
+                              <span v-else>Sin respaldo</span>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div v-else class="empty-inline">
+                      No hay otros documentos registrados para este periodo.
+                    </div>
+                  </section>
+                  <div class="split-grid section-sanctions-group">
+                  <section v-if="showCommissionPanel" class="panel section-commission-panel">
+                    <div class="panel-header">
+                      <div>
+                        <p class="panel-kicker panel-kicker--section-title">Comisión de servicio</p>
+                        <h3>Registro del periodo</h3>
+                      </div>
+                      <span class="counter-chip">
+                        {{ commissionInfo.inService ? 'En comision' : 'Sin comision' }}
+                      </span>
+                    </div>
+
+                    <div v-if="commissionInfo.hasAnyData" class="commission-card">
+                      <div class="commission-top">
+                        <span class="mini-pill" :class="{ 'mini-pill--active': commissionInfo.inService }">
+                          {{ commissionInfo.inService ? 'Si estuvo en comision' : 'No estuvo en comision' }}
+                        </span>
+                        <span class="mini-pill">{{ commissionInfo.dateRange }}</span>
+                      </div>
+
+                      <div class="commission-grid">
+                        <article class="commission-item">
+                          <span>Lugar</span>
+                          <strong>{{ commissionInfo.place }}</strong>
+                        </article>
+                        <article class="commission-item commission-item--wide">
+                          <span>Actividad</span>
+                          <strong>{{ commissionInfo.activity }}</strong>
+                        </article>
+                      </div>
+                    </div>
+
+                    <div v-else class="empty-inline">
+                      No hay antecedentes de comisión de servicio para este periodo.
+                    </div>
+                  </section>
+
+                    <section class="panel">
+                      <div class="panel-header">
+                        <div>
+                          <p class="panel-kicker panel-kicker--section-title">Sanciones</p>
+                          <span class="panel-record-count">{{ filteredSanctions.length }} registro(s)</span>
+                        </div>
+                      </div>
+
+                      <div v-if="filteredSanctions.length" class="stack-list">
+                        <article
+                          v-for="sanction in filteredSanctions"
+                          :key="sanction.id || `${sanction.tipo_sancion}-${sanction.fecha}`"
+                          class="stack-card"
+                        >
+                          <div class="stack-card__row">
+                            <span>Tipo</span>
+                            <strong>{{ sanction.tipo_sancion || 'Sin registro' }}</strong>
+                          </div>
+                          <div class="stack-card__row">
+                            <span>Fecha</span>
+                            <strong>{{ formatDate(sanction.fecha) }}</strong>
+                          </div>
+                          <div class="stack-card__row stack-card__row--wide">
+                            <span>Resumen</span>
+                            <strong>{{ sanction.resumen_sancion || 'Sin registro' }}</strong>
+                          </div>
+                          <div class="stack-card__row stack-card__row--wide">
+                            <span>Apelación</span>
+                            <strong>{{ sanction.apelacion || 'Sin registro' }}</strong>
+                          </div>
+                          <div class="stack-card__row">
+                            <span>Fecha apelación</span>
+                            <strong>{{ formatDate(sanction.fecha_apelacion) }}</strong>
+                          </div>
+                          <div class="stack-card__row stack-card__row--wide">
+                            <span>Decisión CIG</span>
+                            <strong>{{ sanction.decision_cig || 'Sin registro' }}</strong>
+                          </div>
+                        </article>
+                      </div>
+
+                      <div v-else class="empty-inline">
+                        No hay sanciones registradas para este periodo.
+                      </div>
+                    </section>
                   </div>
-                </div>
-              </article>
 
-              <section class="action-panel action-panel--hero">
-                <button
-                  type="button"
-                  class="action-button action-button--primary"
-                  :disabled="!selectedAnnual"
-                  @click="openPdfExport"
-                >
-                  Exportar PDF
-                </button>
+                  <section v-if="showCommentsPanel" class="panel section-comments-panel">
+                    <div class="panel-header">
+                      <div>
+                        <p class="panel-kicker panel-kicker--section-title">Comentarios</p>
+                        <h3>Observaciones del periodo {{ selectedAnnual?.anio || '' }}</h3>
+                      </div>
+                    </div>
 
-                <button
-                  v-if="canManageHojaVida"
-                  type="button"
-                  class="action-button"
-                  @click="openCreateEditor"
-                >
-                  Agregar hoja anual
-                </button>
-
-                <button
-                  v-if="canManageHojaVida"
-                  type="button"
-                  class="action-button action-button--ghost"
-                  :disabled="!selectedAnnual"
-                  @click="openEditEditor"
-                >
-                  Editar periodo
-                </button>
-              </section>
-
-              <div class="toolbar-row toolbar-row--hero-outside">
-                <label class="search-shell">
-                  <i class="fa-solid fa-magnifying-glass"></i>
-                  <input
-                    v-model.trim="searchTerm"
-                    type="text"
-                    placeholder="Buscar datos personales, cursos, sanciones o comentarios del año seleccionado"
-                  >
-                </label>
+                    <div class="comments-box">
+                      {{ selectedAnnual?.comentarios || 'Sin comentarios registrados para este periodo.' }}
+                    </div>
+                  </section>
+                </template>
               </div>
+              <aside class="sidebar-column sidebar-column--mobile-only">
+                <section v-if="selectedAnnual && filteredRecognitionItems.length" class="panel recognition-panel hero-recognition-panel">
+                  <div class="panel-header">
+                    <div>
+                      <p class="panel-kicker">Reconocimiento anual</p>
+                      <h3>Estado del periodo</h3>
+                    </div>
+                  </div>
 
-              <button
-                v-if="showPhotoHistoryTrigger"
-                type="button"
-                class="action-button action-button--primary photo-history-trigger"
-                @click="openAnnualHistoryModal"
-              >
-                Revisar Hojas Anuales de otros años
-              </button>
+                  <div class="recognition-grid recognition-grid--sidebar">
+                    <article
+                      v-for="recognition in filteredRecognitionItems"
+                      :key="recognition.label"
+                      class="recognition-item"
+                      :class="{ active: recognition.value }"
+                    >
+                      <span>{{ recognition.label }}</span>
+                      <strong>{{ recognition.value ? 'Si' : 'No' }}</strong>
+                    </article>
+                  </div>
+                </section>              </aside>
+            </section>
+              </div>
             </section>
 
             <HistorialAnualEditor
               v-if="isEditorOpen"
               :volunteer-id="volunteer.id"
               :record="editorRecord"
+              :volunteer="volunteer"
               :current-user-id="currentUser?.id || null"
               :initial-section="editorSection"
               :active-year="activePeriodYear"
               @saved="handleRecordSaved"
               @cancel="closeEditor"
             />
-
-            <div v-if="isAnnualHistoryModalOpen" class="history-modal">
+            <div
+              v-if="isAnnualHistoryModalOpen"
+              class="history-modal"
+              @click.self="closeAnnualHistoryModal"
+            >
               <div class="history-modal__panel">
                 <div class="history-modal__header">
                   <div>
@@ -230,441 +755,11 @@
                 </div>
 
                 <div v-else class="empty-inline">
-                  Este voluntario todavia no tiene hoja de vida anual registrada.
+                  Este voluntario todavía no tiene hoja de vida anual registrada.
                 </div>
               </div>
             </div>
 
-            <section class="content-grid">
-              <div class="main-column">
-                <div v-if="!selectedAnnual" class="panel-empty panel-empty--soft">
-                  Este voluntario todavia no tiene una hoja de vida anual para mostrar.
-                </div>
-
-                <div v-else-if="!hasSearchResults" class="panel-empty panel-empty--soft">
-                  No encontramos coincidencias en la hoja de vida del periodo {{ selectedAnnual?.anio || 'seleccionado' }}.
-                </div>
-
-                <template v-else>
-
-                  <section v-if="filteredPersonalFacts.length" class="panel section-personal-panel">
-                    <div class="panel-header">
-                      <div>
-                        <p class="panel-kicker">Datos personales</p>
-                        <h3>Informacion del voluntario</h3>
-                      </div>
-                    </div>
-
-                    <div class="fact-grid fact-grid--personal">
-                      <article
-                        v-for="fact in filteredPersonalFacts"
-                        :key="fact.label"
-                        class="fact-tile fact-tile--personal"
-                        :class="fact.layoutClass"
-                      >
-                        <span class="fact-tile__label">{{ fact.label }}</span>
-                        <div v-if="fact.secondaryValue" class="fact-tile__split">
-                          <strong>{{ fact.value }}</strong>
-                          <strong class="fact-tile__secondary">{{ fact.secondaryValue }}</strong>
-                        </div>
-                        <strong v-else>{{ fact.value }}</strong>
-                      </article>
-                    </div>
-                  </section>
-                  <div class="split-grid section-titles-group">
-                    <section class="panel">
-                      <div class="panel-header">
-                        <div>
-                          <p class="panel-kicker">Titulos</p>
-                          <h3>{{ filteredTitles.length }} registro(s)</h3>
-                        </div>
-                        <button
-                          v-if="canUploadAcademicRecords"
-                          type="button"
-                          class="section-upload-button"
-                          :disabled="!selectedAnnual"
-                          @click="openSectionEditor('titles')"
-                        >
-                          <i class="fa-solid fa-pen-to-square"></i>
-                          <span>Editar registros</span>
-                        </button>
-                      </div>
-
-                      <div v-if="filteredTitles.length" class="table-responsive">
-                        <table class="sheet-table">
-                          <thead>
-                            <tr>
-                              <th>Titulo</th>
-                              <th>Entregado por</th>
-                              <th>Codigo</th>
-                              <th>Respaldo</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr v-for="title in filteredTitles" :key="title.id || `${title.titulo}-${title.codigo_titulo}`">
-                              <td>{{ title.titulo || 'Sin registro' }}</td>
-                              <td>{{ title.entregado_por || 'Sin registro' }}</td>
-                              <td>{{ title.codigo_titulo || 'Sin registro' }}</td>
-                              <td>
-                                <a v-if="title.archivo_url" :href="title.archivo_url" target="_blank" rel="noopener" class="sheet-link">
-                                  {{ title.archivo_nombre || 'Ver respaldo' }}
-                                </a>
-                                <span v-else>Sin respaldo</span>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-
-                      <div v-else class="empty-inline">
-                        No hay titulos aprobados registrados para este periodo.
-                      </div>
-                    </section>
-
-                    <section class="panel">
-                      <div class="panel-header">
-                        <div>
-                          <p class="panel-kicker">Cursos aprobados</p>
-                          <h3>{{ filteredCourses.length }} registro(s)</h3>
-                        </div>
-                        <button
-                          v-if="canUploadAcademicRecords"
-                          type="button"
-                          class="section-upload-button"
-                          :disabled="!selectedAnnual"
-                          @click="openSectionEditor('courses')"
-                        >
-                          <i class="fa-solid fa-pen-to-square"></i>
-                          <span>Editar registros</span>
-                        </button>
-                      </div>
-
-                      <div v-if="filteredCourses.length" class="table-responsive">
-                        <table class="sheet-table">
-                          <thead>
-                            <tr>
-                              <th>Curso</th>
-                              <th>Entregado por</th>
-                              <th>Codigo</th>
-                              <th>Respaldo</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr v-for="course in filteredCourses" :key="course.id || `${course.nombre_curso}-${course.codigo_curso}`">
-                              <td>{{ course.nombre_curso || 'Sin registro' }}</td>
-                              <td>{{ course.entregado_por || 'Sin registro' }}</td>
-                              <td>{{ course.codigo_curso || 'Sin registro' }}</td>
-                              <td>
-                                <a v-if="course.archivo_url" :href="course.archivo_url" target="_blank" rel="noopener" class="sheet-link">
-                                  {{ course.archivo_nombre || 'Ver respaldo' }}
-                                </a>
-                                <span v-else>Sin respaldo</span>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-
-                      <div v-else class="empty-inline">
-                        No hay cursos aprobados registrados para este periodo.
-                      </div>
-                    </section>
-                  </div>
-
-                  <section v-if="showVolunteerReceiptsSection" class="panel section-receipts-panel">
-                    <div class="panel-header">
-                      <div>
-                        <p class="panel-kicker">Boletas y viaticos</p>
-                        <h3>Respaldos por actividad</h3>
-                      </div>
-                      <span class="counter-chip">
-                        {{ volunteerReceiptActivities.length }} actividad(es)
-                      </span>
-                    </div>
-
-                    <div v-if="isLoadingVolunteerActivities" class="empty-inline">
-                      Cargando actividades relacionadas para subir boletas...
-                    </div>
-
-                    <div v-else-if="!volunteerReceiptActivities.length" class="empty-inline">
-                      Aun no participas en actividades con boletas disponibles para registrar desde tu perfil.
-                    </div>
-
-                    <div v-else class="receipt-activity-list">
-                      <article
-                        v-for="activity in volunteerReceiptActivities"
-                        :key="`profile-receipt-${activity.id}`"
-                        class="receipt-activity-card"
-                      >
-                        <div class="receipt-activity-card__header">
-                          <div>
-                            <strong>{{ activity.nombre || 'Actividad sin nombre' }}</strong>
-                            <p>
-                              {{ activity.tipo || 'Sin tipo' }} · {{ formatDateRange(activity.fecha_inicio, activity.fecha_termino) }}
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            class="section-upload-button"
-                            :disabled="volunteerBoletasLoadingActivityId === activity.id"
-                            @click="toggleVolunteerBoletasPanel(activity)"
-                          >
-                            <i class="fa-solid fa-receipt"></i>
-                            <span>{{ volunteerBoletasButtonLabel(activity) }}</span>
-                          </button>
-                        </div>
-
-                        <section v-if="volunteerBoletasActivityId === activity.id" class="receipt-activity-card__body">
-                          <div class="receipt-upload-form">
-                            <div class="receipt-upload-form__grid">
-                              <input
-                                v-model.trim="volunteerBoletaForm.detalle_compra"
-                                type="text"
-                                class="form-control"
-                                placeholder="Detalle de compra"
-                              >
-                              <input
-                                v-model.number="volunteerBoletaForm.monto"
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                class="form-control"
-                                placeholder="Monto"
-                              >
-                            </div>
-
-                            <input
-                              v-model="volunteerBoletaForm.fecha_compra"
-                              type="date"
-                              class="form-control"
-                            >
-
-                            <input
-                              type="file"
-                              class="form-control"
-                              accept=".jpg,.jpeg,.png,.webp,.pdf"
-                              @change="onVolunteerBoletaFileSelected"
-                            >
-
-                            <div class="receipt-upload-form__actions">
-                              <button
-                                type="button"
-                                class="btn btn-danger btn-sm"
-                                :disabled="volunteerBoletaSubmitting || !isVolunteerBoletaFormValid"
-                                @click="uploadVolunteerBoleta(activity)"
-                              >
-                                {{ volunteerBoletaSubmitting ? 'Subiendo...' : 'Registrar boleta' }}
-                              </button>
-                            </div>
-                          </div>
-
-                          <div v-if="volunteerBoletasLoadingActivityId === activity.id" class="empty-inline empty-inline--nested">
-                            Cargando boletas registradas...
-                          </div>
-
-                          <div v-else-if="volunteerBoletaItems.length" class="receipt-profile-list">
-                            <article v-for="item in volunteerBoletaItems" :key="item.id" class="receipt-profile-card">
-                              <div class="receipt-profile-card__top">
-                                <strong>{{ item.detalle_compra }}</strong>
-                                <span class="status-pill status-pill--warning">{{ item.estado || 'pendiente' }}</span>
-                              </div>
-                              <p>{{ formatCurrency(item.monto) }} · {{ formatDate(item.fecha_compra) }}</p>
-                              <a :href="item.archivo_url" target="_blank" rel="noopener" class="sheet-link">
-                                {{ item.archivo?.nombre_original || 'Ver respaldo' }}
-                              </a>
-                            </article>
-                          </div>
-
-                          <div v-else class="empty-inline empty-inline--nested">
-                            Todavia no has subido boletas para esta actividad.
-                          </div>
-                        </section>
-                      </article>
-                    </div>
-                  </section>
-
-                  <div class="split-grid section-sanctions-group">
-                  <section v-if="showCommissionPanel" class="panel section-commission-panel">
-                    <div class="panel-header">
-                      <div>
-                        <p class="panel-kicker">Comision de servicio</p>
-                        <h3>Registro del periodo</h3>
-                      </div>
-                      <span class="counter-chip">
-                        {{ commissionInfo.inService ? 'En comision' : 'Sin comision' }}
-                      </span>
-                    </div>
-
-                    <div v-if="commissionInfo.hasAnyData" class="commission-card">
-                      <div class="commission-top">
-                        <span class="mini-pill" :class="{ 'mini-pill--active': commissionInfo.inService }">
-                          {{ commissionInfo.inService ? 'Si estuvo en comision' : 'No estuvo en comision' }}
-                        </span>
-                        <span class="mini-pill">{{ commissionInfo.dateRange }}</span>
-                      </div>
-
-                      <div class="commission-grid">
-                        <article class="commission-item">
-                          <span>Lugar</span>
-                          <strong>{{ commissionInfo.place }}</strong>
-                        </article>
-                        <article class="commission-item commission-item--wide">
-                          <span>Actividad</span>
-                          <strong>{{ commissionInfo.activity }}</strong>
-                        </article>
-                      </div>
-                    </div>
-
-                    <div v-else class="empty-inline">
-                      No hay antecedentes de comision de servicio para este periodo.
-                    </div>
-                  </section>
-
-                    <section class="panel">
-                      <div class="panel-header">
-                        <div>
-                          <p class="panel-kicker">Sanciones</p>
-                          <h3>{{ filteredSanctions.length }} registro(s)</h3>
-                        </div>
-                      </div>
-
-                      <div v-if="filteredSanctions.length" class="stack-list">
-                        <article
-                          v-for="sanction in filteredSanctions"
-                          :key="sanction.id || `${sanction.tipo_sancion}-${sanction.fecha}`"
-                          class="stack-card"
-                        >
-                          <div class="stack-card__row">
-                            <span>Tipo</span>
-                            <strong>{{ sanction.tipo_sancion || 'Sin registro' }}</strong>
-                          </div>
-                          <div class="stack-card__row">
-                            <span>Fecha</span>
-                            <strong>{{ formatDate(sanction.fecha) }}</strong>
-                          </div>
-                          <div class="stack-card__row stack-card__row--wide">
-                            <span>Resumen</span>
-                            <strong>{{ sanction.resumen_sancion || 'Sin registro' }}</strong>
-                          </div>
-                          <div class="stack-card__row stack-card__row--wide">
-                            <span>Apelacion</span>
-                            <strong>{{ sanction.apelacion || 'Sin registro' }}</strong>
-                          </div>
-                          <div class="stack-card__row">
-                            <span>Fecha apelacion</span>
-                            <strong>{{ formatDate(sanction.fecha_apelacion) }}</strong>
-                          </div>
-                          <div class="stack-card__row stack-card__row--wide">
-                            <span>Decision CIG</span>
-                            <strong>{{ sanction.decision_cig || 'Sin registro' }}</strong>
-                          </div>
-                        </article>
-                      </div>
-
-                      <div v-else class="empty-inline">
-                        No hay sanciones registradas para este periodo.
-                      </div>
-                    </section>
-                  </div>
-
-                  <section v-if="showCommentsPanel" class="panel section-comments-panel">
-                    <div class="panel-header">
-                      <div>
-                        <p class="panel-kicker">Comentarios</p>
-                        <h3>Observaciones del periodo {{ selectedAnnual?.anio || '' }}</h3>
-                      </div>
-                    </div>
-
-                    <div class="comments-box">
-                      {{ selectedAnnual?.comentarios || 'Sin comentarios registrados para este periodo.' }}
-                    </div>
-                  </section>
-                </template>
-              </div>
-
-              <aside class="sidebar-column">
-                <section class="panel history-panel history-panel--sidebar">
-                  <div class="panel-header panel-header--history">
-                    <div>
-                      <p class="panel-kicker">Historial</p>
-                      <h3>Hojas anuales</h3>
-                    </div>
-
-                    <div v-if="canManageHojaVida && selectedAnnual" class="history-panel__actions history-panel__actions--header">
-                      <button
-                        type="button"
-                        class="history-panel__action-button history-panel__action-button--danger"
-                        @click="deleteSelectedAnnual"
-                        aria-label="Eliminar hoja anual seleccionada"
-                        title="Eliminar hoja anual seleccionada"
-                      >
-                        <i class="fa-solid fa-trash"></i>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div v-if="annualRecords.length" class="annual-list">
-                    <HistorialAnualCard
-                      v-for="record in visibleAnnualRecords"
-                      :key="record.id"
-                      :historial="record"
-                      :active="record.anio === selectedYear"
-                      :to="yearLink(record.anio)"
-                    />
-                  </div>
-
-                  <div v-else class="empty-inline">
-                    Este voluntario todavia no tiene hoja de vida anual registrada.
-                  </div>
-
-                  <div v-if="annualRecords.length" class="history-controls history-controls--footer">
-                    <span class="history-counter">
-                      {{ annualWindowStart + 1 }}-{{ annualWindowEnd }} de {{ annualRecords.length }}
-                    </span>
-                    <div class="history-nav">
-                      <button
-                        type="button"
-                        class="history-nav__button"
-                        :disabled="!canGoPrevAnnuals"
-                        @click="goToPreviousAnnualPage"
-                        aria-label="Ver hojas anuales anteriores"
-                      >
-                        <i class="fa-solid fa-chevron-left"></i>
-                      </button>
-                      <button
-                        type="button"
-                        class="history-nav__button"
-                        :disabled="!canGoNextAnnuals"
-                        @click="goToNextAnnualPage"
-                        aria-label="Ver hojas anuales siguientes"
-                      >
-                        <i class="fa-solid fa-chevron-right"></i>
-                      </button>
-                    </div>
-                  </div>
-                </section>
-                <section v-if="filteredRecognitionItems.length" class="panel recognition-panel">
-                  <div class="panel-header">
-                    <div>
-                      <p class="panel-kicker">Reconocimiento anual</p>
-                      <h3>Estado del periodo</h3>
-                    </div>
-                  </div>
-
-                  <div class="recognition-grid recognition-grid--sidebar">
-                    <article
-                      v-for="recognition in filteredRecognitionItems"
-                      :key="recognition.label"
-                      class="recognition-item"
-                      :class="{ active: recognition.value }"
-                    >
-                      <span>{{ recognition.label }}</span>
-                      <strong>{{ recognition.value ? 'Si' : 'No' }}</strong>
-                    </article>
-                  </div>
-                </section>
-              </aside>
-            </section>
           </template>
         </div>
       </div>
@@ -697,51 +792,25 @@ const isEditorOpen = ref(false)
 const editorRecord = ref(null)
 const editorSection = ref(null)
 const editorActiveYear = ref(null)
-const volunteerActivities = ref([])
-const isLoadingVolunteerActivities = ref(false)
-const volunteerBoletasActivityId = ref(null)
-const volunteerBoletasLoadingActivityId = ref(null)
-const volunteerBoletaSubmitting = ref(false)
-const volunteerBoletaItems = ref([])
-function createEmptyVolunteerBoletaForm() {
-  return {
-    detalle_compra: '',
-    monto: '',
-    fecha_compra: '',
-    file: null
-  }
-}
-const volunteerBoletaForm = ref(createEmptyVolunteerBoletaForm())
 const searchTerm = ref('')
 const isUploadingPhoto = ref(false)
 const photoInput = ref(null)
 const annualWindowStart = ref(0)
+const volunteerActivitiesWindowStart = ref(0)
 const viewportWidth = ref(typeof window === 'undefined' ? 1920 : window.innerWidth)
 const isAnnualHistoryModalOpen = ref(false)
 
 const currentUser = computed(() => store.getters.authUser)
-const isOwnVolunteerProfile = computed(() => Boolean(currentUser.value?.id && user.value?.id) && Number(currentUser.value.id) === Number(user.value.id))
 const canManageHojaVida = computed(() => store.getters.isAdministratorExperience && store.getters.canManagePlatform)
-const canUpdatePhoto = computed(() => Boolean(user.value?.id) && (canManageHojaVida.value || currentUser.value?.id === user.value?.id))
-const canUploadAcademicRecords = computed(() => Boolean(user.value?.id) && (canManageHojaVida.value || currentUser.value?.id === user.value?.id))
-const showVolunteerReceiptsSection = computed(() => Boolean(volunteer.value?.id) && isOwnVolunteerProfile.value)
-const volunteerReceiptActivities = computed(() =>
-  volunteerActivities.value
-    .filter((activity) => (activity.voluntarios || []).some((item) => Number(item.id) === Number(volunteer.value?.id)))
-    .sort((left, right) => (left.fecha_inicio || '').localeCompare(right.fecha_inicio || ''))
-)
-const isVolunteerBoletaFormValid = computed(() =>
-  Boolean(
-    volunteerBoletaForm.value.file &&
-    volunteerBoletaForm.value.detalle_compra.trim() &&
-    Number(volunteerBoletaForm.value.monto) > 0
-  )
-)
+const canEditOwnPersonalData = computed(() => Boolean(user.value?.id) && currentUser.value?.id === user.value?.id)
+const canUpdatePhoto = computed(() => Boolean(user.value?.id) && (canManageHojaVida.value || canEditOwnPersonalData.value))
+const canUploadAcademicRecords = computed(() => Boolean(user.value?.id) && (canManageHojaVida.value || canEditOwnPersonalData.value))
 const photoActionLabel = computed(() => volunteer.value?.foto_perfil_url ? 'Cambiar foto' : 'Subir foto')
 
 const volunteer = computed(() => user.value?.voluntario || null)
 
 const annualWindowSize = 3
+const volunteerActivitiesWindowSize = computed(() => (viewportWidth.value <= 860 ? 1 : viewportWidth.value <= 1439 ? 2 : 3))
 
 const annualRecords = computed(() =>
   [...(volunteer.value?.hoja_vida_anual || [])].sort((left, right) => Number(right.anio) - Number(left.anio))
@@ -755,7 +824,7 @@ const annualWindowEnd = computed(() =>
   Math.min(annualWindowStart.value + annualWindowSize, annualRecords.value.length)
 )
 
-const showPhotoHistoryTrigger = computed(() => viewportWidth.value <= 1439)
+const showPhotoHistoryTrigger = computed(() => viewportWidth.value <= 767)
 const canGoPrevAnnuals = computed(() => annualWindowStart.value > 0)
 const canGoNextAnnuals = computed(() => annualWindowEnd.value < annualRecords.value.length)
 
@@ -844,7 +913,7 @@ const personalFacts = computed(() => {
     { label: 'Alergias', value: volunteer.value.alergias || '-' },
     { label: 'Enfermedades', value: volunteer.value.enfermedades || '-' },
     { label: 'Grupo Sanguíneo', value: volunteer.value.grupo_sanguineo || '-' },
-    { label: 'Nivel de escolaridad', value: volunteer.value.nivel_escolaridad || '-' },
+    { label: 'Nivel de escolaridad', value: volunteer.value.nivel_escolaridad || '-', layoutClass: 'fact-tile--span-2' },
     { label: 'Ocupación', value: volunteer.value.ocupacion || '-' },
     {
       label: 'Nombre y Contacto para emergencias',
@@ -876,7 +945,7 @@ const ageLabel = computed(() => {
     age -= 1
   }
 
-  return `${age} anos`
+  return `${age} años`
 })
 
 const commissionInfo = computed(() => {
@@ -918,7 +987,7 @@ const recognitionItems = computed(() => {
 
   return [
     { label: 'Servicio extraordinario', value: Boolean(recognition.servicio_extraordinario) },
-    { label: 'Abnegacion', value: Boolean(recognition.abnegacion) },
+    { label: 'Abnegación', value: Boolean(recognition.abnegacion) },
     { label: '3a medalla de honor', value: Boolean(recognition.medalla_honor_3) },
     { label: '2a medalla de honor', value: Boolean(recognition.medalla_honor_2) },
     { label: '1a medalla de honor', value: Boolean(recognition.medalla_honor_1) },
@@ -928,9 +997,61 @@ const recognitionItems = computed(() => {
   ]
 })
 
+function attachmentLinks(record) {
+  const attachments = Array.isArray(record?.archivos_adjuntos) && record.archivos_adjuntos.length
+    ? record.archivos_adjuntos
+    : (record?.archivo_url
+        ? [{ id: record.archivo_id ?? record.archivo_url, url: record.archivo_url, nombre_original: record.archivo_nombre }]
+        : [])
+
+  return attachments
+    .map((attachment, index) => ({
+      id: attachment.id ?? `${record?.id || 'record'}-${index}`,
+      url: attachment.url ?? attachment.url_publica ?? '',
+      name: attachment.nombre_original ?? attachment.nombre ?? attachment.archivo_nombre ?? `Respaldo ${index + 1}`
+    }))
+    .filter((attachment) => attachment.url)
+}
+
+const volunteerActivitiesForYear = computed(() => {
+  const year = activePeriodYear.value
+  const activities = Array.isArray(volunteer.value?.actividades) ? volunteer.value.actividades : []
+
+  if (!year) {
+    return []
+  }
+
+  return [...activities]
+    .filter((activity) => Number(String(activity.fecha_inicio || activity.fecha_termino || '').slice(0, 4)) === Number(year))
+    .sort((left, right) => String(right.fecha_inicio || right.fecha_termino || '').localeCompare(String(left.fecha_inicio || left.fecha_termino || '')))
+})
+
+const filteredVolunteerActivities = computed(() => volunteerActivitiesForYear.value.filter((activity) => matchesSearch([
+  activity.nombre,
+  activity.tipo,
+  activity.lugar,
+  activity.colaborador_externo,
+  activity.filial?.nombre,
+  activity.fecha_inicio,
+  activity.fecha_termino,
+  activity.pivot?.horas_asistidas,
+].filter(Boolean).join(' '))))
+
+const visibleVolunteerActivities = computed(() =>
+  filteredVolunteerActivities.value.slice(volunteerActivitiesWindowStart.value, volunteerActivitiesWindowStart.value + volunteerActivitiesWindowSize.value)
+)
+
+const volunteerActivitiesWindowEnd = computed(() =>
+  Math.min(volunteerActivitiesWindowStart.value + volunteerActivitiesWindowSize.value, filteredVolunteerActivities.value.length)
+)
+
+const canGoPrevVolunteerActivities = computed(() => volunteerActivitiesWindowStart.value > 0)
+const canGoNextVolunteerActivities = computed(() => volunteerActivitiesWindowEnd.value < filteredVolunteerActivities.value.length)
+
 const filteredPersonalFacts = computed(() => personalFacts.value.filter((item) => matchesSearch(`${item.label} ${item.value}`)))
-const filteredTitles = computed(() => (selectedAnnual.value?.titulos || []).filter((item) => matchesSearch(`${item.titulo} ${item.entregado_por} ${item.codigo_titulo} ${item.archivo_nombre || ''}`)))
-const filteredCourses = computed(() => (selectedAnnual.value?.cursos || []).filter((item) => matchesSearch(`${item.nombre_curso} ${item.entregado_por} ${item.codigo_curso} ${item.archivo_nombre || ''}`)))
+const filteredTitles = computed(() => (selectedAnnual.value?.titulos || []).filter((item) => matchesSearch(`${item.titulo} ${item.entregado_por} ${item.codigo_titulo} ${attachmentLinks(item).map((attachment) => attachment.name).join(' ')}`)))
+const filteredCourses = computed(() => (selectedAnnual.value?.cursos || []).filter((item) => matchesSearch(`${item.nombre_curso} ${item.entregado_por} ${item.codigo_curso} ${attachmentLinks(item).map((attachment) => attachment.name).join(' ')}`)))
+const filteredOtherDocuments = computed(() => (selectedAnnual.value?.otros_documentos || []).filter((item) => matchesSearch(`${item.nombre_documento} ${item.motivo} ${attachmentLinks(item).map((attachment) => attachment.name).join(' ')}`)))
 const filteredSanctions = computed(() => (selectedAnnual.value?.sanciones || []).filter((item) => matchesSearch(`${item.tipo_sancion} ${item.fecha} ${item.resumen_sancion} ${item.apelacion} ${item.fecha_apelacion} ${item.decision_cig}`)))
 const filteredRecognitionItems = computed(() => recognitionItems.value.filter((item) => matchesSearch(`${item.label} ${item.value ? 'si' : 'no'}`)))
 
@@ -954,8 +1075,10 @@ const hasSearchResults = computed(() => {
 
   return Boolean(
     filteredPersonalFacts.value.length ||
+    filteredVolunteerActivities.value.length ||
     filteredTitles.value.length ||
     filteredCourses.value.length ||
+    filteredOtherDocuments.value.length ||
     filteredSanctions.value.length ||
     filteredRecognitionItems.value.length ||
     showCommissionPanel.value ||
@@ -973,6 +1096,10 @@ watch(annualRecords, () => {
   syncSelectedYear()
   syncAnnualWindow()
 })
+
+watch([filteredVolunteerActivities, volunteerActivitiesWindowSize], () => {
+  syncVolunteerActivitiesWindow()
+}, { immediate: true })
 onMounted(() => {
   updateViewportWidth()
   window.addEventListener('resize', updateViewportWidth)
@@ -1044,6 +1171,25 @@ function goToNextAnnualPage() {
   annualWindowStart.value = Math.min(annualWindowStart.value + annualWindowSize, maxStart)
 }
 
+function syncVolunteerActivitiesWindow() {
+  if (!filteredVolunteerActivities.value.length) {
+    volunteerActivitiesWindowStart.value = 0
+    return
+  }
+
+  const maxStart = Math.max(filteredVolunteerActivities.value.length - volunteerActivitiesWindowSize.value, 0)
+  volunteerActivitiesWindowStart.value = Math.min(Math.max(volunteerActivitiesWindowStart.value, 0), maxStart)
+}
+
+function goToPreviousVolunteerActivitiesPage() {
+  volunteerActivitiesWindowStart.value = Math.max(volunteerActivitiesWindowStart.value - volunteerActivitiesWindowSize.value, 0)
+}
+
+function goToNextVolunteerActivitiesPage() {
+  const maxStart = Math.max(filteredVolunteerActivities.value.length - volunteerActivitiesWindowSize.value, 0)
+  volunteerActivitiesWindowStart.value = Math.min(volunteerActivitiesWindowStart.value + volunteerActivitiesWindowSize.value, maxStart)
+}
+
 function yearLink(year) {
   return {
     name: 'HistorialView',
@@ -1080,121 +1226,6 @@ function openPdfExport() {
   })
 }
 
-function volunteerBoletasButtonLabel(activity) {
-  if (volunteerBoletasLoadingActivityId.value === activity.id) {
-    return 'Cargando boletas...'
-  }
-
-  return volunteerBoletasActivityId.value === activity.id ? 'Ocultar boletas' : 'Ver boletas'
-}
-
-function onVolunteerBoletaFileSelected(event) {
-  volunteerBoletaForm.value.file = event.target.files?.[0] || null
-}
-
-function resetVolunteerReceiptsState() {
-  volunteerActivities.value = []
-  volunteerBoletasActivityId.value = null
-  volunteerBoletasLoadingActivityId.value = null
-  volunteerBoletaItems.value = []
-  volunteerBoletaForm.value = createEmptyVolunteerBoletaForm()
-}
-
-async function loadVolunteerActivities() {
-  if (!volunteer.value?.id) {
-    resetVolunteerReceiptsState()
-    return
-  }
-
-  isLoadingVolunteerActivities.value = true
-
-  try {
-    const firstPage = await axios.get(`${API_BASE}/actividad`, { params: { page: 1 } })
-    const totalPages = Number(firstPage.data?.last_page || 1)
-    const pages = [firstPage.data]
-
-    if (totalPages > 1) {
-      const responses = await Promise.all(
-        Array.from({ length: totalPages - 1 }, (_, index) =>
-          axios.get(`${API_BASE}/actividad`, { params: { page: index + 2 } })
-        )
-      )
-
-      pages.push(...responses.map((response) => response.data))
-    }
-
-    volunteerActivities.value = pages.flatMap((page) => page.data || [])
-  } catch (error) {
-    resetVolunteerReceiptsState()
-    show_alerta('No se pudieron cargar las actividades del voluntario.', 'error')
-  } finally {
-    isLoadingVolunteerActivities.value = false
-  }
-}
-
-async function loadVolunteerBoletas(activityId) {
-  volunteerBoletasLoadingActivityId.value = activityId
-
-  try {
-    const response = await axios.get(`${API_BASE}/actividad/${activityId}/boletas`, {
-      params: { voluntario_id: volunteer.value?.id }
-    })
-    volunteerBoletaItems.value = Array.isArray(response.data) ? response.data : []
-  } catch (error) {
-    volunteerBoletaItems.value = []
-    show_alerta('No se pudieron cargar tus boletas de esta actividad.', 'error')
-  } finally {
-    volunteerBoletasLoadingActivityId.value = null
-  }
-}
-
-async function toggleVolunteerBoletasPanel(activity) {
-  if (volunteerBoletasActivityId.value === activity.id) {
-    volunteerBoletasActivityId.value = null
-    volunteerBoletaItems.value = []
-    volunteerBoletaForm.value = createEmptyVolunteerBoletaForm()
-    return
-  }
-
-  volunteerBoletasActivityId.value = activity.id
-  volunteerBoletaForm.value = createEmptyVolunteerBoletaForm()
-  await loadVolunteerBoletas(activity.id)
-}
-
-async function uploadVolunteerBoleta(activity) {
-  if (!isVolunteerBoletaFormValid.value || !volunteer.value?.id) {
-    show_alerta('Completa detalle, monto y archivo de la boleta.', 'warning')
-    return
-  }
-
-  volunteerBoletaSubmitting.value = true
-
-  try {
-    const formData = new FormData()
-    formData.append('voluntario_id', String(volunteer.value.id))
-    formData.append('archivo', volunteerBoletaForm.value.file)
-    formData.append('detalle_compra', volunteerBoletaForm.value.detalle_compra.trim())
-    formData.append('monto', String(volunteerBoletaForm.value.monto))
-
-    if (volunteerBoletaForm.value.fecha_compra) {
-      formData.append('fecha_compra', volunteerBoletaForm.value.fecha_compra)
-    }
-
-    await axios.post(`${API_BASE}/actividad/${activity.id}/boletas`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
-
-    volunteerBoletaForm.value = createEmptyVolunteerBoletaForm()
-    await loadVolunteerBoletas(activity.id)
-    show_alerta('Boleta registrada correctamente.', 'success')
-  } catch (error) {
-    const message = error.response?.data?.message || 'No se pudo registrar la boleta.'
-    show_alerta(message, 'error')
-  } finally {
-    volunteerBoletaSubmitting.value = false
-  }
-}
-
 function openCreateEditor() {
   editorRecord.value = null
   editorSection.value = null
@@ -1218,6 +1249,16 @@ function openSectionEditor(section) {
 
   editorRecord.value = selectedAnnual.value
   editorSection.value = section
+  isEditorOpen.value = true
+}
+
+function openPersonalDataEditor() {
+  if (!selectedAnnual.value || !canEditOwnPersonalData.value) {
+    return
+  }
+
+  editorRecord.value = selectedAnnual.value
+  editorSection.value = 'personal'
   isEditorOpen.value = true
 }
 
@@ -1245,11 +1286,11 @@ async function deleteSelectedAnnual() {
 
   const result = await Swal.fire({
     title: `Eliminar hoja anual ${selectedAnnual.value.anio}?`,
-    text: 'Se perdera la informacion registrada para ese periodo.',
+    text: 'Se perderá la información registrada para ese periodo.',
     icon: 'warning',
     iconHtml: '×',
     showCancelButton: true,
-    confirmButtonText: 'Si, eliminar',
+    confirmButtonText: 'Sí, eliminar',
     cancelButtonText: 'Cancelar',
     buttonsStyling: false,
     customClass: {
@@ -1410,6 +1451,48 @@ function formatAttendance(record) {
   return `${Number(hours)} h`
 }
 
+function formatActivityDateRange(start, end) {
+  if (!start && !end) {
+    return 'Sin registro'
+  }
+
+  const formatSingleDate = (value) => {
+    if (!value) {
+      return 'Sin registro'
+    }
+
+    const [year, month, day] = String(value).slice(0, 10).split('-')
+
+    if (!year || !month || !day) {
+      return String(value)
+    }
+
+    return `${day}-${month}-${year}`
+  }
+
+  const startLabel = formatSingleDate(start)
+  const endLabel = formatSingleDate(end)
+
+  if (start && end && start !== end) {
+    return `${startLabel} - ${endLabel}`
+  }
+
+  return startLabel !== 'Sin registro' ? startLabel : endLabel
+}
+
+function formatVolunteerActivityHours(value) {
+  if (value === null || value === undefined || value === '') {
+    return 'Sin registro'
+  }
+
+  const numericValue = Number(value)
+
+  if (!Number.isFinite(numericValue)) {
+    return 'Sin registro'
+  }
+
+  return `${numericValue % 1 === 0 ? numericValue.toFixed(0) : numericValue.toFixed(2)} h`
+}
 function normalizeSearch(value) {
   return String(value || '')
     .toLowerCase()
@@ -1453,6 +1536,17 @@ function matchesSearch(value) {
   text-transform: uppercase;
 }
 
+.panel-kicker--section-title {
+  color: #173b70;
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(1.35rem, 1.05rem + 0.9vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+  margin-bottom: 0.45rem;
+  text-transform: none;
+}
+
 .hero-panel h2,
 .panel-header h3 {
   margin: 0;
@@ -1462,6 +1556,26 @@ function matchesSearch(value) {
 .panel-header h3 {
   font-size: clamp(1.35rem, 1.1rem + 0.55vw, 1.72rem);
   line-height: 1.2;
+}
+
+.section-personal-panel__title {
+  color: #f5333f;
+}
+.panel-record-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0.48rem 0.95rem;
+  border: 1.5px solid #f5333f;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #f5333f;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.98rem;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .hero-layout,
@@ -1474,14 +1588,29 @@ function matchesSearch(value) {
   display: grid;
 }
 
-.hero-layout {
-  grid-template-columns: 170px minmax(0, 1fr) 320px;
-  grid-template-areas:
-    "rail panel actions"
-    "rail toolbar toolbar";
-  gap: 1.2rem;
+.hero-stage {
+  display: block;
   margin-bottom: 1rem;
-  align-items: stretch;
+}
+
+.hero-stage::after {
+  content: "";
+  display: block;
+  clear: both;
+}
+
+.hero-main {
+  min-width: 0;
+  display: grid;
+  gap: 1rem;
+  margin-right: calc(21.5rem + 1.2rem);
+}
+
+.hero-layout {
+  grid-template-columns: 170px minmax(0, 1fr);
+  grid-template-areas: "rail panel";
+  gap: 1.2rem;
+  align-items: center;
 }
 
 .hero-rail {
@@ -1491,8 +1620,10 @@ function matchesSearch(value) {
   grid-template-areas:
     "back year"
     "photo photo";
+  grid-template-rows: auto 1fr;
   gap: 0.7rem;
   align-items: start;
+  align-self: center;
 }
 
 .back-button,
@@ -1545,11 +1676,16 @@ function matchesSearch(value) {
 
 .photo-card {
   grid-area: photo;
+  width: min(100%, 10.25rem);
+  justify-self: center;
+  align-self: center;
+  margin-top: 0;
   padding: 0.4rem;
   display: grid;
   gap: 0.4rem;
   align-content: start;
 }
+
 
 .photo-frame {
   width: 100%;
@@ -1644,27 +1780,36 @@ function matchesSearch(value) {
   background: #fff;
 }
 .hero-side {
+  width: 7.2rem;
+  min-width: 7.2rem;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: stretch;
+  justify-self: end;
   gap: 0.6rem;
 }
-
 .hero-brand-actions {
-  display: none;
-  justify-items: start;
+  display: grid;
+  justify-items: stretch;
+  gap: 0.55rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.hero-brand-action {
+.hero-actions-row {
+  display: none;
+}
+
+.hero-brand-actions .hero-brand-action {
   width: 100%;
-  max-width: 6.3rem;
+  max-width: 100%;
+  justify-self: end;
   border-radius: 12px;
-  min-height: 36px;
-  padding: 0.45rem 0.65rem;
-  font-size: 0.8rem;
-  line-height: 1.2;
+  min-height: 34px;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.76rem;
+  line-height: 1.15;
   white-space: normal;
-  text-align: center;
 }
 
 
@@ -1717,6 +1862,7 @@ function matchesSearch(value) {
   display: block;
   font-size: 1.22rem;
   line-height: 1.35;
+  color: #323232;
 }
 
 .hero-stat strong {
@@ -1730,7 +1876,8 @@ function matchesSearch(value) {
 }
 
 .toolbar-row--hero-outside {
-  grid-area: toolbar;
+  width: 100%;
+  max-width: none;
   margin-bottom: 0;
 }
 
@@ -1775,7 +1922,14 @@ function matchesSearch(value) {
   outline: none;
   background: transparent;
   color: #173b70;
+  -webkit-text-fill-color: #173b70;
+  caret-color: #173b70;
   font-size: 1.08rem;
+}
+
+.search-shell input::placeholder {
+  color: #7d8ba0;
+  opacity: 1;
 }
 
 .status-pill,
@@ -1802,18 +1956,28 @@ function matchesSearch(value) {
 }
 
 .content-grid {
-  grid-template-columns: minmax(0, 1fr) minmax(18.5rem, 21.5rem);
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: 1fr;
+  margin-right: 0;
   gap: 0.95rem;
   align-items: start;
 }
 
-.main-column,
-.sidebar-column {
+.main-column {
+  width: 100%;
+  min-width: 0;
   display: grid;
   gap: 1.2rem;
 }
 
+.main-column > * {
+  width: 100%;
+}
+
 .sidebar-column {
+  display: none;
+  gap: 1.2rem;
   width: 100%;
   max-width: 21.5rem;
   justify-self: stretch;
@@ -1822,6 +1986,19 @@ function matchesSearch(value) {
 .history-panel {
   min-width: 0;
   width: 100%;
+}
+
+.hero-history-column {
+  float: right;
+  width: 21.5rem;
+  margin-left: 1.2rem;
+  display: grid;
+  gap: 1.2rem;
+  align-content: start;
+}
+
+.hero-history-panel {
+  min-height: 100%;
 }
 
 .history-modal {
@@ -2212,7 +2389,7 @@ function matchesSearch(value) {
   border-radius: 16px;
   background: #f8fafc;
   border: 1px solid #e7edf4;
-  color: #173b70;
+  color: #323232;
   white-space: pre-line;
   line-height: 1.65;
   font-size: 1.02rem;
@@ -2254,25 +2431,143 @@ function matchesSearch(value) {
   opacity: 0.6;
 }
 
-.section-upload-button {
+.volunteer-activities-grid {
+  grid-template-columns: 1fr;
+  gap: 0.95rem;
+}
+
+.volunteer-activity-card {
+  display: grid;
+  gap: 0.95rem;
+  padding: 1.05rem 1.05rem 0.95rem;
+  background: #ffffff;
+  border: 1px solid #e7edf4;
+  box-shadow: 0 12px 26px rgba(15, 47, 95, 0.08);
+}
+
+.volunteer-activity-card__header {
+  display: grid;
+  gap: 0.72rem;
+}
+
+.volunteer-activity-card__name {
+  margin: 0;
+  color: #173b70;
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(1.05rem, 0.98rem + 0.22vw, 1.28rem);
+  font-weight: 800;
+  line-height: 1.18;
+}
+
+.volunteer-activity-card__type {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
-  min-width: 10.75rem;
-  max-width: 100%;
-  min-height: 38px;
-  padding: 0.45rem 0.9rem;
-  border: 1px solid #ff3743;
+  width: fit-content;
+  min-height: 34px;
+  padding: 0.38rem 0.9rem;
   border-radius: 999px;
-  background: #fff5f5;
-  color: #cf2530;
-  font-size: 0.92rem;
+  background: #f5333f;
+  color: #ffffff;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.93rem;
   font-weight: 700;
+  line-height: 1;
+}
+
+.volunteer-activity-card__details {
+  display: grid;
+  gap: 0;
+}
+
+.volunteer-activity-card__item {
+  display: grid;
+  grid-template-columns: 2.4rem minmax(0, 1fr);
+  gap: 0.82rem;
+  align-items: center;
+  padding: 0.78rem 0;
+  border-top: 1px solid #e7edf4;
+}
+
+.volunteer-activity-card__item:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.volunteer-activity-card__item:last-child {
+  padding-bottom: 0;
+}
+
+.volunteer-activity-card__icon {
+  width: 2.4rem;
+  height: 2.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.85rem;
+  color: #f5333f;
+  background: #fff5f5;
+  font-size: 1.1rem;
+}
+
+.volunteer-activity-card__content {
+  min-width: 0;
+  display: grid;
+  gap: 0.16rem;
+}
+
+.volunteer-activity-card__label {
+  color: #173b70;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.volunteer-activity-card__value {
+  color: #323232;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.38;
+  word-break: break-word;
+}
+
+.volunteer-activities-pagination {
+  margin-top: 0.95rem;
+}.section-upload-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 11.25rem;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 0.58rem 1rem;
+  border: 1px solid #f5333f;
+  border-radius: 0.95rem;
+  background: #f5333f;
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(245, 51, 63, 0.18);
+  font-size: 0.94rem;
+  font-weight: 800;
+  line-height: 1;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.section-upload-button:hover,
+.section-upload-button:focus-visible {
+  background: #dc2430;
+  border-color: #dc2430;
+  color: #ffffff;
+  box-shadow: 0 12px 28px rgba(220, 36, 48, 0.24);
+  transform: translateY(-1px);
 }
 
 .section-upload-button:disabled {
   opacity: 0.55;
+  box-shadow: none;
+  transform: none;
 }
 
 .annual-list {
@@ -2306,85 +2601,92 @@ function matchesSearch(value) {
   font-size: 1.08rem;
 }
 
-.receipt-activity-list,
-.receipt-profile-list {
-  display: grid;
-  gap: 0.9rem;
+
+@media (min-width: 861px) and (max-width: 1439.98px) {
+  .volunteer-activities-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
-.receipt-activity-card,
-.receipt-profile-card {
-  border: 1px solid #e3eaf2;
-  border-radius: 18px;
-  background: #fbfdff;
+@media (min-width: 1440px) {
+  .volunteer-activities-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
-.receipt-activity-card {
-  padding: 0.95rem;
-  display: grid;
-  gap: 0.85rem;
-}
+@media (min-width: 1200px) and (max-width: 1439.98px) {
+  .hero-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 7rem;
+    align-items: start;
+    gap: 0.85rem;
+  }
 
-.receipt-activity-card__header,
-.receipt-profile-card__top,
-.receipt-upload-form__actions {
+  .hero-side {
+  width: 7.2rem;
+  min-width: 7.2rem;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.8rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: stretch;
+  justify-self: end;
+  gap: 0.6rem;
 }
-
-.receipt-activity-card__header strong,
-.receipt-profile-card__top strong {
-  color: #163a69;
-}
-
-.receipt-activity-card__header p,
-.receipt-profile-card p {
-  margin: 0.2rem 0 0;
-  color: #617389;
-}
-
-.receipt-activity-card__body {
+.hero-brand-actions {
   display: grid;
-  gap: 0.85rem;
+  justify-items: stretch;
+  gap: 0.55rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.receipt-upload-form {
-  display: grid;
-  gap: 0.75rem;
-  padding: 0.9rem;
-  border-radius: 16px;
-  background: #f8fafc;
-  border: 1px solid #e4ebf3;
+.hero-actions-row {
+  display: none;
 }
 
-.receipt-upload-form__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+.hero-brand-actions .hero-brand-action {
+  width: 100%;
+  max-width: 100%;
+  justify-self: end;
+  border-radius: 12px;
+  min-height: 34px;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.76rem;
+  line-height: 1.15;
+  white-space: normal;
 }
 
-.receipt-profile-card {
-  padding: 0.9rem 0.95rem;
-}
 
-.empty-inline--nested {
-  background: #f8fafc;
+.hero-brand img {
+    width: 64px;
+  }
+
+  .hero-brand-actions {
+    width: 100%;
+    justify-items: stretch;
+    gap: 0.34rem;
+  }
+
+  .hero-brand-actions .hero-brand-action {
+    width: 100%;
+    max-width: 100%;
+    min-height: 30px;
+    padding: 0.35rem 0.3rem;
+    font-size: 0.62rem;
+    line-height: 1.08;
+  }
 }
 
 @media (min-width: 1600px) {
-  .fact-grid--personal {
+.fact-grid--personal {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .hero-layout {
-    grid-template-columns: 182px minmax(0, 1fr) 340px;
+    grid-template-columns: 182px minmax(0, 1fr);
   }
 
   .content-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(19rem, 22rem);
+    grid-template-columns: 1fr;
   }
 
   .hero-panel h2 {
@@ -2392,303 +2694,188 @@ function matchesSearch(value) {
   }
 }
 
-@media (max-width: 1439.98px) {
-  .content-grid {
+@media (max-width: 1199.98px) {
+  .hero-stage {
+    display: grid;
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
-  .sidebar-column {
+  .hero-main {
+    display: contents;
+    margin-right: 0;
+  }
+
+  .hero-history-column {
+    display: contents;
+    float: none;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .hero-history-panel {
+    order: 3;
+    width: 100%;
     max-width: none;
   }
 
   .hero-layout {
-    grid-template-columns: 170px minmax(0, 1fr);
-    grid-template-areas:
-      "rail panel"
-      "toolbar toolbar";
-    align-items: start;
-  }
-
-  .hero-panel {
-    min-height: 0;
-  }
-
-  .hero-top {
-    align-items: flex-start;
-    flex-wrap: nowrap;
-    gap: 1rem;
-  }
-
-  .hero-side {
-    width: 7.8rem;
-    min-width: 7.8rem;
-    align-items: center;
-    justify-self: center;
-    gap: 0.55rem;
-  }
-
-  .hero-brand {
-    width: 104px;
-    min-width: 104px;
-    height: 84px;
-    margin-left: 0;
-    align-self: center;
-  }
-
-  .hero-brand img {
-    width: 82px;
-  }
-
-  .history-panel--sidebar {
-    display: none;
-  }
-
-  .photo-history-trigger {
-    display: inline-flex;
-    width: max-content;
-    max-width: 100%;
-    min-width: 19.5rem;
-    min-height: 33px;
-    padding: 0 1rem;
-    font-size: 0.68rem;
-    white-space: nowrap;
-    flex-wrap: nowrap;
-    justify-content: center;
-    align-self: flex-start;
-  }
-
-  .hero-brand-actions {
-    display: grid;
-    justify-items: center;
-    gap: 0.65rem;
-    justify-self: center;
-    align-self: center;
-    width: 100%;
-    padding-left: 0;
-    padding-right: 0;
-    box-sizing: border-box;
-  }
-
-  .hero-brand-action {
-    max-width: 6rem;
-    border-radius: 999px;
-    min-height: 38px;
-    padding: 0.42rem 0.52rem;
-    font-size: 0.8rem;
-    font-weight: 700;
-    line-height: 1.18;
-  }
-
-  .action-panel--hero {
-    display: none;
-  }
-
-}
-
-@media (max-width: 991.98px) {
-  .content-grid,
-  .hero-layout,
-  .split-grid,
-  .fact-grid,
-  .hero-stats,
-  .commission-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .hero-layout {
-    grid-template-columns: minmax(8.75rem, 9.75rem) minmax(0, 1fr);
-    grid-template-areas:
-      "rail panel"
-      "toolbar toolbar";
-    gap: 0.95rem;
-    align-items: start;
-  }
-
-  .hero-rail {
-    grid-template-columns: 52px minmax(0, 1fr);
-    grid-template-areas:
-      "back year"
-      "photo photo";
-    gap: 0.65rem;
-    align-items: start;
-  }
-
-  .photo-card {
-    grid-column: 1 / -1;
-    width: 100%;
-    justify-self: stretch;
-  }
-
-  .toolbar-row,
-  .panel-header {
-    align-items: stretch;
-  }
-
-  .hero-panel {
-    padding: 1.15rem 1.2rem;
-    min-height: 0;
-  }
-
-  .hero-panel h2 {
-    font-size: clamp(2.15rem, 1.8rem + 1.3vw, 2.8rem);
-    line-height: 1.08;
-  }
-
-  .hero-top {
-    align-items: flex-start;
-    flex-wrap: nowrap;
-    gap: 1rem;
-  }
-
-  .hero-meta {
-    gap: 0.55rem 0.9rem;
-    margin-bottom: 0.45rem;
-  }
-  .hero-side {
-    width: 7.1rem;
-    min-width: 7.1rem;
-    align-items: center;
-    justify-self: center;
-    padding-left: 0;
-    padding-right: 0;
-    gap: 0.55rem;
-  }
-
-  .hero-brand {
-    width: 100px;
-    min-width: 100px;
-    height: 82px;
-    margin-left: 0;
-    align-self: center;
-  }
-
-  .hero-brand img {
-    width: 82px;
-  }
-
-  .hero-brand-actions {
-    display: grid;
-    justify-items: center;
-    gap: 0.5rem;
-    width: 100%;
-    padding-left: 0;
-    padding-right: 0;
-    box-sizing: border-box;
-  }
-
-
-  .hero-brand-action {
-    max-width: 5.65rem;
-    border-radius: 999px;
-    min-height: 38px;
-    padding: 0.42rem 0.46rem;
-    font-size: 0.82rem;
-    font-weight: 700;
-    line-height: 1.18;
-  }
-
-
-  .action-panel--hero {
-    display: none;
-  }
-
-  .fact-grid--personal {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .fact-tile--wide,
-  .commission-item--wide {
-    grid-column: auto;
-  }
-
-  .fact-grid--personal .fact-tile--span-2 {
-    grid-column: span 2;
-  }
-
-  .panel-header--history,
-  .history-controls {
-    justify-items: stretch;
-  }
-
-  .history-panel__actions,
-  .history-panel__actions-placeholder {
-    min-height: 0;
-  }
-
-  .history-panel__actions {
-    justify-content: flex-start;
-  }
-
-  .history-controls--footer {
-    justify-items: initial;
-    justify-content: flex-end;
-    align-items: center;
-    flex-wrap: nowrap;
-  }
-
-  .section-personal-panel {
     order: 1;
+    grid-template-columns: minmax(7.5rem, 9rem) minmax(0, 1fr);
+    gap: 1rem;
+    align-items: center;
   }
 
-  .section-commission-panel {
+  .toolbar-row--hero-outside {
     order: 2;
   }
 
-  .section-titles-group {
-    order: 3;
-  }
-
-  .section-sanctions-group {
+  .content-grid {
     order: 4;
   }
 
-  .section-comments-panel {
-    order: 5;
+  .hero-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(6.6rem, 11vw, 7.8rem);
+    align-items: start;
+    gap: 0.75rem;
   }
 
-  .history-controls--footer .history-nav {
-  justify-content: flex-start;
-  flex: 0 0 auto;
-}
-
-.history-nav {
-    justify-content: space-between;
+  .hero-panel {
+    min-height: 208px;
   }
-}
-@media (max-width: 767.98px) {
 
-  .history-panel--sidebar {
+  .hero-panel h2 {
+    font-size: clamp(1.9rem, 2.9vw, 2.8rem);
+    line-height: 1;
+  }
+
+  .hero-side {
+  width: 7.2rem;
+  min-width: 7.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-self: end;
+  gap: 0.6rem;
+}
+.hero-brand-actions {
+  display: grid;
+  justify-items: stretch;
+  gap: 0.55rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.hero-actions-row {
+  display: none;
+}
+
+.hero-brand-actions .hero-brand-action {
+  width: 100%;
+  max-width: 100%;
+  justify-self: end;
+  border-radius: 12px;
+  min-height: 34px;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.76rem;
+  line-height: 1.15;
+  white-space: normal;
+}
+
+
+.hero-brand img {
+    width: clamp(56px, 6vw, 68px);
+  }
+
+  .hero-brand-actions {
+    display: grid;
+    justify-items: center;
+    gap: clamp(0.3rem, 0.7vw, 0.5rem);
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .hero-brand-actions .hero-brand-action {
+    width: 100%;
+    max-width: 100%;
+    min-height: clamp(30px, 3.2vw, 38px);
+    padding: clamp(0.34rem, 0.8vw, 0.5rem) clamp(0.3rem, 0.6vw, 0.45rem);
+    font-size: clamp(0.58rem, 0.95vw, 0.78rem);
+    font-weight: 800;
+    line-height: 1.08;
+  }
+
+  .hero-actions-row {
     display: none;
   }
 
-  .history-modal {
-    display: flex;
+  .photo-history-trigger {
+    display: none;
+  }
+
+  .hero-history-column .hero-recognition-panel {
+    display: none;
+  }
+
+  .sidebar-column.sidebar-column--mobile-only {
+    display: grid;
+    order: 99;
+    width: 100%;
+    max-width: none;
+    margin-top: 0;
+    gap: 0.9rem;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .hero-stage {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.95rem;
+  }
+
+  .hero-main {
+    display: contents;
+    margin-right: 0;
+  }
+
+  .hero-history-column {
+    display: contents;
+    float: none;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .hero-history-panel {
+    order: 3;
+    width: 100%;
+    max-width: none;
   }
 
   .hero-layout {
+    order: 1;
     grid-template-columns: minmax(5.9rem, 6.3rem) minmax(0, 1fr);
-    grid-template-areas:
-      "rail panel"
-      "toolbar toolbar";
+    grid-template-areas: "rail panel";
     gap: 0.7rem;
-    align-items: start;
+    align-items: center;
+  }
+
+  .toolbar-row--hero-outside {
+    order: 2;
+  }
+
+  .content-grid {
+    order: 4;
   }
 
   .photo-history-trigger {
-    display: inline-flex;
-    grid-column: 1 / -1;
-    width: max-content;
-    max-width: 100%;
-    min-width: 19.5rem;
-    min-height: 33px;
-    padding: 0 1rem;
-    font-size: 0.68rem;
-    white-space: nowrap;
-    flex-wrap: nowrap;
-    justify-content: center;
-    justify-self: start;
+    display: none;
   }
-
 
   .hero-rail {
     display: grid;
@@ -2698,6 +2885,7 @@ function matchesSearch(value) {
       "photo photo";
     gap: 0.5rem;
     align-items: start;
+    align-self: center;
   }
 
   .back-button,
@@ -2720,10 +2908,12 @@ function matchesSearch(value) {
 
   .photo-card {
     grid-column: 1 / -1;
-    width: 100%;
+    width: min(100%, 6.2rem);
     max-width: none;
-    justify-self: stretch;
-    margin-inline: 0;
+    justify-self: center;
+    align-self: center;
+    margin-inline: auto;
+    margin-top: 0;
     padding: 0.28rem;
     gap: 0.28rem;
     border-radius: 14px;
@@ -2739,11 +2929,15 @@ function matchesSearch(value) {
     font-weight: 800;
   }
 
+  .hero-panel {
+    min-height: 208px;
+  }
+
   .hero-top {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 7.6rem;
+    grid-template-columns: minmax(0, 1fr) 6.1rem;
     align-items: start;
-    gap: 0.7rem;
+    gap: 0.55rem;
   }
 
   .hero-copy {
@@ -2753,105 +2947,114 @@ function matchesSearch(value) {
   .hero-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.12rem 0.45rem;
-    margin-bottom: 0.24rem;
+    gap: 0.08rem 0.4rem;
+    margin-bottom: 0.18rem;
   }
 
   .hero-kicker {
     margin-bottom: 0;
-    font-size: 0.66rem;
-    line-height: 1.15;
-    letter-spacing: 0.05em;
+    font-size: 0.62rem;
+    line-height: 1.12;
+    letter-spacing: 0.04em;
   }
 
   .hero-panel h2 {
-    font-size: clamp(1.04rem, 5.1vw, 1.6rem);
-    line-height: 1.02;
-    margin-bottom: 0.34rem;
+    font-size: clamp(0.98rem, 4.8vw, 1.52rem);
+    line-height: 0.98;
+    margin-bottom: 0.28rem;
   }
 
   .hero-stats {
-    gap: 0.22rem;
+    gap: 0.18rem;
   }
 
   .hero-stat {
-    gap: 0.1rem;
+    gap: 0.08rem;
     padding-block: 0;
   }
 
   .hero-stat span {
-    font-size: 0.68rem;
-    line-height: 1.15;
-    margin-bottom: 0.04rem;
+    font-size: 0.64rem;
+    line-height: 1.1;
+    margin-bottom: 0.02rem;
   }
 
   .hero-stat strong {
-    font-size: 0.88rem;
-    line-height: 1.15;
+    font-size: 0.84rem;
+    line-height: 1.1;
   }
 
   .hero-side {
-    width: 6.2rem;
-    min-width: 6.2rem;
-    align-items: center;
-    justify-content: flex-start;
-    justify-self: center;
-    align-self: start;
-    gap: 0.2rem;
-    padding-left: 0;
-    padding-right: 0;
-    margin-top: -0.9rem;
-    box-sizing: border-box;
-  }
+  width: 7.2rem;
+  min-width: 7.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-self: end;
+  gap: 0.6rem;
+}
+.hero-brand-actions {
+  display: grid;
+  justify-items: stretch;
+  gap: 0.55rem;
+  width: 100%;
+  box-sizing: border-box;
+}
 
-  .hero-brand {
-    width: 100%;
-    min-width: 0;
-    height: 98px;
-    padding: 0;
-    margin-top: -0.7rem;
-    border: none;
-    background: transparent;
-    box-shadow: none;
-    border-radius: 0;
-    align-self: center;
-    flex-direction: column;
-    gap: 0.08rem;
-    text-align: center;
-  }
+.hero-actions-row {
+  display: none;
+}
 
-  .hero-brand img {
-    width: 84px;
+.hero-brand-actions .hero-brand-action {
+  width: 100%;
+  max-width: 100%;
+  justify-self: end;
+  border-radius: 12px;
+  min-height: 34px;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.76rem;
+  line-height: 1.15;
+  white-space: normal;
+}
+
+
+.hero-brand img {
+    width: 62px;
   }
 
   .hero-brand-actions {
     display: grid;
     justify-items: center;
-    align-content: start;
-    gap: 0.34rem;
+    gap: 0.28rem;
     width: 100%;
-    padding-left: 0;
-    padding-right: 0;
-    padding-top: 0;
-    margin-top: -0.4rem;
-    box-sizing: border-box;
+    max-width: 100%;
   }
 
-
-  .hero-brand-action {
+  .hero-brand-actions .hero-brand-action {
     width: 100%;
-    max-width: 5.35rem;
-    border-radius: 999px;
-    min-height: 33px;
-    padding: 0.4rem 0.42rem;
-    font-size: 0.64rem;
+    max-width: 100%;
+    min-height: 28px;
+    padding: 0.34rem 0.3rem;
+    font-size: 0.56rem;
     font-weight: 800;
-    line-height: 1.15;
+    line-height: 1.08;
   }
 
+  .hero-actions-row {
+    display: none;
+  }
 
-  .toolbar-row--hero-outside {
-    margin-top: 0.15rem;
+  .hero-history-column .hero-recognition-panel {
+    display: none;
+  }
+
+  .sidebar-column.sidebar-column--mobile-only {
+    display: grid;
+    order: 99;
+    width: 100%;
+    max-width: none;
+    margin-top: 0;
+    gap: 0.7rem;
   }
 
   .search-shell {
@@ -2861,6 +3064,9 @@ function matchesSearch(value) {
   }
 
   .search-shell input {
+    color: #173b70;
+    -webkit-text-fill-color: #173b70;
+    caret-color: #173b70;
     font-size: 0.9rem;
   }
 
@@ -2963,6 +3169,42 @@ function matchesSearch(value) {
   box-shadow: 0 0 0 3px rgba(23, 59, 112, 0.12);
 }
 </style>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

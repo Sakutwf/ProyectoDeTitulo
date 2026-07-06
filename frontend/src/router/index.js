@@ -9,6 +9,8 @@ import DocumentoActividadPdfView from '../views/DocumentoActividadPdfView.vue'
 import LoginView from '../views/LoginView.vue'
 import AccessSelectionView from '../views/AccessSelectionView.vue'
 import VolunteerActivitiesView from '../views/VolunteerActivitiesView.vue'
+import VolunteerGalleryView from '../views/VolunteerGalleryView.vue'
+import VolunteerBoletasView from '../views/VolunteerBoletasView.vue'
 import DocumentosView from '../views/DocumentosView.vue'
 import GaleriaFotosView from '../views/GaleriaFotosView.vue'
 import store from '../store'
@@ -81,6 +83,18 @@ const routes = [
     path: '/mis-actividades',
     name: 'volunteer-activities',
     component: VolunteerActivitiesView,
+    meta: { requiresAuth: true, roles: ['voluntario'], experience: 'volunteer' }
+  },
+  {
+    path: '/mi-galeria',
+    name: 'volunteer-gallery',
+    component: VolunteerGalleryView,
+    meta: { requiresAuth: true, roles: ['voluntario'], experience: 'volunteer' }
+  },
+  {
+    path: '/mis-boletas',
+    name: 'volunteer-boletas',
+    component: VolunteerBoletasView,
     meta: { requiresAuth: true, roles: ['voluntario'], experience: 'volunteer' }
   },
   {
@@ -171,5 +185,3 @@ router.beforeEach((to, from, next) => {
 })
 
 export default router
-
-

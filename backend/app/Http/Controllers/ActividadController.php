@@ -252,7 +252,7 @@ class ActividadController extends Controller
             'voluntario_id' => ['nullable', 'integer', 'exists:voluntarios,id'],
         ]);
 
-        $query = $actividad->boletasViatico()->with(['archivo', 'voluntario.user', 'revisadoPor.voluntario']);
+        $query = $actividad->boletasViatico()->with(['archivo', 'voluntario.user', 'revisadoPor.voluntario', 'actividad:id,nombre']);
 
         if ($request->filled('voluntario_id')) {
             $query->where('voluntario_id', $request->integer('voluntario_id'));
@@ -320,9 +320,64 @@ class ActividadController extends Controller
         ]);
 
         return response()->json(
-            $boleta->load(['archivo', 'voluntario.user']),
+            $boleta->load(['archivo', 'voluntario.user', 'actividad:id,nombre']),
             201
         );
+    }
+
+    public function actualizarBoleta(Request $request, BoletaViatico $boletaViatico)
+    {
+        $actor = $request->user()?->loadMissing('roles', 'voluntario');
+
+        abort_unless($this->canManageBoleta($actor, $boletaViatico), 403, 'No tienes permisos para actualizar esta boleta.');
+
+        $data = $request->validate([
+            'actividad_id' => ['required', 'integer', 'exists:actividades,id'],
+            'archivo' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+            'detalle_compra' => ['required', 'string', 'max:255'],
+            'monto' => ['required', 'numeric', 'min:0'],
+            'fecha_compra' => ['nullable', 'date'],
+        ]);
+
+        $actividad = Actividad::findOrFail($data['actividad_id']);
+        $this->ensureVolunteerBelongsToActivity($actividad, (int) $boletaViatico->voluntario_id);
+
+        $album = $this->ensureReceiptAlbum($actividad, $actor?->id ?? $boletaViatico->voluntario?->user_id);
+
+        if ($request->hasFile('archivo')) {
+            $archivo = $this->replaceBoletaArchivo($request, $boletaViatico, $album, $data['detalle_compra']);
+            $boletaViatico->archivo_id = $archivo->id;
+        } elseif ($boletaViatico->archivo) {
+            $boletaViatico->archivo->update([
+                'entidad_id' => $album->id,
+                'descripcion' => $data['detalle_compra'],
+            ]);
+        }
+
+        $boletaViatico->actividad_id = $actividad->id;
+        $boletaViatico->detalle_compra = $data['detalle_compra'];
+        $boletaViatico->monto = $data['monto'];
+        $boletaViatico->fecha_compra = $data['fecha_compra'] ?? $boletaViatico->fecha_compra ?? now()->toDateString();
+        $boletaViatico->save();
+
+        return response()->json(
+            $boletaViatico->fresh()->load(['archivo', 'voluntario.user', 'revisadoPor.voluntario', 'actividad:id,nombre']),
+            200
+        );
+    }
+
+    public function eliminarBoleta(Request $request, BoletaViatico $boletaViatico)
+    {
+        $actor = $request->user()?->loadMissing('roles', 'voluntario');
+
+        abort_unless($this->canManageBoleta($actor, $boletaViatico), 403, 'No tienes permisos para eliminar esta boleta.');
+
+        $this->deleteBoletaArchivo($boletaViatico->archivo);
+        $boletaViatico->delete();
+
+        return response()->json([
+            'message' => 'Boleta eliminada correctamente.',
+        ], 200);
     }
 
     private function ensureReceiptAlbum(Actividad $actividad, ?int $creatorId): Album
@@ -337,6 +392,74 @@ class ActividadController extends Controller
                 'creado_por' => $creatorId,
             ]
         );
+    }
+
+    private function ensureVolunteerBelongsToActivity(Actividad $actividad, int $voluntarioId): void
+    {
+        $isLinkedToActivity = $actividad->voluntarios()
+            ->where('voluntarios.id', $voluntarioId)
+            ->exists();
+
+        if (! $isLinkedToActivity) {
+            throw ValidationException::withMessages([
+                'actividad_id' => ['El voluntario no pertenece a la actividad seleccionada.'],
+            ]);
+        }
+    }
+
+    private function canManageBoleta($actor, BoletaViatico $boletaViatico): bool
+    {
+        if (! $actor) {
+            return false;
+        }
+
+        $actor->loadMissing('roles', 'voluntario');
+        $boletaViatico->loadMissing('voluntario');
+
+        $isAdmin = $actor->roles->contains(fn ($role) => in_array($role->clave, ['administrador', 'secretario-directiva'], true));
+
+        if ($isAdmin) {
+            return true;
+        }
+
+        return (int) ($actor->voluntario?->id ?? 0) === (int) $boletaViatico->voluntario_id
+            || (int) $actor->id === (int) ($boletaViatico->voluntario?->user_id ?? 0);
+    }
+
+    private function replaceBoletaArchivo(Request $request, BoletaViatico $boletaViatico, Album $album, string $descripcion): Archivo
+    {
+        $this->deleteBoletaArchivo($boletaViatico->archivo);
+
+        Storage::disk('public')->makeDirectory('albumes/'.$album->id.'/boletas');
+
+        $file = $request->file('archivo');
+        $path = $file->store('albumes/'.$album->id.'/boletas', 'public');
+
+        return Archivo::create([
+            'entidad' => 'album',
+            'entidad_id' => $album->id,
+            'categoria' => 'boleta_album',
+            'ruta' => $path,
+            'nombre_original' => $file->getClientOriginalName(),
+            'extension' => $file->getClientOriginalExtension(),
+            'mime_type' => $file->getClientMimeType(),
+            'tamano' => $file->getSize(),
+            'descripcion' => $descripcion,
+            'subido_por' => $request->user()?->id ?? $boletaViatico->voluntario?->user_id,
+        ]);
+    }
+
+    private function deleteBoletaArchivo(?Archivo $archivo): void
+    {
+        if (! $archivo) {
+            return;
+        }
+
+        if ($archivo->ruta) {
+            Storage::disk('public')->delete($archivo->ruta);
+        }
+
+        $archivo->delete();
     }
 
     private function normalizeActividadAuditReferences(Request $request): void
@@ -378,6 +501,29 @@ class ActividadController extends Controller
             ->all();
 
         $request->merge(['voluntarios_detalle' => $normalizedDetails]);
+    }
+
+    private function normalizeTimeField(Request $request, string $field): void
+    {
+        $value = $request->input($field);
+
+        if (! is_string($value)) {
+            return;
+        }
+
+        $trimmedValue = trim($value);
+
+        if ($trimmedValue === '') {
+            return;
+        }
+
+        try {
+            $normalizedTime = new \DateTimeImmutable($trimmedValue);
+        } catch (\Exception $exception) {
+            return;
+        }
+
+        $request->merge([$field => $normalizedTime->format('H:i')]);
     }
 
     private function normalizeHorasTotalesFromSchedule(Request $request): void
@@ -446,6 +592,8 @@ class ActividadController extends Controller
     {
         $required = $partial ? 'sometimes' : 'required';
         $this->normalizeActividadAuditReferences($request);
+        $this->normalizeTimeField($request, 'hora_inicio');
+        $this->normalizeTimeField($request, 'hora_termino');
         $this->normalizeHorasTotalesFromSchedule($request);
 
         return $request->validate([
@@ -647,6 +795,7 @@ class ActividadController extends Controller
         }
     }
 }
+
 
 
 

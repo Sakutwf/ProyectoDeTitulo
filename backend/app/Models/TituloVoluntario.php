@@ -31,6 +31,14 @@ class TituloVoluntario extends Model
         return $this->belongsTo(Archivo::class);
     }
 
+    public function archivosAdjuntos()
+    {
+        return $this->hasMany(Archivo::class, 'entidad_id')
+            ->where('entidad', 'titulo_voluntario')
+            ->where('categoria', 'respaldo_titulo')
+            ->orderBy('id');
+    }
+
     public function getArchivoUrlAttribute(): ?string
     {
         return $this->archivo?->url_publica;
