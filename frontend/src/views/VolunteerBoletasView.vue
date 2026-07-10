@@ -409,14 +409,50 @@ function formatCurrency(value) {
   })
 }
 
+function normalizeBoletaStatus(value) {
+  const normalized = String(value || '').trim().toLowerCase()
+
+  if (['pendiente', 'solicitado', 'solicitada'].includes(normalized)) {
+    return 'solicitado'
+  }
+
+  if (['aprobado', 'aprobada'].includes(normalized)) {
+    return 'aprobado'
+  }
+
+  if (['pagado', 'pagada'].includes(normalized)) {
+    return 'pagado'
+  }
+
+  return 'solicitado'
+}
+
 function statusLabel(value) {
-  return String(value || 'pendiente').toLowerCase() === 'pagada' ? 'Pagada' : 'Pendiente'
+  const normalized = normalizeBoletaStatus(value)
+
+  if (normalized === 'pagado') {
+    return 'Pagado'
+  }
+
+  if (normalized === 'aprobado') {
+    return 'Aprobado'
+  }
+
+  return 'Solicitado'
 }
 
 function statusClass(value) {
-  return String(value || 'pendiente').toLowerCase() === 'pagada'
-    ? 'status-pill--success'
-    : 'status-pill--warning'
+  const normalized = normalizeBoletaStatus(value)
+
+  if (normalized === 'pagado') {
+    return 'status-pill--success'
+  }
+
+  if (normalized === 'aprobado') {
+    return 'status-pill--info'
+  }
+
+  return 'status-pill--warning'
 }
 
 function isImageBoleta(item, url) {
@@ -1039,3 +1075,4 @@ onBeforeUnmount(() => {
   }
 }
 </style>
+

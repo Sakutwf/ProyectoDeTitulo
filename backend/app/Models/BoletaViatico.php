@@ -57,3 +57,4 @@ class BoletaViatico extends Model
         return $this->archivo?->url_publica;
     }
 }
+

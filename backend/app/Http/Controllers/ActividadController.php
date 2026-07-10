@@ -9,6 +9,7 @@ use App\Models\BoletaViatico;
 use App\Models\GaleriaActividad;
 use App\Models\Voluntario;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -16,6 +17,18 @@ use Illuminate\Validation\ValidationException;
 class ActividadController extends Controller
 {
     private const RELATIONS = ['filial', 'creador', 'voluntarios.user', 'climas.archivo'];
+
+    private const BOLETA_ESTADO_SOLICITADO = 'solicitado';
+
+    private const BOLETA_ESTADO_APROBADO = 'aprobado';
+
+    private const BOLETA_ESTADO_PAGADO = 'pagado';
+
+    private const BOLETA_ESTADOS = [
+        self::BOLETA_ESTADO_SOLICITADO,
+        self::BOLETA_ESTADO_APROBADO,
+        self::BOLETA_ESTADO_PAGADO,
+    ];
 
     public function index(Request $request)
     {
@@ -266,6 +279,77 @@ class ActividadController extends Controller
         );
     }
 
+    public function gestionBoletas(Request $request)
+    {
+        $actor = $request->user()?->loadMissing('roles', 'voluntario.filial');
+
+        abort_unless($this->canReviewBoletas($actor), 403, 'No tienes permisos para revisar boletas.');
+
+        $estado = null;
+
+        if ($request->filled('estado')) {
+            $estado = $this->normalizeBoletaEstado($request->input('estado'));
+        }
+
+        $query = BoletaViatico::query()
+            ->with(['archivo', 'voluntario.user', 'voluntario.filial', 'revisadoPor.voluntario', 'actividad:id,nombre']);
+
+        $this->scopeBoletasToActorFilial($query, $actor);
+
+        if ($estado) {
+            $query->where('estado', $estado);
+        }
+
+        $query->orderByRaw($this->boletaPriorityOrderSql());
+
+        if ($this->boletasHasFechaPagoColumn()) {
+            $query->latest('fecha_pago');
+        }
+
+        return response()->json(
+            $query->latest('fecha_compra')
+                ->latest('id')
+                ->get(),
+            200
+        );
+    }
+
+    public function actualizarEstadoBoleta(Request $request, BoletaViatico $boletaViatico)
+    {
+        $actor = $request->user()?->loadMissing('roles', 'voluntario.filial');
+
+        abort_unless($this->canReviewBoletas($actor), 403, 'No tienes permisos para actualizar el estado de esta boleta.');
+        abort_unless($this->canReviewBoletaFromActorFilial($actor, $boletaViatico), 403, 'No tienes permisos para actualizar boletas de otra filial.');
+
+        $data = $request->validate([
+            'estado' => ['required', 'string', 'max:50'],
+            'fecha_pago' => ['nullable', 'date'],
+        ]);
+
+        $estado = $this->normalizeBoletaEstado($data['estado']);
+
+        if (! in_array($estado, self::BOLETA_ESTADOS, true)) {
+            throw ValidationException::withMessages([
+                'estado' => ['El estado de la boleta no es valido.'],
+            ]);
+        }
+
+        $boletaViatico->estado = $estado;
+        $boletaViatico->revisado_por = $actor?->id;
+
+        if ($this->boletasHasFechaPagoColumn()) {
+            $boletaViatico->fecha_pago = $estado === self::BOLETA_ESTADO_PAGADO
+                ? ($data['fecha_pago'] ?? now()->toDateString())
+                : null;
+        }
+
+        $boletaViatico->save();
+
+        return response()->json(
+            $boletaViatico->fresh()->load(['archivo', 'voluntario.user', 'voluntario.filial', 'revisadoPor.voluntario', 'actividad:id,nombre']),
+            200
+        );
+    }
     public function subirBoleta($id, Request $request)
     {
         $actividad = Actividad::findOrFail($id);
@@ -316,7 +400,7 @@ class ActividadController extends Controller
             'detalle_compra' => $data['detalle_compra'],
             'monto' => $data['monto'],
             'fecha_compra' => $data['fecha_compra'] ?? now()->toDateString(),
-            'estado' => 'pendiente',
+            'estado' => self::BOLETA_ESTADO_SOLICITADO,
         ]);
 
         return response()->json(
@@ -413,19 +497,80 @@ class ActividadController extends Controller
             return false;
         }
 
-        $actor->loadMissing('roles', 'voluntario');
+        $actor->loadMissing('roles', 'voluntario.filial');
         $boletaViatico->loadMissing('voluntario');
 
-        $isAdmin = $actor->roles->contains(fn ($role) => in_array($role->clave, ['administrador', 'secretario-directiva'], true));
-
-        if ($isAdmin) {
-            return true;
+        if ($this->canReviewBoletas($actor)) {
+            return $this->canReviewBoletaFromActorFilial($actor, $boletaViatico);
         }
 
         return (int) ($actor->voluntario?->id ?? 0) === (int) $boletaViatico->voluntario_id
-            || (int) $actor->id === (int) ($boletaViatico->voluntario?->user_id ?? 0);
+            || (int) ($actor->id ?? 0) === (int) ($boletaViatico->voluntario?->user_id ?? 0);
     }
 
+    private function canReviewBoletas($actor): bool
+    {
+        if (! $actor) {
+            return false;
+        }
+
+        $actor->loadMissing('roles');
+
+        return $actor->roles->contains(fn ($role) => in_array($role->clave, ['administrador', 'secretario-directiva'], true));
+    }
+
+    private function canReviewBoletaFromActorFilial($actor, BoletaViatico $boletaViatico): bool
+    {
+        if (! $actor) {
+            return false;
+        }
+
+        $actor->loadMissing('voluntario');
+        $boletaViatico->loadMissing('voluntario');
+
+        $actorFilialId = (int) ($actor->voluntario?->filial_id ?? 0);
+
+        if ($actorFilialId <= 0) {
+            return true;
+        }
+
+        return (int) ($boletaViatico->voluntario?->filial_id ?? 0) === $actorFilialId;
+    }
+
+    private function scopeBoletasToActorFilial($query, $actor): void
+    {
+        $actorFilialId = (int) ($actor?->voluntario?->filial_id ?? 0);
+
+        if ($actorFilialId <= 0) {
+            return;
+        }
+
+        $query->whereHas('voluntario', function ($volunteerQuery) use ($actorFilialId) {
+            $volunteerQuery->where('filial_id', $actorFilialId);
+        });
+    }
+
+    private function normalizeBoletaEstado($estado): string
+    {
+        $value = strtolower(trim((string) $estado));
+
+        return match ($value) {
+            'pendiente', 'solicitada', 'solicitado', '' => self::BOLETA_ESTADO_SOLICITADO,
+            'aprobada', 'aprobado' => self::BOLETA_ESTADO_APROBADO,
+            'pagada', 'pagado' => self::BOLETA_ESTADO_PAGADO,
+            default => $value,
+        };
+    }
+
+    private function boletaPriorityOrderSql(): string
+    {
+        return "CASE LOWER(COALESCE(estado, '')) WHEN 'solicitado' THEN 0 WHEN 'aprobado' THEN 1 WHEN 'pagado' THEN 2 ELSE 3 END";
+    }
+
+    private function boletasHasFechaPagoColumn(): bool
+    {
+        return Schema::hasColumn('boletas_viatico', 'fecha_pago');
+    }
     private function replaceBoletaArchivo(Request $request, BoletaViatico $boletaViatico, Album $album, string $descripcion): Archivo
     {
         $this->deleteBoletaArchivo($boletaViatico->archivo);
@@ -795,6 +940,9 @@ class ActividadController extends Controller
         }
     }
 }
+
+
+
 
 
 

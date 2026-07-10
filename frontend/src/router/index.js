@@ -11,6 +11,7 @@ import AccessSelectionView from '../views/AccessSelectionView.vue'
 import VolunteerActivitiesView from '../views/VolunteerActivitiesView.vue'
 import VolunteerGalleryView from '../views/VolunteerGalleryView.vue'
 import VolunteerBoletasView from '../views/VolunteerBoletasView.vue'
+import BoletasGestionView from '../views/BoletasGestionView.vue'
 import DocumentosView from '../views/DocumentosView.vue'
 import GaleriaFotosView from '../views/GaleriaFotosView.vue'
 import store from '../store'
@@ -46,8 +47,7 @@ const routes = [
   {
     path: '/inicio',
     name: 'inicio',
-    component: HomeView,
-    meta: { requiresAuth: true }
+    component: HomeView
   },
   {
     path: '/seleccionar-acceso',
@@ -71,6 +71,12 @@ const routes = [
     path: '/documentos',
     name: 'documentos',
     component: DocumentosView,
+    meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
+  },
+  {
+    path: '/boletas',
+    name: 'boletas-gestion',
+    component: BoletasGestionView,
     meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
   },
   {
@@ -185,3 +191,4 @@ router.beforeEach((to, from, next) => {
 })
 
 export default router
+

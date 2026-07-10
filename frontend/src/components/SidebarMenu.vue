@@ -37,11 +37,11 @@
 
         <ul class="nav flex-column">
             <li class="nav-item nav-item--inicio" :class="{ active: activeLink === 'inicio' }">
-                <router-link to="/inicio" class="nav-link nav-link--inicio" :title="displayCompact ? 'Inicio' : null" :aria-label="displayCompact ? 'Inicio' : null">
+                <router-link to="/inicio" class="nav-link nav-link--inicio" :title="displayCompact ? 'Inicio y novedades' : null" :aria-label="displayCompact ? 'Inicio y novedades' : null">
                     <span class="nav-link__icon">
                         <i class="fa-solid fa-tachometer-alt"></i>
                     </span>
-                    <span class="nav-link__label">Inicio</span>
+                    <span class="nav-link__label">Inicio y novedades</span>
                 </router-link>
             </li>
             <li v-if="canManagePlatform" class="nav-item" :class="{ active: activeLink === 'voluntarios' }">
@@ -66,6 +66,14 @@
                         <i class="fa-solid fa-folder-open"></i>
                     </span>
                     <span class="nav-link__label">Documentos</span>
+                </router-link>
+            </li>
+            <li v-if="canManagePlatform" class="nav-item" :class="{ active: activeLink === 'boletas-gestion' }">
+                <router-link to="/boletas" class="nav-link" :title="displayCompact ? 'Boletas' : null" :aria-label="displayCompact ? 'Boletas' : null">
+                    <span class="nav-link__icon">
+                        <i class="fa-solid fa-receipt"></i>
+                    </span>
+                    <span class="nav-link__label">Boletas</span>
                 </router-link>
             </li>
             <li v-if="canManagePlatform" class="nav-item" :class="{ active: activeLink === 'galeria-fotos' }">
@@ -181,10 +189,11 @@ export default {
             if (path.includes('/voluntarios')) return 'voluntarios'
             if (path.includes('/actividades')) return 'actividades'
             if (path.includes('/documentos')) return 'documentos'
+            if (path.includes('/mis-boletas')) return 'mis-boletas'
+            if (path.includes('/boletas')) return 'boletas-gestion'
             if (path.includes('/galeria-fotos')) return 'galeria-fotos'
             if (path.includes('/mis-actividades')) return 'mis-actividades'
             if (path.includes('/mi-galeria')) return 'mi-galeria'
-            if (path.includes('/mis-boletas')) return 'mis-boletas'
             if (path.includes('/historial')) return 'mi-perfil'
             return 'inicio'
         }
@@ -459,6 +468,9 @@ export default {
     }
 }
 </style>
+
+
+
 
 
 

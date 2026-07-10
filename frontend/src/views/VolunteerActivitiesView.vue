@@ -207,7 +207,7 @@
                     <article v-for="item in boletaItems" :key="item.id" class="receipt-card">
                       <div class="receipt-card__top">
                         <strong>{{ item.detalle_compra }}</strong>
-                        <span class="receipt-state">{{ item.estado || 'pendiente' }}</span>
+                        <span class="receipt-state">{{ boletaStatusLabel(item.estado) }}</span>
                       </div>
                       <p>{{ formatCurrency(item.monto) }} · {{ formatDate(item.fecha_compra) }}</p>
                       <a :href="item.archivo_url" target="_blank" rel="noopener" class="receipt-link">Ver respaldo</a>
@@ -290,6 +290,20 @@ function formatDateRange(start, end) {
 function formatHours(value) {
   const numericValue = Number(value || 0)
   return `${numericValue % 1 === 0 ? numericValue.toFixed(0) : numericValue.toFixed(2)} h`
+}
+
+function boletaStatusLabel(value) {
+  const normalized = String(value || '').trim().toLowerCase()
+
+  if (['pagado', 'pagada'].includes(normalized)) {
+    return 'Pagado'
+  }
+
+  if (['aprobado', 'aprobada'].includes(normalized)) {
+    return 'Aprobado'
+  }
+
+  return 'Solicitado'
 }
 
 function formatCurrency(value) {
@@ -812,3 +826,4 @@ onMounted(async () => {
   }
 }
 </style>
+

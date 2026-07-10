@@ -49,7 +49,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('actividad/{id}/galeria', [ActividadController::class, 'subirImagenGaleria']);
     Route::get('actividad/{id}/boletas', [ActividadController::class, 'boletas']);
     Route::post('actividad/{id}/boletas', [ActividadController::class, 'subirBoleta']);
+    Route::get('boletas/gestion', [ActividadController::class, 'gestionBoletas']);
     Route::put('boletas/{boletaViatico}', [ActividadController::class, 'actualizarBoleta']);
+    Route::put('boletas/{boletaViatico}/estado', [ActividadController::class, 'actualizarEstadoBoleta']);
     Route::delete('boletas/{boletaViatico}', [ActividadController::class, 'eliminarBoleta']);
     Route::apiResource('actividad', ActividadController::class);
     Route::apiResource('voluntarios', VoluntarioController::class);
@@ -67,6 +69,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ]);
     });
 });
+
 
 
 

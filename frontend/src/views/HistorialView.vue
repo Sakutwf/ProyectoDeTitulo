@@ -2463,16 +2463,21 @@ function matchesSearch(value) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  align-self: start;
   width: fit-content;
-  min-height: 34px;
-  padding: 0.38rem 0.9rem;
+  max-width: 100%;
+  min-height: 2rem;
+  padding: 0.26rem 0.78rem;
+  border: 1px solid #f2c4c8;
   border-radius: 999px;
-  background: #f5333f;
-  color: #ffffff;
+  background: #fff6f7;
+  color: #d83b46;
   font-family: 'Montserrat', sans-serif;
-  font-size: 0.93rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  line-height: 1;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  white-space: normal;
 }
 
 .volunteer-activity-card__details {
@@ -3169,6 +3174,8 @@ function matchesSearch(value) {
   box-shadow: 0 0 0 3px rgba(23, 59, 112, 0.12);
 }
 </style>
+
+
 
 
 
