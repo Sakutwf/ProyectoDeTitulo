@@ -1,8 +1,9 @@
 <template>
   <div class="login-page">
     <form class="login-card" @submit.prevent="submitLogin">
+      <router-link to="/portada" class="login-back-link"><i class="fa-solid fa-arrow-left"></i> Volver</router-link>
       <div class="login-brand">
-        <img src="@/assets/LogoHorizontal.svg" alt="Cruz Roja" class="login-logo">
+        <router-link to="/portada" aria-label="Ir a Inicio y novedades"><img src="@/assets/LogoHorizontal.svg" alt="Cruz Roja" class="login-logo"></router-link>
       </div>
 
       <label class="login-field">
@@ -91,6 +92,7 @@ export default {
 
 <style scoped>
 .login-page {
+  position: relative;
   min-height: 100vh;
   display: grid;
   place-items: center;
@@ -101,7 +103,30 @@ export default {
     linear-gradient(180deg, #f3efe9 0%, #edf2f8 100%);
 }
 
+.login-back-link {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(15, 47, 95, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #0f2f5f;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 0 10px 24px rgba(15, 47, 95, 0.08);
+}
+
+.login-back-link:hover {
+  color: #e01e1e;
+  border-color: rgba(224, 30, 30, 0.35);
+}
+
 .login-card {
+  position: relative;
   width: min(560px, 100%);
   min-height: 620px;
   display: grid;
@@ -191,6 +216,10 @@ export default {
 }
 
 @media (max-width: 575.98px) {
+  .login-page {
+    padding-top: 1.5rem;
+  }
+
   .login-card {
     min-height: auto;
     padding: 2.5rem 1.4rem;

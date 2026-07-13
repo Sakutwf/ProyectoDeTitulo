@@ -14,6 +14,8 @@ x-laravel-env: &laravel-env
   DB_DATABASE: ${MARIADB_DATABASE:-SistemaCruzRoja}
   DB_USERNAME: ${MARIADB_USER:-cruzroja}
   DB_PASSWORD: ${MARIADB_PASSWORD}
+  DB_CHARSET: utf8mb4
+  DB_COLLATION: utf8mb4_unicode_ci
   SESSION_DRIVER: ${SESSION_DRIVER:-database}
   CACHE_STORE: ${CACHE_STORE:-database}
   QUEUE_CONNECTION: ${QUEUE_CONNECTION:-database}

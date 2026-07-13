@@ -275,6 +275,7 @@ import axios from 'axios'
 import Swal from 'sweetalert2'
 import SidebarMenu from '../components/SidebarMenu.vue'
 import { buildApiUrl } from '../config/api'
+import { optimizeImage } from '../utils/imageOptimization'
 
 const store = useStore()
 const currentUser = computed(() => store.getters.authUser)
@@ -455,8 +456,9 @@ async function uploadAlbumPhotos() {
 
   try {
     for (const file of pendingPhotoFiles.value) {
+      const optimizedFile = await optimizeImage(file)
       const formData = new FormData()
-      formData.append('archivo', file)
+      formData.append('archivo', optimizedFile)
       formData.append('nombre', file.name.replace(/\.[^.]+$/, ''))
       if (!isAdministrator.value && currentUser.value?.id) {
         formData.append('subido_por', String(currentUser.value.id))

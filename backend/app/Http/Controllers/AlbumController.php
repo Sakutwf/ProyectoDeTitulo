@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Actividad;
 use App\Models\Album;
 use App\Models\Archivo;
 use App\Models\GaleriaActividad;
 use App\Models\User;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 
 class AlbumController extends Controller
 {
+    public function __construct(private readonly ImageOptimizer $imageOptimizer) {}
+
     public function index(Request $request)
     {
         $query = Album::with(['actividad:id,nombre,fecha_inicio,fecha_termino', 'creador:id,username'])
@@ -84,7 +85,7 @@ class AlbumController extends Controller
     public function uploadPhoto(Request $request, Album $album)
     {
         $data = $request->validate([
-            'archivo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'archivo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'nombre' => ['nullable', 'string', 'max:180'],
             'descripcion' => ['nullable', 'string'],
             'subido_por' => ['nullable', 'integer'],
@@ -93,7 +94,7 @@ class AlbumController extends Controller
         Storage::disk('public')->makeDirectory('albumes/'.$album->id);
 
         $file = $request->file('archivo');
-        $path = $file->store('albumes/'.$album->id, 'public');
+        $optimized = $this->imageOptimizer->store($file, 'albumes/'.$album->id);
         $title = $data['nombre'] ?? pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
         $uploaderId = $request->user()?->id
             ?? User::query()->whereKey($data['subido_por'] ?? null)->value('id');
@@ -102,11 +103,11 @@ class AlbumController extends Controller
             'entidad' => 'album',
             'entidad_id' => $album->id,
             'categoria' => 'foto_album',
-            'ruta' => $path,
+            'ruta' => $optimized['path'],
             'nombre_original' => $title,
-            'extension' => $file->getClientOriginalExtension(),
-            'mime_type' => $file->getClientMimeType(),
-            'tamano' => $file->getSize(),
+            'extension' => $optimized['extension'],
+            'mime_type' => $optimized['mime_type'],
+            'tamano' => $optimized['size'],
             'descripcion' => $data['descripcion'] ?? null,
             'subido_por' => $uploaderId,
         ]);
@@ -231,4 +232,3 @@ class AlbumController extends Controller
         return $user->roles->contains(fn ($role) => $role->clave === 'administrador');
     }
 }
-

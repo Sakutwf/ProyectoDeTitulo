@@ -176,7 +176,7 @@
 
                       <div class="hero-side">
                         <div class="hero-brand">
-                          <img :src="logoSrc" alt="Cruz Roja Chilena">
+                          <router-link to="/portada" aria-label="Ir a Inicio y novedades"><img :src="logoSrc" alt="Cruz Roja Chilena"></router-link>
                         </div>
 
                         <div class="hero-brand-actions">
@@ -779,6 +779,7 @@ import HistorialAnualEditor from '../components/HistorialAnualEditor.vue'
 import { API_BASE } from '../config/api'
 import { show_alerta } from '../funciones'
 import Swal from 'sweetalert2'
+import { optimizeImage } from '../utils/imageOptimization'
 
 const route = useRoute()
 const router = useRouter()
@@ -1395,8 +1396,9 @@ async function onProfilePhotoSelected(event) {
   isUploadingPhoto.value = true
 
   try {
+    const optimizedFile = await optimizeImage(file, { maxOutputBytes: 2 * 1024 * 1024 })
     const formData = new FormData()
-    formData.append('foto_perfil', file)
+    formData.append('foto_perfil', optimizedFile)
 
     const response = await axios.post(`${API_BASE}/user/${user.value.id}/foto-perfil`, formData, {
       headers: {

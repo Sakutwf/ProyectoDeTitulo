@@ -129,6 +129,7 @@ import SidebarMenu from '../components/SidebarMenu.vue'
 import { API_BASE } from '../config/api'
 import { show_alerta } from '../funciones'
 import { useStore } from 'vuex'
+import { optimizeImage } from '../utils/imageOptimization'
 
 const store = useStore()
 const currentUser = computed(() => store.getters.authUser)
@@ -250,8 +251,9 @@ async function uploadGalleryImage(actividad) {
   gallerySubmitting.value = true
 
   try {
+    const optimizedFile = await optimizeImage(galleryForm.value.file)
     const formData = new FormData()
-    formData.append('archivo', galleryForm.value.file)
+    formData.append('archivo', optimizedFile)
     formData.append('subido_por', currentUser.value?.id || '')
 
     if (galleryForm.value.titulo.trim()) {

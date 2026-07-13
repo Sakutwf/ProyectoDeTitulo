@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Actividad;
+use App\Models\ActividadClima;
 use App\Models\Album;
 use App\Models\Archivo;
 use App\Models\BoletaViatico;
 use App\Models\GaleriaActividad;
 use App\Models\Voluntario;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -16,6 +18,8 @@ use Illuminate\Validation\ValidationException;
 
 class ActividadController extends Controller
 {
+    public function __construct(private readonly ImageOptimizer $imageOptimizer) {}
+
     private const RELATIONS = ['filial', 'creador', 'voluntarios.user', 'climas.archivo'];
 
     private const BOLETA_ESTADO_SOLICITADO = 'solicitado';
@@ -176,6 +180,7 @@ class ActividadController extends Controller
         ])->findOrFail($id);
 
         $galeria = $actividad->galeria
+            ->filter(fn ($item) => $item->archivo?->categoria !== 'clima_documento')
             ->map(fn ($item) => [
                 'id' => $item->id,
                 'archivo_id' => $item->archivo_id,
@@ -218,27 +223,28 @@ class ActividadController extends Controller
         $actividad = Actividad::findOrFail($id);
 
         $data = $request->validate([
-            'archivo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'archivo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'titulo' => ['nullable', 'string', 'max:150'],
             'descripcion' => ['nullable', 'string'],
             'fecha' => ['nullable', 'date'],
             'subido_por' => ['nullable', 'integer', 'exists:users,id'],
+            'categoria' => ['nullable', 'string', 'in:galeria_actividad,clima_documento'],
         ]);
 
         Storage::disk('public')->makeDirectory('actividades/galeria');
 
         $file = $request->file('archivo');
-        $path = $file->store('actividades/galeria', 'public');
+        $optimized = $this->imageOptimizer->store($file, 'actividades/galeria');
 
         $archivo = Archivo::create([
             'entidad' => 'actividad',
             'entidad_id' => $actividad->id,
-            'categoria' => 'galeria_actividad',
-            'ruta' => $path,
-            'nombre_original' => $file->getClientOriginalName(),
-            'extension' => $file->getClientOriginalExtension(),
-            'mime_type' => $file->getClientMimeType(),
-            'tamano' => $file->getSize(),
+            'categoria' => $data['categoria'] ?? 'galeria_actividad',
+            'ruta' => $optimized['path'],
+            'nombre_original' => $optimized['original_name'],
+            'extension' => $optimized['extension'],
+            'mime_type' => $optimized['mime_type'],
+            'tamano' => $optimized['size'],
             'descripcion' => $data['descripcion'] ?? null,
             'subido_por' => $data['subido_por'] ?? $request->user()?->id,
         ]);
@@ -255,6 +261,35 @@ class ActividadController extends Controller
             $registro->load(['archivo', 'subidoPor.voluntario']),
             201
         );
+    }
+
+    public function eliminarImagenTemporalClima($id, Archivo $archivo)
+    {
+        Actividad::findOrFail($id);
+
+        abort_unless(
+            $archivo->entidad === 'actividad'
+            && (int) $archivo->entidad_id === (int) $id
+            && $archivo->categoria === 'clima_documento',
+            404
+        );
+
+        DB::transaction(function () use ($id, $archivo) {
+            ActividadClima::query()
+                ->where('actividad_id', $id)
+                ->where('archivo_id', $archivo->id)
+                ->update(['archivo_id' => null]);
+
+            GaleriaActividad::query()->where('archivo_id', $archivo->id)->delete();
+
+            if ($archivo->ruta) {
+                Storage::disk('public')->delete($archivo->ruta);
+            }
+
+            $archivo->delete();
+        });
+
+        return response()->json(null, 204);
     }
 
     public function boletas($id, Request $request)
@@ -350,6 +385,7 @@ class ActividadController extends Controller
             200
         );
     }
+
     public function subirBoleta($id, Request $request)
     {
         $actividad = Actividad::findOrFail($id);
@@ -571,6 +607,7 @@ class ActividadController extends Controller
     {
         return Schema::hasColumn('boletas_viatico', 'fecha_pago');
     }
+
     private function replaceBoletaArchivo(Request $request, BoletaViatico $boletaViatico, Album $album, string $descripcion): Archivo
     {
         $this->deleteBoletaArchivo($boletaViatico->archivo);
@@ -733,6 +770,7 @@ class ActividadController extends Controller
                 'updated_at',
             ]);
     }
+
     private function validateActividad(Request $request, bool $partial = false): array
     {
         $required = $partial ? 'sometimes' : 'required';
@@ -794,6 +832,7 @@ class ActividadController extends Controller
                 ->all();
 
             $actividad->voluntarios()->sync($syncData);
+
             return;
         }
 
@@ -849,6 +888,7 @@ class ActividadController extends Controller
 
         if ($rows->isEmpty()) {
             $actividad->climas()->delete();
+
             return;
         }
 
@@ -865,6 +905,7 @@ class ActividadController extends Controller
                 $actividad->climas()
                     ->whereKey($row['id'])
                     ->update($payload);
+
                 continue;
             }
 
@@ -940,13 +981,3 @@ class ActividadController extends Controller
         }
     }
 }
-
-
-
-
-
-
-
-
-
-

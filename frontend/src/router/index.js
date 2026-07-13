@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { Modal } from 'bootstrap'
 import HomeView from '../views/HomeView.vue'
+import WelcomeView from '../views/WelcomeView.vue'
 import UserView from '../views/UserView.vue'
 import ActividadView from '../views/ActividadView.vue'
 import HistorialView from '../views/HistorialView.vue'
@@ -14,6 +15,7 @@ import VolunteerBoletasView from '../views/VolunteerBoletasView.vue'
 import BoletasGestionView from '../views/BoletasGestionView.vue'
 import DocumentosView from '../views/DocumentosView.vue'
 import GaleriaFotosView from '../views/GaleriaFotosView.vue'
+import PortadaEditorView from '../views/PortadaEditorView.vue'
 import store from '../store'
 import { defaultRouteForUser } from '../utils/auth'
 
@@ -42,11 +44,17 @@ const routes = [
   {
     path: '/',
     name: 'home',
-    redirect: '/inicio'
+    redirect: () => store.getters.isAuthenticated ? { name: 'inicio' } : { name: 'portada-publica' }
   },
   {
     path: '/inicio',
     name: 'inicio',
+    component: WelcomeView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/portada',
+    name: 'portada-publica',
     component: HomeView
   },
   {
@@ -84,6 +92,12 @@ const routes = [
     name: 'galeria-fotos',
     component: GaleriaFotosView,
     meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
+  },
+  {
+    path: '/administrar-portada',
+    name: 'administrar-portada',
+    component: PortadaEditorView,
+    meta: { requiresAuth: true, roles: ['administrador'], experience: 'admin' }
   },
   {
     path: '/mis-actividades',
@@ -158,7 +172,7 @@ router.beforeEach((to, from, next) => {
     return
   }
 
-  if (isAuthenticated && needsAccessSelection && to.name !== 'access-selection') {
+  if (isAuthenticated && needsAccessSelection && !['access-selection', 'portada-publica'].includes(to.name)) {
     next({ name: 'access-selection', query: { redirect: to.fullPath } })
     return
   }

@@ -183,6 +183,7 @@ import axios from 'axios'
 import { show_alerta } from '../funciones'
 import { Modal } from 'bootstrap'
 import { buildApiUrl } from '../config/api'
+import { optimizeImage } from '../utils/imageOptimization'
 
 const ESCOLARIDAD_OPTIONS = [
   'Sin escolaridad',
@@ -318,8 +319,16 @@ export default {
 
       return descriptions[role.clave] || role.clave
     },
-    onPhotoSelected(event) {
-      this.foto_perfil = event.target.files?.[0] || null
+    async onPhotoSelected(event) {
+      const file = event.target.files?.[0] || null
+      if (!file) return
+      try {
+        this.foto_perfil = await optimizeImage(file, { maxOutputBytes: 2 * 1024 * 1024 })
+      } catch (error) {
+        this.foto_perfil = null
+        event.target.value = ''
+        show_alerta(error.message || 'No se pudo optimizar la imagen.', 'error')
+      }
     },
     appendIfFilled(formData, key, value) {
       if (value !== null && value !== undefined && String(value).trim() !== '') {

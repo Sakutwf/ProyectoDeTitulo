@@ -1,7 +1,7 @@
 <template>
   <div class="access-page">
     <section class="access-card">
-      <img src="@/assets/LogoHorizontal.svg" alt="Cruz Roja" class="access-logo">
+      <router-link to="/portada" aria-label="Ir a Inicio y novedades"><img src="@/assets/LogoHorizontal.svg" alt="Cruz Roja" class="access-logo"></router-link>
 
       <div class="access-copy">
         <p class="access-eyebrow">Acceso disponible</p>

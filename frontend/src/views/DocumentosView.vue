@@ -717,6 +717,7 @@ import axios from 'axios'
 import Swal from 'sweetalert2'
 import SidebarMenu from '../components/SidebarMenu.vue'
 import { buildApiUrl } from '../config/api'
+import { optimizeImage } from '../utils/imageOptimization'
 
 const documentTypes = [
   {
@@ -1007,7 +1008,8 @@ function createEmptyAnalysisClimateRow(temperaturaMinima = '', temperaturaMaxima
     titulo_imagen: source?.titulo_imagen || source?.titulo || source?.archivo?.nombre_original || '',
     descripcion_imagen: source?.descripcion_imagen || source?.descripcion || source?.archivo?.descripcion || '',
     fecha: source?.fecha || '',
-    origen: source?.origen || 'galeria_actividad'
+    origen: source?.origen || 'galeria_actividad',
+    es_imagen_temporal: source?.es_imagen_temporal ?? (source?.archivo?.categoria === 'clima_documento')
   }
 }
 
@@ -1051,7 +1053,8 @@ function serializeAnalysisClimateRows(rows) {
       titulo_imagen: row?.titulo_imagen || row?.archivo?.nombre_original || '',
       descripcion_imagen: row?.descripcion_imagen || row?.archivo?.descripcion || '',
       fecha: row?.fecha || '',
-      origen: row?.origen || 'galeria_actividad'
+      origen: row?.origen || 'galeria_actividad',
+      es_imagen_temporal: row?.es_imagen_temporal ?? (row?.archivo?.categoria === 'clima_documento')
     }))
 }
 
@@ -1572,13 +1575,15 @@ function addAnalysisClimateRow() {
   analysis.descripcion_evento.climas_esperados.push(createEmptyAnalysisClimateRow())
 }
 
-function removeAnalysisClimateRow(index) {
+async function removeAnalysisClimateRow(index) {
   const analysis = ensureAnalysisContent()
-  analysis.descripcion_evento.climas_esperados.splice(index, 1)
+  const [removedRow] = analysis.descripcion_evento.climas_esperados.splice(index, 1)
 
   if (!analysis.descripcion_evento.climas_esperados.length) {
     analysis.descripcion_evento.climas_esperados.push(createEmptyAnalysisClimateRow())
   }
+
+  await deleteTemporaryClimateImage(removedRow)
 }
 
 function findAnalysisClimateRow(rowId) {
@@ -1599,14 +1604,17 @@ function assignGalleryPhotoToClimate(rowId, item) {
   row.descripcion_imagen = item?.descripcion || item?.archivo?.descripcion || ''
   row.fecha = item?.fecha || ''
   row.origen = item?.origen || 'galeria_actividad'
+  row.es_imagen_temporal = item?.es_imagen_temporal ?? (item?.archivo?.categoria === 'clima_documento')
 }
 
-function clearClimatePhoto(rowId) {
+async function clearClimatePhoto(rowId) {
   const row = findAnalysisClimateRow(rowId)
 
   if (!row) {
     return
   }
+
+  const removedPhoto = { ...row }
 
   row.archivo_id = null
   row.imagen_url = ''
@@ -1614,6 +1622,35 @@ function clearClimatePhoto(rowId) {
   row.descripcion_imagen = ''
   row.fecha = ''
   row.origen = 'galeria_actividad'
+  row.es_imagen_temporal = false
+
+  await deleteTemporaryClimateImage(removedPhoto)
+}
+
+function isTemporaryClimateImage(photo) {
+  return Boolean(
+    photo?.archivo_id
+    && (photo?.es_imagen_temporal || photo?.archivo?.categoria === 'clima_documento')
+  )
+}
+
+async function deleteTemporaryClimateImage(photo) {
+  if (!selectedActividadId.value || !isTemporaryClimateImage(photo)) {
+    return
+  }
+
+  try {
+    await axios.delete(buildApiUrl(
+      `actividad/${selectedActividadId.value}/galeria-temporal/${photo.archivo_id}`
+    ))
+    await refreshActivityGallery()
+  } catch (error) {
+    Swal.fire(
+      'Aviso',
+      'La imagen se quitó del clima, pero no fue posible eliminar el archivo temporal.',
+      'warning'
+    )
+  }
 }
 
 function openClimatePhotoPicker(rowId) {
@@ -1648,12 +1685,18 @@ async function uploadClimatePhotoFromFile(rowId, file) {
   }
 
   uploadingClimatePhoto.value = true
+  const climateRow = findAnalysisClimateRow(rowId)
+  const previousPhoto = climateRow ? { ...climateRow } : null
+  let uploadedPhoto = null
+  let associationPersisted = false
 
   try {
+    const optimizedFile = await optimizeImage(file)
     const formData = new FormData()
-    formData.append('archivo', file)
+    formData.append('archivo', optimizedFile)
     formData.append('titulo', file.name.replace(/\.[^.]+$/, ''))
     formData.append('fecha', todayAsInput())
+    formData.append('categoria', 'clima_documento')
 
     if (currentUser.value?.id) {
       formData.append('subido_por', String(currentUser.value.id))
@@ -1663,15 +1706,33 @@ async function uploadClimatePhotoFromFile(rowId, file) {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
 
-    const uploadedPhoto = normalizeGalleryItems([response.data])[0]
+    const normalizedPhoto = normalizeGalleryItems([response.data])[0]
+    uploadedPhoto = normalizedPhoto
+      ? { ...normalizedPhoto, es_imagen_temporal: true }
+      : null
 
     if (uploadedPhoto) {
       assignGalleryPhotoToClimate(rowId, uploadedPhoto)
+      form.contenido = await syncAnalysisClimateRowsWithActivity(ensureAnalysisContent())
+      associationPersisted = true
+
+      if (previousPhoto?.archivo_id !== uploadedPhoto.archivo_id) {
+        await deleteTemporaryClimateImage(previousPhoto)
+      }
     }
 
     await refreshActivityGallery()
     Swal.fire('Foto asociada', 'La imagen del clima fue cargada y vinculada correctamente.', 'success')
   } catch (error) {
+    if (uploadedPhoto && !associationPersisted) {
+      await deleteTemporaryClimateImage(uploadedPhoto)
+    }
+
+    const currentRow = findAnalysisClimateRow(rowId)
+    if (currentRow && previousPhoto && !associationPersisted) {
+      Object.assign(currentRow, previousPhoto)
+    }
+
     Swal.fire('Error', 'No se pudo cargar la imagen del clima.', 'error')
     throw error
   } finally {
@@ -1891,8 +1952,9 @@ async function uploadNarrativePhotosFromDevice() {
 
   try {
     for (const file of pendingNarrativePhotoFiles.value) {
+      const optimizedFile = await optimizeImage(file)
       const formData = new FormData()
-      formData.append('archivo', file)
+      formData.append('archivo', optimizedFile)
       formData.append('titulo', file.name.replace(/\.[^.]+$/, ''))
       formData.append('fecha', todayAsInput())
 

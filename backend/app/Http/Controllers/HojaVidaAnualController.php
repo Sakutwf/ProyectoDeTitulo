@@ -8,6 +8,7 @@ use App\Models\HojaVidaAnual;
 use App\Models\TituloVoluntario;
 use App\Models\User;
 use App\Models\Voluntario;
+use App\Services\ImageOptimizer;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,8 @@ use Illuminate\Validation\ValidationException;
 
 class HojaVidaAnualController extends Controller
 {
+    public function __construct(private readonly ImageOptimizer $imageOptimizer) {}
+
     private const VOLUNTEER_CARGO_CATALOG = [
         'gobernanza_presidente' => ['tipo' => 'Gobernanza', 'nombre' => 'Presidente', 'direccion' => null],
         'gobernanza_vicepresidente' => ['tipo' => 'Gobernanza', 'nombre' => 'Vicepresidente', 'direccion' => null],
@@ -176,7 +179,7 @@ class HojaVidaAnualController extends Controller
             'alergias' => ['sometimes', 'nullable', 'string'],
             'contacto_emergencia_nombre' => ['sometimes', 'nullable', 'string', 'max:150'],
             'contacto_emergencia_numero' => ['sometimes', 'nullable', 'string', 'max:30'],
-            'foto_perfil' => ['sometimes', 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'foto_perfil' => ['sometimes', 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'titulos' => ['sometimes', 'array'],
             'titulos.*.id' => ['nullable', 'integer'],
             'titulos.*.titulo' => ['nullable', 'string', 'max:150'],
@@ -772,13 +775,9 @@ class HojaVidaAnualController extends Controller
 
         $archivoActual = $voluntario->archivoFotoPerfil()->first();
 
-        if ($archivoActual?->ruta) {
-            Storage::disk('public')->delete($archivoActual->ruta);
-        }
-
         Storage::disk('public')->makeDirectory('voluntarios/fotos');
 
-        $path = $file->store('voluntarios/fotos', 'public');
+        $optimized = $this->imageOptimizer->store($file, 'voluntarios/fotos', 2 * 1024 * 1024);
 
         $voluntario->archivoFotoPerfil()->updateOrCreate(
             [
@@ -787,14 +786,18 @@ class HojaVidaAnualController extends Controller
                 'categoria' => self::VOLUNTEER_PROFILE_PHOTO_CATEGORY,
             ],
             [
-                'ruta' => $path,
-                'nombre_original' => $file->getClientOriginalName(),
-                'extension' => $file->getClientOriginalExtension(),
-                'mime_type' => $file->getClientMimeType(),
-                'tamano' => $file->getSize(),
+                'ruta' => $optimized['path'],
+                'nombre_original' => $optimized['original_name'],
+                'extension' => $optimized['extension'],
+                'mime_type' => $optimized['mime_type'],
+                'tamano' => $optimized['size'],
                 'subido_por' => $request->user()?->id,
             ]
         );
+
+        if ($archivoActual?->ruta && $archivoActual->ruta !== $optimized['path']) {
+            Storage::disk('public')->delete($archivoActual->ruta);
+        }
     }
     private function normalizeText(mixed $value): ?string
     {
@@ -807,9 +810,6 @@ class HojaVidaAnualController extends Controller
         return $normalized === '' ? null : $normalized;
     }
 }
-
-
-
 
 
 

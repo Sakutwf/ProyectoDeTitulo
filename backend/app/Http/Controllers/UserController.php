@@ -6,6 +6,7 @@ use App\Models\Archivo;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Voluntario;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -15,6 +16,8 @@ use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
+    public function __construct(private readonly ImageOptimizer $imageOptimizer) {}
+
     private const DEFAULT_PROFILE_PASSWORD = 'cruzRojaCco26';
 
     private const VOLUNTEER_CARGO_CATALOG = [
@@ -149,7 +152,7 @@ class UserController extends Controller
     public function updateVolunteerPhoto(Request $request, User $user)
     {
         $request->validate([
-            'foto_perfil' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'foto_perfil' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
         ]);
 
         $voluntario = $user->voluntario;
@@ -389,14 +392,10 @@ class UserController extends Controller
 
         $archivoActual = $voluntario->archivoFotoPerfil()->first();
 
-        if ($archivoActual?->ruta) {
-            Storage::disk('public')->delete($archivoActual->ruta);
-        }
-
         Storage::disk('public')->makeDirectory('voluntarios/fotos');
 
         $file = $request->file('foto_perfil');
-        $path = $file->store('voluntarios/fotos', 'public');
+        $optimized = $this->imageOptimizer->store($file, 'voluntarios/fotos', 2 * 1024 * 1024);
 
         $voluntario->archivoFotoPerfil()->updateOrCreate(
             [
@@ -405,14 +404,18 @@ class UserController extends Controller
                 'categoria' => 'foto_perfil',
             ],
             [
-                'ruta' => $path,
-                'nombre_original' => $file->getClientOriginalName(),
-                'extension' => $file->getClientOriginalExtension(),
-                'mime_type' => $file->getClientMimeType(),
-                'tamano' => $file->getSize(),
+                'ruta' => $optimized['path'],
+                'nombre_original' => $optimized['original_name'],
+                'extension' => $optimized['extension'],
+                'mime_type' => $optimized['mime_type'],
+                'tamano' => $optimized['size'],
                 'subido_por' => $request->user()?->id,
             ]
         );
+
+        if ($archivoActual?->ruta && $archivoActual->ruta !== $optimized['path']) {
+            Storage::disk('public')->delete($archivoActual->ruta);
+        }
     }
 
     private function voluntarioRules(?int $currentVoluntarioId = null): array
@@ -437,7 +440,7 @@ class UserController extends Controller
             'alergias' => ['nullable', 'string'],
             'contacto_emergencia_nombre' => ['nullable', 'string', 'max:150'],
             'contacto_emergencia_numero' => ['nullable', 'string', 'max:30'],
-            'foto_perfil' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'foto_perfil' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
         ];
     }
 
@@ -450,9 +453,6 @@ class UserController extends Controller
         }
     }
 }
-
-
-
 
 
 

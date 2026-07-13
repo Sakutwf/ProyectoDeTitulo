@@ -752,6 +752,7 @@ import axios from 'axios'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { API_BASE } from '../config/api'
 import { show_alerta } from '../funciones'
+import { optimizeImage } from '../utils/imageOptimization'
 
 const MAX_ATTACHMENT_SIZE_KB = 5120
 const MAX_ATTACHMENT_SIZE_BYTES = MAX_ATTACHMENT_SIZE_KB * 1024
@@ -1718,8 +1719,16 @@ function requestClose() {
   emit('cancel')
 }
 
-function onPhotoSelected(event) {
-  form.foto_perfil = event.target.files?.[0] || null
+async function onPhotoSelected(event) {
+  const file = event.target.files?.[0] || null
+  if (!file) return
+  try {
+    form.foto_perfil = await optimizeImage(file, { maxOutputBytes: 2 * 1024 * 1024 })
+  } catch (error) {
+    form.foto_perfil = null
+    event.target.value = ''
+    show_alerta(error.message || 'No se pudo optimizar la imagen.', 'error')
+  }
 }
 
 function onTitleFileSelected(index, attachmentIndex, event) {

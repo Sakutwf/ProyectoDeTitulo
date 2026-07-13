@@ -12,10 +12,15 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ActividadController;
 use App\Http\Controllers\AlbumController;
 use App\Http\Controllers\VoluntarioController;
+use App\Http\Controllers\PortadaController;
 
 Route::post('login', [AuthController::class, 'login']);
+Route::get('portada', [PortadaController::class, 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('portada/opciones', [PortadaController::class, 'options']);
+    Route::post('portada/imagenes', [PortadaController::class, 'uploadImages']);
+    Route::put('portada/configuracion', [PortadaController::class, 'update']);
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('me', fn (Request $request) => $request->user()->loadMissing('roles.permissions', 'voluntario'));
 
@@ -47,6 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('actividad/{id}/climas', [ActividadController::class, 'guardarClimas']);
     Route::get('actividad/{id}/galeria', [ActividadController::class, 'galeria']);
     Route::post('actividad/{id}/galeria', [ActividadController::class, 'subirImagenGaleria']);
+    Route::delete('actividad/{id}/galeria-temporal/{archivo}', [ActividadController::class, 'eliminarImagenTemporalClima']);
     Route::get('actividad/{id}/boletas', [ActividadController::class, 'boletas']);
     Route::post('actividad/{id}/boletas', [ActividadController::class, 'subirBoleta']);
     Route::get('boletas/gestion', [ActividadController::class, 'gestionBoletas']);
@@ -69,8 +75,5 @@ Route::middleware('auth:sanctum')->group(function () {
         ]);
     });
 });
-
-
-
 
 

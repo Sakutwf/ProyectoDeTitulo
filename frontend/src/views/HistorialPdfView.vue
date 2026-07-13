@@ -26,7 +26,7 @@
     <div v-else-if="volunteer && selectedAnnual" class="pdf-document">
       <article class="pdf-sheet pdf-sheet--page1">
         <header class="page-header">
-          <img :src="logoSrc" alt="Cruz Roja Chilena" class="page-logo">
+          <router-link to="/portada" aria-label="Ir a Inicio y novedades"><img :src="logoSrc" alt="Cruz Roja Chilena" class="page-logo"></router-link>
           <h1>HOJA DE VIDA DEL VOLUNTARIO/A</h1>
         </header>
 

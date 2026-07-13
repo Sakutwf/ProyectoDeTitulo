@@ -22,7 +22,7 @@
           <div class="print-page__content">
             <header class="document-cover document-cover--compact">
               <div class="document-cover__brand">
-                <img :src="logoSrc" alt="Cruz Roja Chilena" class="document-cover__logo">
+                <router-link to="/portada" aria-label="Ir a Inicio y novedades"><img :src="logoSrc" alt="Cruz Roja Chilena" class="document-cover__logo"></router-link>
               </div>
               <div class="document-cover__titles">
                 <h1>INFORME NARRATIVO</h1>
@@ -221,7 +221,7 @@
           <div class="print-page__content print-page__content--analysis-intro">
             <header class="document-cover document-cover--analysis">
               <div class="document-cover__brand document-cover__brand--analysis">
-                <img :src="logoSrc" alt="Cruz Roja Chilena" class="document-cover__logo document-cover__logo--analysis">
+                <router-link to="/portada" aria-label="Ir a Inicio y novedades"><img :src="logoSrc" alt="Cruz Roja Chilena" class="document-cover__logo document-cover__logo--analysis"></router-link>
               </div>
               <div class="document-cover__titles document-cover__titles--analysis">
                 <div class="document-cover__eyebrow">COMUNICADO FILIAL {{ filialName.toUpperCase() }}</div>

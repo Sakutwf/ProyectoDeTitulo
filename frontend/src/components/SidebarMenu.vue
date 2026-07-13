@@ -1,9 +1,9 @@
 <template>
     <div class="sidebar" :class="{ 'sidebar--compact': displayCompact, 'sidebar--collapsible': collapsible }">
         <div class="sidebar-header">
-            <div class="logo-container">
+            <router-link to="/portada" class="logo-container" aria-label="Ir a Inicio y novedades">
                 <img :src="logoSrc" alt="Cruz Roja Logo" class="logo">
-            </div>
+            </router-link>
         </div>
 
         <div v-if="!displayCompact" class="sidebar-user-row">
@@ -37,11 +37,11 @@
 
         <ul class="nav flex-column">
             <li class="nav-item nav-item--inicio" :class="{ active: activeLink === 'inicio' }">
-                <router-link to="/inicio" class="nav-link nav-link--inicio" :title="displayCompact ? 'Inicio y novedades' : null" :aria-label="displayCompact ? 'Inicio y novedades' : null">
+                <router-link to="/inicio" class="nav-link nav-link--inicio" :title="displayCompact ? 'Inicio' : null" :aria-label="displayCompact ? 'Inicio' : null">
                     <span class="nav-link__icon">
-                        <i class="fa-solid fa-tachometer-alt"></i>
+                        <i class="fa-solid fa-house"></i>
                     </span>
-                    <span class="nav-link__label">Inicio y novedades</span>
+                    <span class="nav-link__label">Inicio</span>
                 </router-link>
             </li>
             <li v-if="canManagePlatform" class="nav-item" :class="{ active: activeLink === 'voluntarios' }">
@@ -82,6 +82,12 @@
                         <i class="fa-solid fa-images"></i>
                     </span>
                     <span class="nav-link__label">Galería de fotos</span>
+                </router-link>
+            </li>
+            <li v-if="isAdministrator" class="nav-item" :class="{ active: activeLink === 'administrar-portada' }">
+                <router-link to="/administrar-portada" class="nav-link" :title="displayCompact ? 'Administrar portada' : null">
+                    <span class="nav-link__icon"><i class="fa-solid fa-newspaper"></i></span>
+                    <span class="nav-link__label">Administrar portada</span>
                 </router-link>
             </li>
             <li v-if="isVolunteerProfileAvailable" class="nav-item" :class="{ active: activeLink === 'mi-perfil' }">
@@ -171,6 +177,9 @@ export default {
         canManagePlatform() {
             return this.$store.getters.isAdministratorExperience
         },
+        isAdministrator() {
+            return this.canManagePlatform && this.$store.getters.hasRole('administrador')
+        },
         canSwitchAccess() {
             return this.$store.getters.requiresAccessSelection
         },
@@ -192,6 +201,7 @@ export default {
             if (path.includes('/mis-boletas')) return 'mis-boletas'
             if (path.includes('/boletas')) return 'boletas-gestion'
             if (path.includes('/galeria-fotos')) return 'galeria-fotos'
+            if (path.includes('/administrar-portada')) return 'administrar-portada'
             if (path.includes('/mis-actividades')) return 'mis-actividades'
             if (path.includes('/mi-galeria')) return 'mi-galeria'
             if (path.includes('/historial')) return 'mi-perfil'
@@ -210,9 +220,9 @@ export default {
             this.$store.dispatch('chooseAccessMode', null)
             this.$router.push({ name: 'access-selection' })
         },
-        logout() {
-            this.$store.dispatch('logout')
-            this.$router.push('/login')
+        async logout() {
+            await this.$store.dispatch('logout')
+            this.$router.replace('/login')
         }
     }
 }
