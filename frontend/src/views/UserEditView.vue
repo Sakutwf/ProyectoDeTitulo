@@ -18,6 +18,11 @@
                 <input id="edit-username" v-model.trim="username" type="text" class="form-control" required>
               </div>
 
+              <div class="col-md-12" v-if="!esVoluntario">
+                <label for="edit-admin-email" class="form-label">Correo para notificaciones administrativas</label>
+                <input id="edit-admin-email" v-model.trim="correo_notificaciones" type="email" class="form-control" required>
+              </div>
+
               <template v-if="esVoluntario">
                 <div class="col-12">
                   <div class="volunteer-section-title">Datos del voluntario</div>
@@ -228,6 +233,7 @@ export default {
       nombres: '',
       apellidos: '',
       correo_electronico: '',
+      correo_notificaciones: '',
       nacionalidad: '',
       fecha_nacimiento: '',
       fecha_incorporacion: '',
@@ -356,6 +362,7 @@ export default {
       this.nombres = voluntario?.nombres || ''
       this.apellidos = voluntario?.apellidos || ''
       this.correo_electronico = voluntario?.correo_electronico || ''
+      this.correo_notificaciones = user.correo_notificaciones || ''
       this.nacionalidad = voluntario?.nacionalidad || ''
       this.fecha_nacimiento = voluntario?.fecha_nacimiento || ''
       this.fecha_incorporacion = voluntario?.fecha_incorporacion || ''
@@ -378,6 +385,7 @@ export default {
 
       if (!this.esVoluntario) {
         formData.append('username', this.username.trim())
+        formData.append('correo_notificaciones', this.correo_notificaciones.trim())
       }
 
       const roleIds = this.esVoluntario
@@ -432,6 +440,12 @@ export default {
 
       if (!this.esVoluntario && !this.username.trim()) {
         show_alerta('Debes ingresar el username del usuario.', 'warning', 'edit-username')
+        return false
+      }
+
+
+      if (!this.esVoluntario && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.correo_notificaciones)) {
+        show_alerta('Debes ingresar un correo administrativo válido.', 'warning', 'edit-admin-email')
         return false
       }
 

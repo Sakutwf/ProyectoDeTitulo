@@ -35,7 +35,7 @@
             </button>
         </div>
 
-        <ul class="nav flex-column">
+        <ul ref="navigation" class="nav flex-column" @wheel="scrollNavigation">
             <li class="nav-item nav-item--inicio" :class="{ active: activeLink === 'inicio' }">
                 <router-link to="/inicio" class="nav-link nav-link--inicio" :title="displayCompact ? 'Inicio' : null" :aria-label="displayCompact ? 'Inicio' : null">
                     <span class="nav-link__icon">
@@ -82,6 +82,12 @@
                         <i class="fa-solid fa-images"></i>
                     </span>
                     <span class="nav-link__label">Galería de fotos</span>
+                </router-link>
+            </li>
+            <li v-if="canManagePlatform" class="nav-item" :class="{ active: activeLink === 'solicitudes-hoja-vida' }">
+                <router-link to="/solicitudes-hoja-vida" class="nav-link" :title="displayCompact ? 'Solicitudes de hoja de vida' : null">
+                    <span class="nav-link__icon"><i class="fa-solid fa-user-check"></i></span>
+                    <span class="nav-link__label">Solicitudes</span>
                 </router-link>
             </li>
             <li v-if="isAdministrator" class="nav-item" :class="{ active: activeLink === 'administrar-portada' }">
@@ -199,6 +205,7 @@ export default {
             if (path.includes('/actividades')) return 'actividades'
             if (path.includes('/documentos')) return 'documentos'
             if (path.includes('/mis-boletas')) return 'mis-boletas'
+            if (path.includes('/solicitudes-hoja-vida')) return 'solicitudes-hoja-vida'
             if (path.includes('/boletas')) return 'boletas-gestion'
             if (path.includes('/galeria-fotos')) return 'galeria-fotos'
             if (path.includes('/administrar-portada')) return 'administrar-portada'
@@ -209,6 +216,19 @@ export default {
         }
     },
     methods: {
+        scrollNavigation(event) {
+            const navigation = this.$refs.navigation
+
+            if (window.innerWidth >= 1200 || !navigation || navigation.scrollWidth <= navigation.clientWidth) {
+                return
+            }
+
+            const movement = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY
+            if (!movement) return
+
+            event.preventDefault()
+            navigation.scrollLeft += movement
+        },
         toggleSidebar() {
             if (!this.collapsible) {
                 return
@@ -221,8 +241,11 @@ export default {
             this.$router.push({ name: 'access-selection' })
         },
         async logout() {
-            await this.$store.dispatch('logout')
-            this.$router.replace('/login')
+            try {
+                await this.$store.dispatch('logout')
+            } finally {
+                this.$router.replace('/portada')
+            }
         }
     }
 }
@@ -412,22 +435,48 @@ export default {
     }
 
     .sidebar .nav {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(5.4rem, 1fr));
+        display: flex;
+        flex-direction: row !important;
+        flex-wrap: nowrap;
         align-items: stretch;
         gap: 0.45rem;
-        padding: 0;
+        padding: 0 0 0.35rem;
         width: 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-x: contain;
+        scroll-behavior: smooth;
+        scroll-snap-type: x proximity;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.72) rgba(255, 255, 255, 0.16);
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .sidebar .nav::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .sidebar .nav::-webkit-scrollbar-track {
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.16);
+    }
+
+    .sidebar .nav::-webkit-scrollbar-thumb {
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
     }
 
     .sidebar .nav-item {
+        flex: 0 0 clamp(5.6rem, 11vw, 7.4rem);
         min-width: 0;
         margin-top: 0 !important;
+        scroll-snap-align: start;
     }
 
     .sidebar .nav-link {
         min-width: 0;
         width: 100%;
+        height: 4.6rem;
         min-height: 4.6rem;
         padding: 0.62rem 0.45rem;
         border-left: none;
@@ -457,13 +506,17 @@ export default {
         font-size: 0.78rem;
         line-height: 1.1;
         white-space: normal;
-        overflow: visible;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
     }
 
     :global(.content-wrapper) {
         width: 100%;
         min-width: 0;
-        padding-top: 5.7rem;
+        box-sizing: border-box;
+        padding-top: 7rem !important;
         padding-bottom: 0;
     }
 

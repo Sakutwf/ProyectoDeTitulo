@@ -14,6 +14,19 @@
           </div>
 
           <template v-else-if="volunteer">
+            <section v-if="canEditOwnPersonalData && pendingRequests.length" class="pending-requests-panel">
+              <div>
+                <p class="panel-kicker">En revisión</p>
+                <h3>Solicitudes de modificación</h3>
+              </div>
+              <div class="pending-request-list">
+                <article v-for="request in pendingRequests" :key="request.id">
+                  <span :class="`pending-status pending-status--${request.estado}`">{{ request.estado }}</span>
+                  <strong>{{ pendingRequestLabel(request) }}</strong>
+                  <small v-if="request.motivo_revision">{{ request.motivo_revision }}</small>
+                </article>
+              </div>
+            </section>
             <section class="hero-stage">
               <aside class="hero-history-column">
                 <section class="panel history-panel hero-history-panel">
@@ -800,6 +813,7 @@ const annualWindowStart = ref(0)
 const volunteerActivitiesWindowStart = ref(0)
 const viewportWidth = ref(typeof window === 'undefined' ? 1920 : window.innerWidth)
 const isAnnualHistoryModalOpen = ref(false)
+const pendingRequests = ref([])
 
 const currentUser = computed(() => store.getters.authUser)
 const canManageHojaVida = computed(() => store.getters.isAdministratorExperience && store.getters.canManagePlatform)
@@ -1125,11 +1139,29 @@ async function fetchUser() {
     }
 
     syncSelectedYear()
+    if (canEditOwnPersonalData.value) {
+      await loadMyRequests()
+    }
   } catch (error) {
     errorMessage.value = 'No se pudo cargar la hoja de vida del voluntario.'
   } finally {
     isLoading.value = false
   }
+}
+
+async function loadMyRequests() {
+  try {
+    const response = await axios.get(`${API_BASE}/mis-solicitudes-hoja-vida`)
+    pendingRequests.value = Array.isArray(response.data) ? response.data : []
+  } catch (error) {
+    pendingRequests.value = []
+  }
+}
+
+function pendingRequestLabel(request) {
+  const action = { crear: 'Agregar', actualizar: 'Modificar', eliminar: 'Eliminar' }[request.accion] || request.accion
+  const type = { titulo: 'título', curso: 'curso', documento: 'documento' }[request.tipo_registro] || request.tipo_registro
+  return `${action} ${type}`
 }
 
 function syncSelectedYear() {
@@ -3175,6 +3207,7 @@ function matchesSearch(value) {
   outline: none;
   box-shadow: 0 0 0 3px rgba(23, 59, 112, 0.12);
 }
+.pending-requests-panel{margin:0 0 1rem;background:#fff8e5;border:1px solid #f0d58a;border-radius:18px;padding:1rem 1.2rem}.pending-requests-panel h3{margin:.15rem 0 .8rem}.pending-request-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.65rem}.pending-request-list article{display:grid;gap:.25rem;background:#fff;border-radius:12px;padding:.75rem}.pending-request-list small{color:#667085}.pending-status{width:max-content;padding:.2rem .45rem;border-radius:999px;font-size:.7rem;font-weight:800;text-transform:uppercase;background:#ffefb6;color:#7b5700}.pending-status--aprobada{background:#dff7e8;color:#176b3a}.pending-status--rechazada{background:#fde2e3;color:#a4212a}
 </style>
 
 

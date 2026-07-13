@@ -5,6 +5,7 @@ x-laravel-env: &laravel-env
   APP_ENV: ${APP_ENV:-production}
   APP_DEBUG: ${APP_DEBUG:-false}
   APP_URL: ${APP_URL:-http://localhost:8080}
+  FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8080}
   APP_KEY: ${APP_KEY}
   LOG_CHANNEL: ${LOG_CHANNEL:-stack}
   LOG_LEVEL: ${LOG_LEVEL:-warning}
@@ -19,6 +20,14 @@ x-laravel-env: &laravel-env
   SESSION_DRIVER: ${SESSION_DRIVER:-database}
   CACHE_STORE: ${CACHE_STORE:-database}
   QUEUE_CONNECTION: ${QUEUE_CONNECTION:-database}
+  MAIL_MAILER: ${MAIL_MAILER:-log}
+  MAIL_HOST: ${MAIL_HOST:-127.0.0.1}
+  MAIL_PORT: ${MAIL_PORT:-2525}
+  MAIL_USERNAME: ${MAIL_USERNAME:-}
+  MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+  MAIL_ENCRYPTION: ${MAIL_ENCRYPTION:-}
+  MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-notificaciones@example.com}
+  MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Sistema Cruz Roja}
   SESSION_DOMAIN: ${SESSION_DOMAIN:-localhost}
   SANCTUM_STATEFUL_DOMAINS: ${SANCTUM_STATEFUL_DOMAINS:-localhost,127.0.0.1}
 
@@ -48,6 +57,19 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     restart: unless-stopped
+    environment: *laravel-env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - backend_storage:/var/www/backend/storage
+
+  queue:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--timeout=120"]
     environment: *laravel-env
     depends_on:
       db:

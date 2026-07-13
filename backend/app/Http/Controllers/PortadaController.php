@@ -139,10 +139,10 @@ class PortadaController extends Controller
         $this->ensureAdministrator($request);
 
         $data = $request->validate([
-            'textos.carrusel_etiqueta' => ['required', 'string', 'max:120'],
-            'textos.novedades_etiqueta' => ['required', 'string', 'max:120'],
-            'textos.novedades_titulo' => ['required', 'string', 'max:180'],
-            'textos.novedades_descripcion' => ['required', 'string', 'max:300'],
+            'textos.carrusel_etiqueta' => ['nullable', 'string', 'max:120'],
+            'textos.novedades_etiqueta' => ['nullable', 'string', 'max:120'],
+            'textos.novedades_titulo' => ['nullable', 'string', 'max:180'],
+            'textos.novedades_descripcion' => ['nullable', 'string', 'max:300'],
             'textos.carrusel_texto_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'textos.carrusel_etiqueta_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'textos.novedades_etiqueta_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
@@ -159,15 +159,15 @@ class PortadaController extends Controller
             'textos.directorio.*.voluntario_id' => ['required', 'integer', 'distinct', 'exists:voluntarios,id'],
             'textos.directorio.*.cargo' => ['nullable', 'string', 'max:120'],
             'textos.enlaces_relacionados' => ['array', 'max:12'],
-            'textos.enlaces_relacionados.*.nombre' => ['required', 'string', 'max:120'],
-            'textos.enlaces_relacionados.*.url' => ['required', 'url', 'max:500'],
+            'textos.enlaces_relacionados.*.nombre' => ['nullable', 'string', 'max:120'],
+            'textos.enlaces_relacionados.*.url' => ['nullable', 'url', 'max:500'],
             'novedades' => ['array'],
             'novedades.*.actividad_id' => ['required', 'integer', 'exists:actividades,id'],
             'novedades.*.archivo_portada_id' => ['nullable', 'integer', 'exists:archivos,id'],
             'novedades.*.posicion_x' => ['required', 'integer', 'between:0,100'],
             'novedades.*.posicion_y' => ['required', 'integer', 'between:0,100'],
             'novedades.*.zoom' => ['required', 'integer', 'between:100,250'],
-            'novedades.*.titulo' => ['required', 'string', 'max:180'],
+            'novedades.*.titulo' => ['nullable', 'string', 'max:180'],
             'novedades.*.resumen' => ['nullable', 'string', 'max:1200'],
             'novedades.*.contenido' => ['nullable', 'string', 'max:5000'],
             'novedades.*.ancho' => ['required', Rule::in(['tercio', 'mitad', 'completo'])],
@@ -191,13 +191,24 @@ class PortadaController extends Controller
             'carrusel.*.zooms.*' => ['integer', 'between:100,250'],
         ]);
 
+        foreach (['carrusel_etiqueta', 'novedades_etiqueta', 'novedades_titulo', 'novedades_descripcion'] as $field) {
+            $data['textos'][$field] = $data['textos'][$field] ?? '';
+        }
+
+        $data['textos']['enlaces_relacionados'] = collect($data['textos']['enlaces_relacionados'] ?? [])
+            ->filter(fn ($link) => filled($link['nombre'] ?? null) || filled($link['url'] ?? null))
+            ->values()
+            ->all();
+
         DB::transaction(function () use ($data, $request) {
             PortadaAjuste::updateOrCreate(['id' => 1], $data['textos']);
             Novedad::query()->delete();
             foreach ($data['novedades'] ?? [] as $order => $item) {
+                $title = $item['titulo'] ?? '';
                 Novedad::create([
                     ...$item,
-                    'slug' => Str::slug($item['titulo']).'-'.($order + 1),
+                    'titulo' => $title,
+                    'slug' => (Str::slug($title) ?: 'novedad').'-'.($order + 1),
                     'orden' => $order,
                     'creado_por' => $request->user()->id,
                 ]);

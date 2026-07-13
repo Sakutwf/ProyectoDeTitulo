@@ -68,16 +68,16 @@
                   <div class="boleta-card__header">
                     <div class="boleta-card__heading">
                       <h4>{{ item.detalle_compra || 'Boleta sin nombre' }}</h4>
-                      <span class="status-pill" :class="statusClass(item.estado)">{{ statusLabel(item.estado) }}</span>
+                      <span class="state-label" :class="statusClass(item.estado)">{{ statusLabel(item.estado) }}</span>
                     </div>
 
                     <div class="boleta-card__actions">
                       <button type="button" class="btn btn-sm action-button" title="Editar" @click="openEditModal(item)">
                         <i class="fa-solid fa-edit"></i>
                       </button>
-                      <a :href="item.archivo_url" target="_blank" rel="noopener" class="btn btn-sm action-button" title="Ver boleta">
+                      <button type="button" class="btn btn-sm action-button" title="Ver boleta" @click="openEvidenceModal(item)">
                         <i class="fa-solid fa-eye"></i>
-                      </a>
+                      </button>
                       <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar" @click="deleteBoleta(item)">
                         <i class="fa-solid fa-trash"></i>
                       </button>
@@ -96,6 +96,10 @@
                     <div class="boleta-card__row">
                       <span class="boleta-card__label">Actividad</span>
                       <strong>{{ item.actividad_nombre || 'Sin actividad' }}</strong>
+                    </div>
+                    <div v-if="item.motivo_revision" class="boleta-card__row">
+                      <span class="boleta-card__label">Motivo de revisión</span>
+                      <strong>{{ item.motivo_revision }}</strong>
                     </div>
                   </div>
                 </article>
@@ -125,16 +129,17 @@
                         <td data-label="Fecha">{{ formatDate(item.fecha_compra) }}</td>
                         <td data-label="Actividad">{{ item.actividad_nombre || '-' }}</td>
                         <td data-label="Estado">
-                          <span class="status-pill" :class="statusClass(item.estado)">{{ statusLabel(item.estado) }}</span>
+                          <span class="state-label" :class="statusClass(item.estado)">{{ statusLabel(item.estado) }}</span>
+                          <small v-if="item.motivo_revision" class="d-block mt-1">{{ item.motivo_revision }}</small>
                         </td>
                         <td data-label="Acciones">
                           <div class="d-flex justify-content-center actions-cell">
                             <button type="button" class="btn btn-sm action-button" title="Editar" @click="openEditModal(item)">
                               <i class="fa-solid fa-edit"></i>
                             </button>
-                            <a :href="item.archivo_url" target="_blank" rel="noopener" class="btn btn-sm action-button" title="Ver boleta">
+                            <button type="button" class="btn btn-sm action-button" title="Ver boleta" @click="openEvidenceModal(item)">
                               <i class="fa-solid fa-eye"></i>
-                            </a>
+                            </button>
                             <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar" @click="deleteBoleta(item)">
                               <i class="fa-solid fa-trash"></i>
                             </button>
@@ -281,6 +286,7 @@
         </div>
       </div>
     </div>
+    <BoletaEvidenceModal v-if="evidenceBoleta" :boleta="evidenceBoleta" @close="closeEvidenceModal" />
   </div>
 </template>
 
@@ -289,6 +295,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import axios from 'axios'
 import Swal from 'sweetalert2'
 import SidebarMenu from '../components/SidebarMenu.vue'
+import BoletaEvidenceModal from '../components/BoletaEvidenceModal.vue'
 import { API_BASE } from '../config/api'
 import { show_alerta } from '../funciones'
 import { useStore } from 'vuex'
@@ -309,6 +316,15 @@ const selectedBoletaId = ref(null)
 const selectedBoletaItem = ref(null)
 const searchTerm = ref('')
 const editPreviewUrl = ref('')
+const evidenceBoleta = ref(null)
+
+function openEvidenceModal(item) {
+  if (item?.archivo_url) evidenceBoleta.value = item
+}
+
+function closeEvidenceModal() {
+  evidenceBoleta.value = null
+}
 
 const createForm = ref(createEmptyCreateForm())
 const editForm = ref(createEmptyEditForm())
@@ -424,6 +440,10 @@ function normalizeBoletaStatus(value) {
     return 'pagado'
   }
 
+  if (['rechazado', 'rechazada'].includes(normalized)) {
+    return 'rechazado'
+  }
+
   return 'solicitado'
 }
 
@@ -438,6 +458,10 @@ function statusLabel(value) {
     return 'Aprobado'
   }
 
+  if (normalized === 'rechazado') {
+    return 'Rechazado'
+  }
+
   return 'Solicitado'
 }
 
@@ -445,14 +469,18 @@ function statusClass(value) {
   const normalized = normalizeBoletaStatus(value)
 
   if (normalized === 'pagado') {
-    return 'status-pill--success'
+    return 'state-label--neutral'
   }
 
   if (normalized === 'aprobado') {
-    return 'status-pill--info'
+    return 'state-label--approved'
   }
 
-  return 'status-pill--warning'
+  if (normalized === 'rechazado') {
+    return 'state-label--neutral'
+  }
+
+  return 'state-label--requested'
 }
 
 function isImageBoleta(item, url) {
@@ -876,25 +904,41 @@ onBeforeUnmount(() => {
   background: #edf5fb;
 }
 
-.status-pill {
+.state-label {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 36px;
-  padding: 0.35rem 0.8rem;
-  border-radius: 999px;
+  gap: 0.5rem;
+  min-height: 38px;
+  padding: 0.45rem 0.95rem;
+  border: 1.5px solid currentColor;
+  border-radius: 0.9rem;
+  background: #fff;
   font-size: 0.85rem;
   font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
 }
 
-.status-pill--warning {
-  background: #fff3cd;
-  color: #7a5a00;
+.state-label::before {
+  width: 0.48rem;
+  height: 0.48rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: currentColor;
+  content: '';
 }
 
-.status-pill--success {
-  background: #dcfce7;
-  color: #166534;
+.state-label--requested {
+  color: #e01e1e;
+}
+
+.state-label--approved {
+  color: #0f2f5f;
+}
+
+.state-label--neutral {
+  color: #667085;
 }
 
 .edit-modal-backdrop {

@@ -16,6 +16,7 @@ import BoletasGestionView from '../views/BoletasGestionView.vue'
 import DocumentosView from '../views/DocumentosView.vue'
 import GaleriaFotosView from '../views/GaleriaFotosView.vue'
 import PortadaEditorView from '../views/PortadaEditorView.vue'
+import SolicitudesHojaVidaView from '../views/SolicitudesHojaVidaView.vue'
 import store from '../store'
 import { defaultRouteForUser } from '../utils/auth'
 
@@ -91,6 +92,12 @@ const routes = [
     path: '/galeria-fotos',
     name: 'galeria-fotos',
     component: GaleriaFotosView,
+    meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
+  },
+  {
+    path: '/solicitudes-hoja-vida',
+    name: 'solicitudes-hoja-vida',
+    component: SolicitudesHojaVidaView,
     meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
   },
   {

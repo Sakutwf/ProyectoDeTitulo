@@ -16,6 +16,7 @@ class BoletaViatico extends Model
         'monto',
         'fecha_compra',
         'estado',
+        'motivo_revision',
         'observacion_revision',
         'revisado_por',
     ];
@@ -57,4 +58,3 @@ class BoletaViatico extends Model
         return $this->archivo?->url_publica;
     }
 }
-

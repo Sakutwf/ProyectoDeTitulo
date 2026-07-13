@@ -18,6 +18,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'username',
+        'correo_notificaciones',
         'must_change_password',
         'password',
     ];
@@ -76,6 +77,10 @@ class User extends Authenticatable
 
     public function getEmailAttribute(): ?string
     {
+        if (! empty($this->attributes['correo_notificaciones'])) {
+            return $this->attributes['correo_notificaciones'];
+        }
+
         $voluntario = $this->relationLoaded('voluntario')
             ? $this->getRelation('voluntario')
             : $this->voluntario;

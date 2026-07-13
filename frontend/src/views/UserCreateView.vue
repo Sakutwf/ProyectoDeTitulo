@@ -82,6 +82,10 @@
                     El perfil administrativo utilizará el nombre de usuario y la contraseña definidas aquí.
                   </div>
                 </div>
+                <div class="col-12">
+                  <label for="create-admin-email" class="form-label">Correo para notificaciones administrativas</label>
+                  <input id="create-admin-email" v-model.trim="correo_notificaciones" type="email" class="form-control" required placeholder="administracion@ejemplo.cl">
+                </div>
               </template>
 
               <template v-if="esVoluntario">
@@ -280,6 +284,7 @@ export default {
       nombres: '',
       apellidos: '',
       correo_electronico: '',
+      correo_notificaciones: '',
       nacionalidad: '',
       fecha_nacimiento: '',
       fecha_incorporacion: '',
@@ -430,6 +435,7 @@ export default {
     clearAdminFields() {
       this.username = ''
       this.password = ''
+      this.correo_notificaciones = ''
     },
     clearVoluntarioFields() {
       this.registro_filial = ''
@@ -481,6 +487,7 @@ export default {
         formData.append('username', this.username.trim())
         formData.append('password', this.password.trim())
         formData.append('must_change_password', '0')
+        formData.append('correo_notificaciones', this.correo_notificaciones.trim())
       }
 
       if (this.esVoluntario) {
@@ -531,6 +538,11 @@ export default {
 
         if (this.password.trim().length < 6) {
           show_alerta('La contraseña debe tener al menos 6 caracteres.', 'warning', 'create-password')
+          return false
+        }
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.correo_notificaciones)) {
+          show_alerta('Debes ingresar un correo administrativo válido.', 'warning', 'create-admin-email')
           return false
         }
       }

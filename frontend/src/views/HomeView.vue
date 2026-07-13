@@ -15,25 +15,24 @@
             <div class="carousel-images" :class="`carousel-images--${slide.imagenes.length}`">
               <span v-for="image in slide.imagenes" :key="image.id" class="carousel-image-cell"><img :src="image.url_publica" :style="{ objectPosition: `${image.pivot?.posicion_x ?? 50}% ${image.pivot?.posicion_y ?? 50}%`, transform: `scale(${(image.pivot?.zoom ?? 100) / 100})`, transformOrigin: `${image.pivot?.posicion_x ?? 50}% ${image.pivot?.posicion_y ?? 50}%` }" :alt="slide.titulo || 'Actividad de Cruz Roja'"></span>
             </div>
-            <div v-if="slide.titulo || slide.bajada" class="carousel-caption" :style="{ '--carousel-title-color': slide.titulo_color || texts.carrusel_texto_color, '--carousel-subtitle-color': slide.bajada_color || texts.carrusel_texto_color, '--carousel-label-color': texts.carrusel_etiqueta_color }"><p>{{ texts.carrusel_etiqueta }}</p><h1>{{ slide.titulo }}</h1><span>{{ slide.bajada }}</span></div>
+            <div v-if="texts.carrusel_etiqueta || slide.titulo || slide.bajada" class="carousel-caption" :style="{ '--carousel-title-color': slide.titulo_color || texts.carrusel_texto_color, '--carousel-subtitle-color': slide.bajada_color || texts.carrusel_texto_color, '--carousel-label-color': texts.carrusel_etiqueta_color }"><p v-if="texts.carrusel_etiqueta">{{ texts.carrusel_etiqueta }}</p><h1 v-if="slide.titulo">{{ slide.titulo }}</h1><span v-if="slide.bajada">{{ slide.bajada }}</span></div>
           </div>
           <button v-if="slides.length > 1" class="carousel-arrow carousel-arrow--left" aria-label="Anterior" @click="previousSlide"><i class="fa-solid fa-chevron-left"></i></button>
           <button v-if="slides.length > 1" class="carousel-arrow carousel-arrow--right" aria-label="Siguiente" @click="nextSlide"><i class="fa-solid fa-chevron-right"></i></button>
           <div v-if="slides.length > 1" class="carousel-dots"><button v-for="(slide, index) in slides" :key="slide.id" :class="{ active: index === activeSlide }" :aria-label="`Ir a diapositiva ${index + 1}`" @click="activeSlide = index"></button></div>
         </section>
 
-        <section class="intro" :style="{ '--news-label-color': texts.novedades_etiqueta_color, '--news-title-color': texts.novedades_titulo_color, '--news-description-color': texts.novedades_descripcion_color }">
-          <p>{{ texts.novedades_etiqueta }}</p>
-          <h1>{{ texts.novedades_titulo }}</h1>
-          <span>{{ texts.novedades_descripcion }}</span>
+        <section v-if="texts.novedades_etiqueta || texts.novedades_titulo || texts.novedades_descripcion" class="intro" :style="{ '--news-label-color': texts.novedades_etiqueta_color, '--news-title-color': texts.novedades_titulo_color, '--news-description-color': texts.novedades_descripcion_color }">
+          <p v-if="texts.novedades_etiqueta">{{ texts.novedades_etiqueta }}</p>
+          <h1 v-if="texts.novedades_titulo">{{ texts.novedades_titulo }}</h1>
+          <span v-if="texts.novedades_descripcion">{{ texts.novedades_descripcion }}</span>
         </section>
 
         <section v-if="news.length" class="news-grid">
           <article v-for="(item, index) in news" :key="item.id" class="news-card news-card--completo" :class="{ 'news-card--reverse': index % 2 === 1 }">
             <div v-if="item.archivo_portada?.url_publica" class="news-card__image"><img :src="item.archivo_portada.url_publica" :style="{ objectPosition: `${item.posicion_x ?? 50}% ${item.posicion_y ?? 50}%`, transform: `scale(${(item.zoom ?? 100) / 100})`, transformOrigin: `${item.posicion_x ?? 50}% ${item.posicion_y ?? 50}%` }" :alt="item.titulo"></div>
             <div class="news-card__body">
-              <span class="tag">{{ item.actividad?.tipo || 'Actividad' }}</span>
-              <h2>{{ item.titulo }}</h2>
+              <h2 v-if="item.titulo">{{ item.titulo }}</h2>
               <p v-if="item.resumen">{{ item.resumen }}</p>
               <dl>
                 <template v-for="field in item.campos_visibles || []" :key="field">
@@ -139,4 +138,6 @@ export default {
 .landing-footer .footer-socials i{color:#e01e1e}
 .landing-footer{margin-top:0}
 @media(max-width:1100px){.news-card--completo,.news-card--completo.news-card--reverse{grid-column:span 6;display:block;min-height:0}.news-card--completo .news-card__image{height:clamp(150px,32vw,260px);min-height:0}.news-card--reverse .news-card__image,.news-card--reverse .news-card__body{order:initial}}
+.news-card h2{font-size:clamp(1.55rem,2.2vw,2rem);line-height:1.08;margin:0 0 .65rem}.news-card--completo .news-card__body{justify-content:flex-start;padding-top:clamp(1rem,1.5vw,1.25rem)}
+.landing-footer .footer-socials a{width:50px;height:50px;font-size:1.45rem}.landing-footer .footer-socials i{font-size:1.45rem!important}
 </style>

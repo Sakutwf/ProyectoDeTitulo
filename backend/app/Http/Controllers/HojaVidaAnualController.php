@@ -9,6 +9,7 @@ use App\Models\TituloVoluntario;
 use App\Models\User;
 use App\Models\Voluntario;
 use App\Services\ImageOptimizer;
+use App\Services\LifeSheetApprovalService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +19,10 @@ use Illuminate\Validation\ValidationException;
 
 class HojaVidaAnualController extends Controller
 {
-    public function __construct(private readonly ImageOptimizer $imageOptimizer) {}
+    public function __construct(
+        private readonly ImageOptimizer $imageOptimizer,
+        private readonly LifeSheetApprovalService $lifeSheetApprovals
+    ) {}
 
     private const VOLUNTEER_CARGO_CATALOG = [
         'gobernanza_presidente' => ['tipo' => 'Gobernanza', 'nombre' => 'Presidente', 'direccion' => null],
@@ -54,8 +58,9 @@ class HojaVidaAnualController extends Controller
         'generador',
     ];
 
-    public function index(Voluntario $voluntario)
+    public function index(Request $request, Voluntario $voluntario)
     {
+        $this->authorizeSheetAccess($request, $voluntario->id);
         return response()->json(
             $voluntario->hojaVidaAnual()
                 ->with(['titulos.archivo', 'titulos.archivosAdjuntos', 'cursos.archivo', 'cursos.archivosAdjuntos', 'otrosDocumentos.archivo', 'otrosDocumentos.archivosAdjuntos', 'sanciones', 'reconocimiento', 'generador'])
@@ -67,6 +72,8 @@ class HojaVidaAnualController extends Controller
 
     public function store(Request $request, Voluntario $voluntario)
     {
+        abort_unless($this->canManageLifeSheets($request), 403, 'No tienes permisos para crear hojas de vida.');
+
         if ($this->isVolunteerSelfServiceRequest($request, $voluntario->id)) {
             return response()->json([
                 'message' => 'No puedes crear una hoja de vida anual desde tu perfil.',
@@ -89,8 +96,9 @@ class HojaVidaAnualController extends Controller
         return response()->json($hojaVidaAnual, 201);
     }
 
-    public function show(HojaVidaAnual $hojaVidaAnual)
+    public function show(Request $request, HojaVidaAnual $hojaVidaAnual)
     {
+        $this->authorizeSheetAccess($request, $hojaVidaAnual->voluntario_id);
         return response()->json(
             $hojaVidaAnual->load(self::RELATIONS),
             200
@@ -99,6 +107,7 @@ class HojaVidaAnualController extends Controller
 
     public function update(Request $request, HojaVidaAnual $hojaVidaAnual)
     {
+        $this->authorizeSheetAccess($request, $hojaVidaAnual->voluntario_id);
         $isVolunteerSelfService = $this->isVolunteerSelfServiceRequest($request, $hojaVidaAnual->voluntario_id);
 
         if ($isVolunteerSelfService) {
@@ -106,6 +115,21 @@ class HojaVidaAnualController extends Controller
         }
 
         $validated = $this->validateRequest($request, $hojaVidaAnual->voluntario_id, $hojaVidaAnual);
+
+        if ($isVolunteerSelfService) {
+            [$hojaVidaAnual, $pendingRequests] = DB::transaction(function () use ($validated, $hojaVidaAnual, $request) {
+                $pendingRequests = $this->lifeSheetApprovals->capture($hojaVidaAnual, $validated, $request);
+                $hojaVidaAnual->update(
+                    $this->buildMainPayload($validated, $hojaVidaAnual->voluntario_id, $hojaVidaAnual)
+                );
+                $this->syncVolunteerProfile($hojaVidaAnual->voluntario, $validated, $request);
+
+                return [$hojaVidaAnual->fresh()->load(self::RELATIONS), $pendingRequests];
+            });
+
+            $hojaVidaAnual->setAttribute('solicitudes_pendientes', $pendingRequests->values());
+            return response()->json($hojaVidaAnual, 202);
+        }
 
         $hojaVidaAnual = DB::transaction(function () use ($validated, $hojaVidaAnual, $request, $isVolunteerSelfService) {
             $hojaVidaAnual->update(
@@ -121,8 +145,9 @@ class HojaVidaAnualController extends Controller
         return response()->json($hojaVidaAnual, 200);
     }
 
-    public function destroy(HojaVidaAnual $hojaVidaAnual)
+    public function destroy(Request $request, HojaVidaAnual $hojaVidaAnual)
     {
+        abort_unless($this->canManageLifeSheets($request), 403, 'No tienes permisos para eliminar hojas de vida.');
         $hojaVidaAnual->delete();
 
         return response()->json(null, 204);
@@ -692,6 +717,22 @@ class HojaVidaAnualController extends Controller
         return (int) $user->voluntario->id === $voluntarioId;
     }
 
+    private function canManageLifeSheets(Request $request): bool
+    {
+        $user = $request->user()?->loadMissing('roles');
+        return (bool) $user?->roles->contains(fn ($role) => in_array($role->clave, ['administrador', 'secretario-directiva'], true));
+    }
+
+    private function authorizeSheetAccess(Request $request, int $volunteerId): void
+    {
+        if ($this->canManageLifeSheets($request)) {
+            return;
+        }
+
+        $user = $request->user()?->loadMissing('voluntario');
+        abort_unless((int) ($user?->voluntario?->id ?? 0) === $volunteerId, 403, 'No tienes permisos para acceder a esta hoja de vida.');
+    }
+
     private function limitVolunteerEditableSections(Request $request, HojaVidaAnual $hojaVidaAnual): void
     {
         $request->merge([
@@ -810,9 +851,6 @@ class HojaVidaAnualController extends Controller
         return $normalized === '' ? null : $normalized;
     }
 }
-
-
-
 
 
 

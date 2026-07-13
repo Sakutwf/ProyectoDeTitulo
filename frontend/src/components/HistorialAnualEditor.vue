@@ -1833,7 +1833,15 @@ async function submit() {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
 
-    show_alerta('Hoja de vida guardada correctamente.', 'success')
+    const pendingCount = Array.isArray(response.data?.solicitudes_pendientes)
+      ? response.data.solicitudes_pendientes.length
+      : 0
+    show_alerta(
+      pendingCount
+        ? `${pendingCount} cambio(s) fueron enviados para aprobación administrativa.`
+        : 'Hoja de vida guardada correctamente.',
+      'success'
+    )
     emit('saved', response.data)
   } catch (error) {
     const errors = error.response?.data?.errors || {}

@@ -185,6 +185,7 @@ class UserController extends Controller
 
         $validated = $request->validate([
             'username' => ['nullable', 'string', 'max:150', Rule::unique('users', 'username')->ignore($userId)],
+            'correo_notificaciones' => ['sometimes', 'nullable', 'email', 'max:255'],
             'must_change_password' => ['sometimes', 'boolean'],
             'password' => $passwordRules,
             'contrasena' => $contrasenaRules,
@@ -453,6 +454,5 @@ class UserController extends Controller
         }
     }
 }
-
 
 

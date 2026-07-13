@@ -119,6 +119,34 @@
             <div v-else class="empty-state">
               No hay voluntarios disponibles para asociar.
             </div>
+
+            <hr class="my-4">
+
+            <section class="notification-panel">
+              <label class="form-check d-flex align-items-start gap-2 mb-3">
+                <input v-model="notifyVolunteers" class="form-check-input mt-1" type="checkbox">
+                <span>
+                  <strong>Notificar voluntarios a través de correo</strong>
+                  <small class="d-block text-muted">El envío se realizará solamente después de guardar la actividad.</small>
+                </span>
+              </label>
+
+              <div v-if="notifyVolunteers">
+                <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                  <small>{{ notificationRecipients.length }} destinatario(s) seleccionado(s)</small>
+                  <button type="button" class="btn btn-sm btn-outline-danger" @click="toggleAllNotificationRecipients">
+                    {{ allNotificationRecipientsSelected ? 'Desmarcar todos' : 'Seleccionar todos' }}
+                  </button>
+                </div>
+                <div class="notification-list">
+                  <label v-for="volunteer in notifiableVolunteers" :key="`notify-${volunteer.id}`" class="form-check notification-recipient">
+                    <input v-model="notificationRecipients" class="form-check-input" type="checkbox" :value="volunteer.id">
+                    <span><strong>{{ fullVolunteerName(volunteer) }}</strong><small>{{ volunteer.correo_electronico }}</small></span>
+                  </label>
+                </div>
+                <div v-if="!notifiableVolunteers.length" class="text-muted small">No hay voluntarios con correo válido.</div>
+              </div>
+            </section>
           </form>
         </div>
 
@@ -152,6 +180,8 @@ export default {
       volunteers: [],
       selectedVolunteers: [],
       volunteerHours: {},
+      notifyVolunteers: false,
+      notificationRecipients: [],
       form: this.defaultForm()
     }
   },
@@ -192,6 +222,12 @@ export default {
       }
 
       return Number(((endMinutes - startMinutes) / 60).toFixed(2))
+    },
+    notifiableVolunteers() {
+      return this.volunteers.filter((volunteer) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(volunteer.correo_electronico || ''))
+    },
+    allNotificationRecipientsSelected() {
+      return this.notifiableVolunteers.length > 0 && this.notificationRecipients.length === this.notifiableVolunteers.length
     }
   },
   mounted() {
@@ -235,6 +271,7 @@ export default {
 
         this.filiales = Array.isArray(filialesResponse.data) ? filialesResponse.data : []
         this.volunteers = Array.isArray(volunteersResponse.data) ? volunteersResponse.data : []
+        this.notificationRecipients = this.notifiableVolunteers.map((volunteer) => volunteer.id)
 
         if (!this.form.filial_id) {
           this.form.filial_id = this.findCuricoFilialId()
@@ -256,6 +293,8 @@ export default {
       this.form.filial_id = this.findCuricoFilialId()
       this.selectedVolunteers = []
       this.volunteerHours = {}
+      this.notifyVolunteers = false
+      this.notificationRecipients = this.notifiableVolunteers.map((volunteer) => volunteer.id)
       this.isSubmitting = false
     },
     fullVolunteerName(volunteer) {
@@ -263,6 +302,11 @@ export default {
     },
     isSelected(voluntarioId) {
       return this.selectedVolunteers.includes(voluntarioId)
+    },
+    toggleAllNotificationRecipients() {
+      this.notificationRecipients = this.allNotificationRecipientsSelected
+        ? []
+        : this.notifiableVolunteers.map((volunteer) => volunteer.id)
     },
     calculateScheduledHours() {
       const startValue = this.normalizeTimeValue(this.form.hora_inicio)
@@ -393,14 +437,38 @@ export default {
         return
       }
 
+      if (this.notifyVolunteers && !this.notificationRecipients.length) {
+        show_alerta('Selecciona al menos un voluntario para enviar el aviso.', 'warning')
+        return
+      }
+
       this.isSubmitting = true
 
       try {
-        await axios.post(`${API_BASE}/actividad`, this.buildPayload())
+        const notificationRequested = this.notifyVolunteers
+        const response = await axios.post(`${API_BASE}/actividad`, this.buildPayload())
+        let notificationFailed = false
+
+        if (this.notifyVolunteers && this.notificationRecipients.length) {
+          try {
+            await axios.post(`${API_BASE}/actividad/${response.data.id}/notificar-voluntarios`, {
+              tipo: 'nueva_actividad',
+              voluntario_ids: this.notificationRecipients
+            })
+          } catch (notificationError) {
+            notificationFailed = true
+          }
+        }
+
         this.hide()
         this.$emit('actividad-created')
         this.resetForm()
-        show_alerta('Actividad creada correctamente.', 'success')
+        show_alerta(
+          notificationFailed
+            ? 'La actividad fue creada, pero no fue posible programar los correos.'
+            : (notificationRequested ? 'Actividad creada y correos programados correctamente.' : 'Actividad creada correctamente.'),
+          notificationFailed ? 'warning' : 'success'
+        )
       } catch (error) {
         const errors = error.response?.data?.errors || {}
         const firstMessage = Object.values(errors).flat()[0] || 'No se pudo crear la actividad.'
@@ -471,6 +539,12 @@ export default {
   padding: 1.2rem;
   color: #65758a;
 }
+
+.notification-panel { border: 1px solid #f1c7ca; border-radius: 16px; padding: 1rem; background: #fff8f8; }
+.notification-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .55rem; max-height: 230px; overflow-y: auto; }
+.notification-recipient { display: flex; gap: .6rem; padding: .65rem; border-radius: 10px; background: #fff; }
+.notification-recipient span { display: grid; }
+.notification-recipient small { color: #65758a; }
 
 @media (max-width: 991.98px) {
   #newActividadModal {

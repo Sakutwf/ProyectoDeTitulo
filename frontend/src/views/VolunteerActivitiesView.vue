@@ -304,6 +304,10 @@ function boletaStatusLabel(value) {
     return 'Aprobado'
   }
 
+  if (['rechazado', 'rechazada'].includes(normalized)) {
+    return 'Rechazado'
+  }
+
   return 'Solicitado'
 }
 

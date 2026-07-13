@@ -163,22 +163,26 @@
         <header><div><p>Vista de escritorio</p><h2>Previsualización</h2></div><span>Landing page</span></header>
         <div ref="livePreview" class="live-preview-viewport">
           <div class="mini-page">
+            <header class="mini-site-header">
+              <div class="mini-site-brand"><img :src="brandLogo" alt="Cruz Roja"><span><small>Cruz Roja</small><strong>Ven a conocer nuestras novedades</strong></span></div>
+              <span class="mini-profile-button"><i class="fa-solid fa-user"></i> Mi perfil</span>
+            </header>
             <div ref="previewSlidesSection" class="mini-hero">
-              <template v-if="previewSlides[0]?.imagenes?.filter(Boolean).length">
-                <div class="mini-hero__images" :style="{ gridTemplateColumns: `repeat(${previewSlides[0].imagenes.filter(Boolean).length}, 1fr)` }">
-                  <span v-for="(id, imageIndex) in previewSlides[0].imagenes.filter(Boolean)" :key="id" class="mini-image-cell"><img :src="imageById(id)?.url_publica" :style="imagePosition(previewSlides[0].posiciones_x[imageIndex], previewSlides[0].posiciones_y[imageIndex], previewSlides[0].zooms[imageIndex])" alt=""></span>
+              <template v-if="visiblePreviewSlides[0]?.imagenes?.filter(Boolean).length">
+                <div class="mini-hero__images" :style="{ gridTemplateColumns: `repeat(${visiblePreviewSlides[0].imagenes.filter(Boolean).length}, 1fr)` }">
+                  <span v-for="(id, imageIndex) in visiblePreviewSlides[0].imagenes.filter(Boolean)" :key="id" class="mini-image-cell"><img :src="imageById(id)?.url_publica" :style="imagePosition(visiblePreviewSlides[0].posiciones_x[imageIndex], visiblePreviewSlides[0].posiciones_y[imageIndex], visiblePreviewSlides[0].zooms[imageIndex])" alt=""></span>
                 </div>
-                <div class="mini-hero__copy" :style="{ '--carousel-title-color': previewSlides[0].titulo_color || previewTexts.carrusel_texto_color, '--carousel-subtitle-color': previewSlides[0].bajada_color || previewTexts.carrusel_texto_color, '--carousel-label-color': previewTexts.carrusel_etiqueta_color }"><small>{{ previewTexts.carrusel_etiqueta }}</small><h1>{{ previewSlides[0].titulo || 'Título del carrusel' }}</h1><p>{{ previewSlides[0].bajada }}</p></div>
+                <div v-if="previewTexts.carrusel_etiqueta || visiblePreviewSlides[0].titulo || visiblePreviewSlides[0].bajada" class="mini-hero__copy" :style="{ '--carousel-title-color': visiblePreviewSlides[0].titulo_color || previewTexts.carrusel_texto_color, '--carousel-subtitle-color': visiblePreviewSlides[0].bajada_color || previewTexts.carrusel_texto_color, '--carousel-label-color': previewTexts.carrusel_etiqueta_color }"><small v-if="previewTexts.carrusel_etiqueta">{{ previewTexts.carrusel_etiqueta }}</small><h1 v-if="visiblePreviewSlides[0].titulo">{{ visiblePreviewSlides[0].titulo }}</h1><p v-if="visiblePreviewSlides[0].bajada">{{ visiblePreviewSlides[0].bajada }}</p></div>
               </template>
               <div v-else class="mini-placeholder"><i class="fa-regular fa-images"></i><span>El carrusel aparecerá aquí</span></div>
             </div>
-            <section class="mini-intro" :style="{ '--news-label-color': previewTexts.novedades_etiqueta_color, '--news-title-color': previewTexts.novedades_titulo_color, '--news-description-color': previewTexts.novedades_descripcion_color }"><small>{{ previewTexts.novedades_etiqueta }}</small><h2>{{ previewTexts.novedades_titulo }}</h2><p>{{ previewTexts.novedades_descripcion }}</p></section>
+            <section v-if="previewTexts.novedades_etiqueta || previewTexts.novedades_titulo || previewTexts.novedades_descripcion" class="mini-intro" :style="{ '--news-label-color': previewTexts.novedades_etiqueta_color, '--news-title-color': previewTexts.novedades_titulo_color, '--news-description-color': previewTexts.novedades_descripcion_color }"><small v-if="previewTexts.novedades_etiqueta">{{ previewTexts.novedades_etiqueta }}</small><h2 v-if="previewTexts.novedades_titulo">{{ previewTexts.novedades_titulo }}</h2><p v-if="previewTexts.novedades_descripcion">{{ previewTexts.novedades_descripcion }}</p></section>
             <section ref="previewNewsSection" class="mini-news">
-              <article v-for="(item, index) in previewNews" :key="item.localId" class="mini-news--completo" :class="{ 'mini-news--reverse': index % 2 === 1 }">
-                <img v-if="imageById(item.archivo_portada_id)" :src="imageById(item.archivo_portada_id).url_publica" :style="imagePosition(item.posicion_x, item.posicion_y, item.zoom)" alt="">
-                <div><small>{{ activityById(item.actividad_id)?.tipo || 'Actividad' }}</small><h3>{{ item.titulo }}</h3><p>{{ item.resumen }}</p></div>
+              <article v-for="(item, index) in visiblePreviewNews" :key="item.localId" class="mini-news--completo" :class="{ 'mini-news--reverse': index % 2 === 1 }">
+                <span v-if="imageById(item.archivo_portada_id)" class="mini-news__image"><img :src="imageById(item.archivo_portada_id).url_publica" :style="imagePosition(item.posicion_x, item.posicion_y, item.zoom)" alt=""></span>
+                <div class="mini-news__body"><h3 v-if="item.titulo">{{ item.titulo }}</h3><p v-if="item.resumen">{{ item.resumen }}</p><dl><template v-for="field in item.campos_visibles || []" :key="field"><div v-if="previewFieldValue(item, field)"><dt><i :class="previewFieldMeta(field).icon"></i>{{ previewFieldMeta(field).label }}</dt><dd>{{ previewFieldValue(item, field) }}</dd></div></template></dl><p v-if="item.contenido" class="mini-news__content">{{ item.contenido }}</p></div>
               </article>
-              <div v-if="!previewNews.length" class="mini-placeholder mini-placeholder--news"><i class="fa-regular fa-newspaper"></i><span>Las novedades aparecerán aquí</span></div>
+              <div v-if="!visiblePreviewNews.length" class="mini-placeholder mini-placeholder--news"><i class="fa-regular fa-newspaper"></i><span>Las novedades aparecerán aquí</span></div>
             </section>
             <footer ref="previewFooterSection" class="mini-footer">
               <div class="mini-footer__logo"><router-link to="/portada" custom v-slot="{ navigate }"><img :src="brandLogo" alt="Cruz Roja" role="link" tabindex="0" @click="navigate" @keydown.enter="navigate"></router-link></div>
@@ -238,15 +242,16 @@
     <div v-if="previewOpen" class="modal-layer" @click.self="previewOpen = false">
       <section class="preview-modal" role="dialog" aria-modal="true" aria-label="Vista previa de portada">
         <header><div><p>Sin necesidad de guardar</p><h2>Vista previa de la portada</h2></div><button class="modal-close" @click="previewOpen = false"><i class="fa-solid fa-xmark"></i></button></header>
-        <div class="preview-content">
-          <div v-if="slides[0]?.imagenes?.filter(Boolean).length" class="preview-hero" :style="{ gridTemplateColumns: `repeat(${slides[0].imagenes.filter(Boolean).length}, 1fr)` }">
-            <img v-for="(id, imageIndex) in slides[0].imagenes.filter(Boolean)" :key="id" :src="imageById(id)?.url_publica" :style="imagePosition(slides[0].posiciones_x[imageIndex], slides[0].posiciones_y[imageIndex], slides[0].zooms[imageIndex])" alt="Carrusel">
-            <div><h2>{{ slides[0].titulo || 'Título del carrusel' }}</h2><p>{{ slides[0].bajada }}</p></div>
-          </div>
-          <div v-else class="preview-empty">Agrega una diapositiva y selecciona fotografías para verla aquí.</div>
-          <h3>Novedades</h3>
-          <div class="preview-news">
-            <article v-for="item in news" :key="item.localId"><img v-if="imageById(item.archivo_portada_id)" :src="imageById(item.archivo_portada_id).url_publica" :style="imagePosition(item.posicion_x, item.posicion_y, item.zoom)" alt=""><div><small>{{ activityById(item.actividad_id)?.tipo }}</small><h4>{{ item.titulo }}</h4><p>{{ item.resumen }}</p></div></article>
+        <div class="preview-content preview-content--landing">
+          <div class="mini-page mini-page--modal">
+            <header class="mini-site-header"><div class="mini-site-brand"><img :src="brandLogo" alt="Cruz Roja"><span><small>Cruz Roja</small><strong>Ven a conocer nuestras novedades</strong></span></div><span class="mini-profile-button"><i class="fa-solid fa-user"></i> Mi perfil</span></header>
+            <div class="mini-hero">
+              <template v-if="visibleEditorSlides[0]?.imagenes?.filter(Boolean).length"><div class="mini-hero__images" :style="{ gridTemplateColumns: `repeat(${visibleEditorSlides[0].imagenes.filter(Boolean).length}, 1fr)` }"><span v-for="(id, imageIndex) in visibleEditorSlides[0].imagenes.filter(Boolean)" :key="id" class="mini-image-cell"><img :src="imageById(id)?.url_publica" :style="imagePosition(visibleEditorSlides[0].posiciones_x[imageIndex], visibleEditorSlides[0].posiciones_y[imageIndex], visibleEditorSlides[0].zooms[imageIndex])" alt=""></span></div><div v-if="texts.carrusel_etiqueta || visibleEditorSlides[0].titulo || visibleEditorSlides[0].bajada" class="mini-hero__copy" :style="{ '--carousel-title-color': visibleEditorSlides[0].titulo_color || texts.carrusel_texto_color, '--carousel-subtitle-color': visibleEditorSlides[0].bajada_color || texts.carrusel_texto_color, '--carousel-label-color': texts.carrusel_etiqueta_color }"><small v-if="texts.carrusel_etiqueta">{{ texts.carrusel_etiqueta }}</small><h1 v-if="visibleEditorSlides[0].titulo">{{ visibleEditorSlides[0].titulo }}</h1><p v-if="visibleEditorSlides[0].bajada">{{ visibleEditorSlides[0].bajada }}</p></div></template>
+              <div v-else class="mini-placeholder"><i class="fa-regular fa-images"></i><span>El carrusel aparecerá aquí</span></div>
+            </div>
+            <section v-if="texts.novedades_etiqueta || texts.novedades_titulo || texts.novedades_descripcion" class="mini-intro" :style="{ '--news-label-color': texts.novedades_etiqueta_color, '--news-title-color': texts.novedades_titulo_color, '--news-description-color': texts.novedades_descripcion_color }"><small v-if="texts.novedades_etiqueta">{{ texts.novedades_etiqueta }}</small><h2 v-if="texts.novedades_titulo">{{ texts.novedades_titulo }}</h2><p v-if="texts.novedades_descripcion">{{ texts.novedades_descripcion }}</p></section>
+            <section class="mini-news"><article v-for="(item, index) in visibleEditorNews" :key="item.localId" class="mini-news--completo" :class="{ 'mini-news--reverse': index % 2 === 1 }"><span v-if="imageById(item.archivo_portada_id)" class="mini-news__image"><img :src="imageById(item.archivo_portada_id).url_publica" :style="imagePosition(item.posicion_x, item.posicion_y, item.zoom)" alt=""></span><div class="mini-news__body"><h3 v-if="item.titulo">{{ item.titulo }}</h3><p v-if="item.resumen">{{ item.resumen }}</p><dl><template v-for="field in item.campos_visibles || []" :key="field"><div v-if="previewFieldValue(item, field)"><dt><i :class="previewFieldMeta(field).icon"></i>{{ previewFieldMeta(field).label }}</dt><dd>{{ previewFieldValue(item, field) }}</dd></div></template></dl><p v-if="item.contenido" class="mini-news__content">{{ item.contenido }}</p></div></article><div v-if="!visibleEditorNews.length" class="mini-placeholder mini-placeholder--news"><i class="fa-regular fa-newspaper"></i><span>Las novedades aparecerán aquí</span></div></section>
+            <footer class="mini-footer"><div class="mini-footer__logo"><img :src="brandLogo" alt="Cruz Roja"></div><div class="mini-footer__contact"><h3>Dirección</h3><a v-if="texts.direccion" :href="locationUrl(texts)">{{ texts.direccion }}</a><template v-if="texts.horario_atencion"><h3>Horario de atención</h3><p>{{ texts.horario_atencion }}</p></template></div><div><h3>Redes sociales y contacto</h3><div class="mini-socials"><a v-if="texts.instagram_url" :href="texts.instagram_url"><i class="fa-brands fa-instagram"></i></a><a v-if="texts.facebook_url" :href="texts.facebook_url"><i class="fa-brands fa-facebook-f"></i></a><a v-if="texts.telefono" :href="`tel:${texts.telefono}`"><i class="fa-solid fa-phone"></i></a></div><div class="mini-contact-links"><a v-if="texts.telefono" :href="`tel:${texts.telefono}`"><i class="fa-solid fa-phone"></i> {{ texts.telefono }}</a><a v-if="texts.correo_contacto" :href="`mailto:${texts.correo_contacto}`"><i class="fa-solid fa-envelope"></i> {{ texts.correo_contacto }}</a></div></div><div class="mini-footer__related"><h3>Páginas relacionadas</h3><a v-for="link in texts.enlaces_relacionados || []" :key="link.url" :href="link.url">{{ link.nombre }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a></div></footer>
           </div>
         </div>
       </section>
@@ -277,7 +282,11 @@ export default {
       })
     },
     galleryTotalPages() { return Math.max(1, Math.ceil(this.filteredImages.length / this.galleryPageSize)) },
-    paginatedImages() { const start = (this.galleryPage - 1) * this.galleryPageSize; return this.filteredImages.slice(start, start + this.galleryPageSize) }
+    paginatedImages() { const start = (this.galleryPage - 1) * this.galleryPageSize; return this.filteredImages.slice(start, start + this.galleryPageSize) },
+    visiblePreviewSlides() { return this.previewSlides.filter(item => item.publicada !== false) },
+    visiblePreviewNews() { return this.previewNews.filter(item => item.publicada !== false) },
+    visibleEditorSlides() { return this.slides.filter(item => item.publicada !== false) },
+    visibleEditorNews() { return this.news.filter(item => item.publicada !== false) }
   },
   watch: {
     galleryActivity() { this.galleryPage = 1 },
@@ -305,6 +314,37 @@ export default {
     imageById(id) { return this.images.find(i => i.id === id) },
     activityById(id) { return this.activities.find(activity => activity.id === id) },
     activityImages(id) { return this.images.filter(i => i.actividad_id === id) },
+    previewFieldMeta(field) {
+      return {
+        objetivo: { label: 'Objetivo', icon: 'fa-solid fa-bullseye' },
+        fecha: { label: 'Cuándo', icon: 'fa-regular fa-calendar' },
+        lugar: { label: 'Dónde', icon: 'fa-solid fa-location-dot' },
+        voluntarios: { label: 'Voluntarios', icon: 'fa-solid fa-people-group' },
+        personas_ayudadas: { label: 'Beneficiarios', icon: 'fa-solid fa-hand-holding-heart' },
+        filial: { label: 'Filial', icon: 'fa-solid fa-building' },
+        tipo: { label: 'Tipo', icon: 'fa-solid fa-tag' }
+      }[field] || { label: field, icon: 'fa-solid fa-circle-info' }
+    },
+    previewFieldValue(item, field) {
+      const activity = this.activityById(item.actividad_id)
+      if (!activity) return ''
+      if (field === 'personas_ayudadas') return item.personas_ayudadas === null || item.personas_ayudadas === undefined || item.personas_ayudadas === '' ? '' : `${item.personas_ayudadas} personas`
+      if (field === 'objetivo') return activity.objetivo
+      if (field === 'lugar') return activity.lugar
+      if (field === 'tipo') return activity.tipo
+      if (field === 'filial') return activity.filial?.nombre || activity.filial_nombre
+      if (field === 'voluntarios') return `${activity.voluntarios?.length || 0} voluntarios participaron`
+      if (field === 'fecha') {
+        const start = this.formatPreviewDate(activity.fecha_inicio)
+        const end = this.formatPreviewDate(activity.fecha_termino)
+        return end && end !== start ? `${start} al ${end}` : start
+      }
+      return ''
+    },
+    formatPreviewDate(value) {
+      if (!value) return ''
+      return new Intl.DateTimeFormat('es-CL', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(value))
+    },
     addSlide() { this.slides.push({ localId: ++this.sequence, titulo: '', titulo_color: '#ffffff', bajada: '', bajada_color: '#ffffff', publicada: true, imagenes: [this.images[0]?.id], posiciones_x: [50, 50, 50], posiciones_y: [50, 50, 50], zooms: [100, 100, 100] }) },
     addNews() { const a = this.activities[0]; if (!a) return; this.news.push({ localId: ++this.sequence, actividad_id: a.id, archivo_portada_id: a.imagenes?.[0]?.id || null, posicion_x: 50, posicion_y: 50, zoom: 100, titulo: a.nombre, resumen: a.objetivo || '', personas_ayudadas: null, ancho: 'completo', publicada: true, campos_visibles: ['objetivo', 'fecha', 'lugar', 'voluntarios', 'personas_ayudadas'] }) },
     activityChanged(item) { const a = this.activities.find(x => x.id === item.actividad_id); item.titulo = a?.nombre || ''; item.resumen = a?.objetivo || ''; item.archivo_portada_id = a?.imagenes?.[0]?.id || null },
@@ -496,4 +536,7 @@ export default {
 .mini-hero::after{background:linear-gradient(180deg,rgba(1,30,65,.55) 0%,rgba(1,30,65,.18) 8%,transparent 22%)}.mini-hero__copy{text-shadow:0 2px 8px rgba(1,30,65,.72)}
 .mini-hero__copy small{color:var(--carousel-label-color,#fff)!important}.mini-hero__copy h1{color:var(--carousel-title-color,#fff)!important}.mini-hero__copy p{color:var(--carousel-subtitle-color,#fff)!important}.mini-intro small{color:var(--news-label-color,#d72732)!important}.mini-intro h2{color:var(--news-title-color,#011e41)!important}.mini-intro p{color:var(--news-description-color,#657184)!important}
 .color-label-row{display:flex;align-items:center;justify-content:space-between;gap:.7rem}.color-shortcut{display:inline-flex;align-items:center;gap:.4rem;flex:0 0 auto;padding:.3rem .55rem;border:1px solid #d8dee7;border-radius:999px;background:#fff;color:#344054;font-size:.72rem;font-weight:700}.color-shortcut:hover{border-color:#e01e1e}.color-shortcut i{width:20px;height:20px;border-radius:50%;border:1px solid rgba(1,30,65,.2);box-shadow:inset 0 0 0 2px #fff}.color-modal{width:min(620px,96vw);max-height:90vh;background:#fff;border-radius:24px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,.3)}.color-modal>header{display:flex;align-items:flex-start;justify-content:space-between;padding:1.3rem 1.5rem;border-bottom:1px solid #e4e8ee}.color-modal>header p{margin:0;color:#e01e1e;font-weight:800;text-transform:uppercase;letter-spacing:.12em;font-size:.72rem}.color-modal>header h2{margin:.2rem 0;color:#011e41}.color-modal>header span{color:#68758a}.color-modal__body{padding:1.3rem 1.5rem;overflow:auto}.color-modal__palette{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem}.color-modal__palette>button{position:relative;display:flex;align-items:center;gap:.75rem;min-height:64px;padding:.65rem;border:1px solid #d9dee6;border-radius:14px;background:#fff;color:#344054;text-align:left}.color-modal__palette>button:hover,.color-modal__palette>button.active{border-color:#e01e1e;box-shadow:0 0 0 2px rgba(224,30,30,.1)}.color-modal__palette>button>i:first-child{width:40px;height:40px;flex:0 0 auto;border-radius:10px;border:1px solid rgba(1,30,65,.18)}.color-modal__palette>button>span{display:grid}.color-modal__palette small{color:#7b8798;font-weight:500}.color-check{position:absolute;right:.8rem;color:#e01e1e}.custom-color-field{display:grid;gap:.5rem;margin-top:1.2rem;color:#344054;font-weight:700}.custom-color-field>span{display:grid;grid-template-columns:58px 1fr;gap:.7rem}.custom-color-field input[type=color]{width:58px;height:42px;padding:2px;border:1px solid #ced4da;border-radius:8px;background:#fff;cursor:pointer}.custom-color-field .form-control{margin:0;text-transform:uppercase}.color-modal>footer{display:flex;justify-content:flex-end;padding:1rem 1.5rem;border-top:1px solid #e4e8ee}@media(max-width:600px){.color-modal__palette{grid-template-columns:1fr}}
+.preview-content--landing{padding:0;background:#f6f7f9}.mini-site-header{min-height:58px;padding:.65rem 1rem;background:#fff;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e7e9ee}.mini-site-brand{display:flex;align-items:center;gap:.65rem;color:#011e41}.mini-site-brand>img{width:95px}.mini-site-brand>span{display:grid}.mini-site-brand small{text-transform:uppercase;letter-spacing:.12em;color:#7a8495;font-size:.48rem}.mini-site-brand strong{font-size:.63rem}.mini-profile-button{display:inline-flex;align-items:center;gap:.35rem;padding:.42rem .65rem;border-radius:999px;background:#e01e1e;color:#fff;font-size:.58rem;font-weight:800}.mini-news{background:#e01e1e}.mini-news article,.mini-news article.mini-news--completo{background:#fff;color:#011e41}.mini-news article small,.mini-news article h3,.mini-news article p{color:inherit}.mini-news__image{display:block;min-width:0;overflow:hidden}.mini-news__image img{width:100%;height:100%;object-fit:cover}.mini-news--reverse .mini-news__image{order:2}.mini-news--reverse .mini-news__body{order:1}.mini-news__body{display:flex;flex-direction:column;justify-content:center}.mini-news .mini-tag{align-self:flex-start;padding:.22rem .48rem;border-radius:99px;background:#ffe9ea;color:#c91f2b;font-size:.48rem}.mini-news__body>p{color:#596579!important}.mini-news dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.28rem .55rem;margin:.45rem 0 0}.mini-news dl div{padding-top:.3rem;border-top:1px solid #edf0f3}.mini-news dt{font-size:.45rem;text-transform:uppercase;color:#778195}.mini-news dt i{width:14px;color:#e01e1e}.mini-news dd{margin:.1rem 0 0;font-size:.56rem;font-weight:700;color:#596579}.mini-footer__logo img{display:block;width:110px;max-width:100%;padding:.25rem;background:#fff;border-radius:5px}.mini-page--modal{font-size:1.35rem}.mini-page--modal .mini-site-header{min-height:76px;padding:.8rem 1.5rem}.mini-page--modal .mini-site-brand>img{width:145px}.mini-page--modal .mini-site-brand small{font-size:.55rem}.mini-page--modal .mini-site-brand strong{font-size:.8rem}.mini-page--modal .mini-profile-button{font-size:.72rem;padding:.55rem .85rem}.mini-page--modal .mini-hero{height:310px;aspect-ratio:auto}.mini-page--modal .mini-hero__copy{left:3rem;bottom:2rem}.mini-page--modal .mini-hero__copy h1{font-size:2rem}.mini-page--modal .mini-hero__copy p{font-size:.85rem}.mini-page--modal .mini-intro{padding:2.2rem 1rem 1.2rem}.mini-page--modal .mini-intro h2{font-size:2rem}.mini-page--modal .mini-intro p{font-size:.85rem}.mini-page--modal .mini-news{padding:1rem 2.5rem 2.5rem;gap:1rem}.mini-page--modal .mini-news article.mini-news--completo{min-height:210px;border-radius:18px}.mini-page--modal .mini-news article>div{padding:1.25rem}.mini-page--modal .mini-news article h3{font-size:1.25rem}.mini-page--modal .mini-news article p{font-size:.78rem}.mini-page--modal .mini-news dt{font-size:.58rem}.mini-page--modal .mini-news dd{font-size:.72rem}.mini-page--modal .mini-footer{padding:1.3rem 2rem}.mini-page--modal .mini-footer h3{font-size:.75rem}.mini-page--modal .mini-footer__contact>a,.mini-page--modal .mini-footer__contact>p,.mini-page--modal .mini-contact-links a,.mini-page--modal .mini-footer__related>a{font-size:.65rem}@media(max-width:700px){.mini-site-brand>span{display:none}.mini-page--modal{font-size:1rem}.mini-page--modal .mini-hero{height:220px}.mini-page--modal .mini-news{padding:1rem}.mini-page--modal .mini-news article.mini-news--completo,.mini-page--modal .mini-news article.mini-news--reverse{display:block;min-height:0}.mini-page--modal .mini-news__image{height:170px}.mini-page--modal .mini-news__image,.mini-page--modal .mini-news__body{order:initial}.mini-news dl{grid-template-columns:1fr}}
+.mini-news__body{justify-content:flex-start}.mini-news article h3{font-size:1rem;line-height:1.08;margin:0 0 .35rem}.mini-page--modal .mini-news article h3{font-size:1.55rem;margin:0 0 .55rem}
+.mini-socials a{width:30px!important;height:30px;font-size:.9rem}.mini-socials a i{font-size:.9rem}.mini-page--modal .mini-socials a{width:44px!important;height:44px;font-size:1.25rem}.mini-page--modal .mini-socials a i{font-size:1.25rem}
 </style>

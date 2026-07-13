@@ -291,6 +291,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import logoSrc from '../assets/LogoVertical.svg'
 import { API_BASE } from '../config/api'
+import { show_alerta } from '../funciones'
 
 const route = useRoute()
 const router = useRouter()
@@ -401,7 +402,19 @@ function goBack() {
 
 function printNow() {
   if (!readyToPrint.value) return
-  window.print()
+
+  const handlePrintFinished = () => {
+    show_alerta('Documento descargado exitosamente.', 'success')
+  }
+
+  window.addEventListener('afterprint', handlePrintFinished, { once: true })
+
+  try {
+    window.print()
+  } catch {
+    window.removeEventListener('afterprint', handlePrintFinished)
+    show_alerta('Hubo un problema al descargar el documento.', 'error')
+  }
 }
 </script>
 
@@ -624,6 +637,18 @@ function printNow() {
   @page {
     size: letter;
     margin: 0;
+  }
+
+  .pdf-sheet,
+  .pdf-sheet * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  .section-bar th {
+    background-color: #f10808 !important;
+    color: #fff !important;
   }
 
   .pdf-export-page {

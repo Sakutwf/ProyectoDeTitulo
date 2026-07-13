@@ -13,6 +13,7 @@ use App\Http\Controllers\ActividadController;
 use App\Http\Controllers\AlbumController;
 use App\Http\Controllers\VoluntarioController;
 use App\Http\Controllers\PortadaController;
+use App\Http\Controllers\SolicitudHojaVidaController;
 
 Route::post('login', [AuthController::class, 'login']);
 Route::get('portada', [PortadaController::class, 'show']);
@@ -51,6 +52,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('actividad/{id}/voluntarios', [ActividadController::class, 'desasociarVoluntario']);
     Route::put('actividad/{id}/climas', [ActividadController::class, 'guardarClimas']);
     Route::get('actividad/{id}/galeria', [ActividadController::class, 'galeria']);
+    Route::get('actividad/{id}/notificaciones/destinatarios', [ActividadController::class, 'destinatariosNotificacion']);
+    Route::post('actividad/{id}/notificar-voluntarios', [ActividadController::class, 'notificarVoluntarios']);
     Route::post('actividad/{id}/galeria', [ActividadController::class, 'subirImagenGaleria']);
     Route::delete('actividad/{id}/galeria-temporal/{archivo}', [ActividadController::class, 'eliminarImagenTemporalClima']);
     Route::get('actividad/{id}/boletas', [ActividadController::class, 'boletas']);
@@ -67,6 +70,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('hoja-vida-anual/{hojaVidaAnual}', [HojaVidaAnualController::class, 'show']);
     Route::put('hoja-vida-anual/{hojaVidaAnual}', [HojaVidaAnualController::class, 'update']);
     Route::delete('hoja-vida-anual/{hojaVidaAnual}', [HojaVidaAnualController::class, 'destroy']);
+    Route::get('solicitudes-hoja-vida', [SolicitudHojaVidaController::class, 'index']);
+    Route::get('mis-solicitudes-hoja-vida', [SolicitudHojaVidaController::class, 'mine']);
+    Route::put('solicitudes-hoja-vida/{solicitudHojaVida}/revisar', [SolicitudHojaVidaController::class, 'review']);
 
     Route::get('/users', function () {
         return App\Models\User::with('voluntario')->get()->map(fn ($user) => [
@@ -75,5 +81,3 @@ Route::middleware('auth:sanctum')->group(function () {
         ]);
     });
 });
-
-

@@ -56,7 +56,8 @@
                       class="form-control activity-combobox__input"
                       placeholder="Selecciona o busca una actividad"
                       autocomplete="off"
-                      @focus="openActividadMenu"
+                      @focus="handleActividadInputInteraction"
+                      @click="handleActividadInputInteraction"
                       @input="handleActivitySearchInput"
                       @keydown.down.prevent="moveActividadHighlight(1)"
                       @keydown.up.prevent="moveActividadHighlight(-1)"
@@ -779,6 +780,7 @@ const selectedType = ref('')
 const selectedActividadId = ref('')
 const activitySearchTerm = ref('')
 const showActividadMenu = ref(false)
+const showAllActividades = ref(false)
 const highlightedActividadIndex = ref(-1)
 const actividadComboboxRef = ref(null)
 const showPhotoPickerModal = ref(false)
@@ -814,6 +816,10 @@ const isNarrativeType = computed(() => selectedType.value === 'informe_narrativo
 const isContextAnalysisType = computed(() => selectedType.value === 'analisis_contexto')
 const selectedActividad = computed(() => actividades.value.find((actividad) => String(actividad.id) === selectedActividadId.value) || null)
 const filteredActividades = computed(() => {
+  if (showAllActividades.value) {
+    return actividades.value
+  }
+
   const normalizedTerm = normalizeActividadSearch(activitySearchTerm.value)
 
   return actividades.value.filter((actividad) => {
@@ -1475,12 +1481,20 @@ function syncHighlightedActividad() {
 }
 
 function openActividadMenu() {
+  showAllActividades.value = true
   showActividadMenu.value = true
   syncHighlightedActividad()
 }
 
+function handleActividadInputInteraction(event) {
+  openActividadMenu()
+  const input = event?.currentTarget
+  nextTick(() => input?.select())
+}
+
 function closeActividadMenu() {
   showActividadMenu.value = false
+  showAllActividades.value = false
   highlightedActividadIndex.value = -1
 
   if (selectedActividad.value) {
@@ -1498,6 +1512,7 @@ function toggleActividadMenu() {
 }
 
 function handleActivitySearchInput() {
+  showAllActividades.value = false
   showActividadMenu.value = true
 
   if (selectedActividad.value && normalizeActividadSearch(activitySearchTerm.value) !== normalizeActividadSearch(actividadLabel(selectedActividad.value))) {

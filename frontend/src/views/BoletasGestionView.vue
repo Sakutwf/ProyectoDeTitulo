@@ -28,9 +28,10 @@
                 </div>
 
                 <div class="summary-chips">
-                  <span class="status-pill status-pill--warning">{{ requestedCount }} solicitado(s)</span>
-                  <span class="status-pill status-pill--info">{{ approvedCount }} aprobado(s)</span>
-                  <span class="status-pill status-pill--success">{{ paidCount }} pagado(s)</span>
+                  <span class="state-label state-label--requested">{{ requestedCount }} solicitado(s)</span>
+                  <span class="state-label state-label--approved">{{ approvedCount }} aprobado(s)</span>
+                  <span class="state-label state-label--neutral">{{ paidCount }} pagado(s)</span>
+                  <span class="state-label state-label--neutral">{{ rejectedCount }} rechazado(s)</span>
                 </div>
               </div>
 
@@ -68,13 +69,13 @@
                     <div class="boleta-card__heading">
                       <h4>{{ item.detalle_compra || 'Boleta sin nombre' }}</h4>
                       <p class="boleta-card__volunteer">{{ item.voluntario_nombre }}</p>
-                      <span class="status-pill" :class="statusClass(item.estado)">{{ statusLabel(item.estado) }}</span>
+                      <span class="state-label" :class="statusClass(item.estado)">{{ statusLabel(item.estado) }}</span>
                     </div>
 
                     <div class="boleta-card__actions">
-                      <a :href="item.archivo_url" target="_blank" rel="noopener" class="btn btn-sm action-button" title="Ver boleta">
+                      <button type="button" class="btn btn-sm action-button" title="Ver boleta" @click="openEvidenceModal(item)">
                         <i class="fa-solid fa-eye"></i>
-                      </a>
+                      </button>
                       <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar boleta" :disabled="deletingBoletaId === item.id" @click="deleteBoleta(item)">
                         <i class="fa-solid fa-trash"></i>
                       </button>
@@ -115,6 +116,10 @@
                         </option>
                       </select>
                     </div>
+                    <div v-if="item.motivo_revision" class="boleta-card__row">
+                      <span class="boleta-card__label">Motivo de revisión</span>
+                      <strong>{{ item.motivo_revision }}</strong>
+                    </div>
                   </div>
                 </article>
 
@@ -147,7 +152,7 @@
                         <td data-label="Actividad">{{ item.actividad_nombre || '-' }}</td>
                         <td data-label="Estado">
                           <div class="status-cell">
-                            <span class="status-pill" :class="statusClass(item.estado)">{{ statusLabel(item.estado) }}</span>
+                            <span class="state-label" :class="statusClass(item.estado)">{{ statusLabel(item.estado) }}</span>
                             <select
                               class="form-select form-select-sm status-select"
                               :value="normalizeStatus(item.estado)"
@@ -163,9 +168,9 @@
                         <td data-label="Fecha pago">{{ formatDate(item.fecha_pago) }}</td>
                         <td data-label="Acciones">
                           <div class="d-flex justify-content-center actions-cell">
-                            <a :href="item.archivo_url" target="_blank" rel="noopener" class="btn btn-sm action-button" title="Ver boleta">
+                            <button type="button" class="btn btn-sm action-button" title="Ver boleta" @click="openEvidenceModal(item)">
                               <i class="fa-solid fa-eye"></i>
-                            </a>
+                            </button>
                             <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar boleta" :disabled="deletingBoletaId === item.id" @click="deleteBoleta(item)">
                               <i class="fa-solid fa-trash"></i>
                             </button>
@@ -184,6 +189,7 @@
         </div>
       </div>
     </div>
+    <BoletaEvidenceModal v-if="evidenceBoleta" :boleta="evidenceBoleta" @close="closeEvidenceModal" />
   </div>
 </template>
 
@@ -192,14 +198,16 @@ import { computed, onMounted, ref } from 'vue'
 import axios from 'axios'
 import Swal from 'sweetalert2'
 import SidebarMenu from '../components/SidebarMenu.vue'
+import BoletaEvidenceModal from '../components/BoletaEvidenceModal.vue'
 import { API_BASE } from '../config/api'
 import { show_alerta } from '../funciones'
 import { useStore } from 'vuex'
 
 const STATUS_META = {
-  solicitado: { label: 'Solicitado', className: 'status-pill--warning' },
-  aprobado: { label: 'Aprobado', className: 'status-pill--info' },
-  pagado: { label: 'Pagado', className: 'status-pill--success' }
+  solicitado: { label: 'Solicitado', className: 'state-label--requested' },
+  aprobado: { label: 'Aprobado', className: 'state-label--approved' },
+  pagado: { label: 'Pagado', className: 'state-label--neutral' },
+  rechazado: { label: 'Rechazado', className: 'state-label--neutral' }
 }
 
 const statusOptions = Object.entries(STATUS_META).map(([value, meta]) => ({
@@ -220,6 +228,15 @@ const updatingStatusId = ref(null)
 const deletingBoletaId = ref(null)
 const searchTerm = ref('')
 const statusFilter = ref('')
+const evidenceBoleta = ref(null)
+
+function openEvidenceModal(item) {
+  if (item?.archivo_url) evidenceBoleta.value = item
+}
+
+function closeEvidenceModal() {
+  evidenceBoleta.value = null
+}
 
 const filteredBoletaItems = computed(() => {
   const term = searchTerm.value.trim().toLowerCase()
@@ -257,6 +274,7 @@ const emptyBoletasMessage = computed(() =>
 const requestedCount = computed(() => boletaItems.value.filter((item) => normalizeStatus(item.estado) === 'solicitado').length)
 const approvedCount = computed(() => boletaItems.value.filter((item) => normalizeStatus(item.estado) === 'aprobado').length)
 const paidCount = computed(() => boletaItems.value.filter((item) => normalizeStatus(item.estado) === 'pagado').length)
+const rejectedCount = computed(() => boletaItems.value.filter((item) => normalizeStatus(item.estado) === 'rechazado').length)
 
 function normalizeStatus(value) {
   const normalized = String(value || '').trim().toLowerCase()
@@ -271,6 +289,10 @@ function normalizeStatus(value) {
 
   if (['pagado', 'pagada'].includes(normalized)) {
     return 'pagado'
+  }
+
+  if (['rechazado', 'rechazada'].includes(normalized)) {
+    return 'rechazado'
   }
 
   return 'solicitado'
@@ -311,7 +333,7 @@ function statusLabel(value) {
 }
 
 function statusClass(value) {
-  return STATUS_META[normalizeStatus(value)]?.className || 'status-pill--warning'
+  return STATUS_META[normalizeStatus(value)]?.className || 'state-label--requested'
 }
 
 async function loadBoletas() {
@@ -340,8 +362,23 @@ async function updateBoletaStatus(item, nextStatus) {
   updatingStatusId.value = item.id
 
   try {
+    let reason = null
+    if (normalizedStatus === 'rechazado') {
+      const result = await Swal.fire({
+        title: 'Motivo del rechazo',
+        input: 'textarea',
+        inputValidator: value => !value?.trim() ? 'Debes indicar un motivo.' : undefined,
+        showCancelButton: true,
+        confirmButtonText: 'Rechazar',
+        confirmButtonColor: '#e01e1e'
+      })
+      if (!result.isConfirmed) return
+      reason = result.value.trim()
+    }
+
     await axios.put(`${API_BASE}/boletas/${item.id}/estado`, {
-      estado: normalizedStatus
+      estado: normalizedStatus,
+      motivo_revision: reason
     })
 
     await loadBoletas()
@@ -579,30 +616,41 @@ onMounted(async () => {
   background: #edf5fb;
 }
 
-.status-pill {
+.state-label {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 36px;
-  padding: 0.35rem 0.8rem;
-  border-radius: 999px;
+  gap: 0.5rem;
+  min-height: 38px;
+  padding: 0.45rem 0.95rem;
+  border: 1.5px solid currentColor;
+  border-radius: 0.9rem;
+  background: #fff;
   font-size: 0.85rem;
   font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
 }
 
-.status-pill--warning {
-  background: #fff3cd;
-  color: #7a5a00;
+.state-label::before {
+  width: 0.48rem;
+  height: 0.48rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: currentColor;
+  content: '';
 }
 
-.status-pill--info {
-  background: #dbeafe;
-  color: #1d4ed8;
+.state-label--requested {
+  color: #e01e1e;
 }
 
-.status-pill--success {
-  background: #dcfce7;
-  color: #166534;
+.state-label--approved {
+  color: #0f2f5f;
+}
+
+.state-label--neutral {
+  color: #667085;
 }
 
 .status-cell {

@@ -10,15 +10,20 @@ use App\Models\BoletaViatico;
 use App\Models\GaleriaActividad;
 use App\Models\Voluntario;
 use App\Services\ImageOptimizer;
+use App\Services\NotificationCampaignService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class ActividadController extends Controller
 {
-    public function __construct(private readonly ImageOptimizer $imageOptimizer) {}
+    public function __construct(
+        private readonly ImageOptimizer $imageOptimizer,
+        private readonly NotificationCampaignService $notificationCampaigns
+    ) {}
 
     private const RELATIONS = ['filial', 'creador', 'voluntarios.user', 'climas.archivo'];
 
@@ -28,10 +33,13 @@ class ActividadController extends Controller
 
     private const BOLETA_ESTADO_PAGADO = 'pagado';
 
+    private const BOLETA_ESTADO_RECHAZADO = 'rechazado';
+
     private const BOLETA_ESTADOS = [
         self::BOLETA_ESTADO_SOLICITADO,
         self::BOLETA_ESTADO_APROBADO,
         self::BOLETA_ESTADO_PAGADO,
+        self::BOLETA_ESTADO_RECHAZADO,
     ];
 
     public function index(Request $request)
@@ -85,6 +93,36 @@ class ActividadController extends Controller
     public function show($id)
     {
         return response()->json(Actividad::with($this->activityRelations())->findOrFail($id), 200);
+    }
+
+    public function destinatariosNotificacion($id, Request $request)
+    {
+        Actividad::findOrFail($id);
+        abort_unless($this->canReviewBoletas($request->user()), 403, 'No tienes permisos para notificar actividades.');
+
+        return response()->json($this->notificationCampaigns->availableVolunteers(), 200);
+    }
+
+    public function notificarVoluntarios($id, Request $request)
+    {
+        $actividad = Actividad::findOrFail($id);
+        $actor = $request->user()?->loadMissing('roles');
+        abort_unless($this->canReviewBoletas($actor), 403, 'No tienes permisos para notificar actividades.');
+
+        $data = $request->validate([
+            'tipo' => ['required', 'string', Rule::in(['nueva_actividad', 'actividad_modificada'])],
+            'voluntario_ids' => ['required', 'array', 'min:1'],
+            'voluntario_ids.*' => ['required', 'integer', 'distinct', 'exists:voluntarios,id'],
+        ]);
+
+        $campaign = $this->notificationCampaigns->sendActivity(
+            $actividad,
+            $data['tipo'],
+            $data['voluntario_ids'],
+            $actor
+        );
+
+        return response()->json($campaign->load('destinatarios'), 202);
     }
 
     public function edit(Actividad $actividad)
@@ -359,6 +397,7 @@ class ActividadController extends Controller
         $data = $request->validate([
             'estado' => ['required', 'string', 'max:50'],
             'fecha_pago' => ['nullable', 'date'],
+            'motivo_revision' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $estado = $this->normalizeBoletaEstado($data['estado']);
@@ -371,6 +410,11 @@ class ActividadController extends Controller
 
         $boletaViatico->estado = $estado;
         $boletaViatico->revisado_por = $actor?->id;
+        $boletaViatico->motivo_revision = $data['motivo_revision'] ?? null;
+
+        if ($estado === self::BOLETA_ESTADO_RECHAZADO && ! trim((string) $boletaViatico->motivo_revision)) {
+            throw ValidationException::withMessages(['motivo_revision' => ['Debes indicar el motivo del rechazo.']]);
+        }
 
         if ($this->boletasHasFechaPagoColumn()) {
             $boletaViatico->fecha_pago = $estado === self::BOLETA_ESTADO_PAGADO
@@ -379,6 +423,7 @@ class ActividadController extends Controller
         }
 
         $boletaViatico->save();
+        $this->notificationCampaigns->notifyReceiptStatus($boletaViatico, $actor);
 
         return response()->json(
             $boletaViatico->fresh()->load(['archivo', 'voluntario.user', 'voluntario.filial', 'revisadoPor.voluntario', 'actividad:id,nombre']),
@@ -439,6 +484,8 @@ class ActividadController extends Controller
             'estado' => self::BOLETA_ESTADO_SOLICITADO,
         ]);
 
+        $this->notificationCampaigns->notifyReceiptSubmitted($boleta, $request->user());
+
         return response()->json(
             $boleta->load(['archivo', 'voluntario.user', 'actividad:id,nombre']),
             201
@@ -478,7 +525,14 @@ class ActividadController extends Controller
         $boletaViatico->detalle_compra = $data['detalle_compra'];
         $boletaViatico->monto = $data['monto'];
         $boletaViatico->fecha_compra = $data['fecha_compra'] ?? $boletaViatico->fecha_compra ?? now()->toDateString();
+        $boletaViatico->estado = self::BOLETA_ESTADO_SOLICITADO;
+        $boletaViatico->revisado_por = null;
+        $boletaViatico->motivo_revision = null;
+        if ($this->boletasHasFechaPagoColumn()) {
+            $boletaViatico->fecha_pago = null;
+        }
         $boletaViatico->save();
+        $this->notificationCampaigns->notifyReceiptSubmitted($boletaViatico, $actor);
 
         return response()->json(
             $boletaViatico->fresh()->load(['archivo', 'voluntario.user', 'revisadoPor.voluntario', 'actividad:id,nombre']),
