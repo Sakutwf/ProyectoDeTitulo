@@ -10,7 +10,7 @@ class PortadaAjuste extends Model
 
     protected $fillable = [
         'carrusel_etiqueta', 'novedades_etiqueta',
-        'novedades_titulo', 'novedades_descripcion', 'telefono', 'correo_contacto',
+        'novedades_titulo', 'novedades_descripcion', 'telefono', 'whatsapp', 'correo_contacto',
         'horario_atencion',
         'instagram_url', 'facebook_url', 'directorio', 'enlaces_relacionados',
         'direccion', 'ubicacion_url',

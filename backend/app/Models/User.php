@@ -98,10 +98,4 @@ class User extends Authenticatable
         return $this->roles->contains(fn (Role $role) => $role->clave === $roleSlug);
     }
 
-    public function hasPermission(string $permissionSlug): bool
-    {
-        return $this->roles
-            ->flatMap(fn (Role $role) => $role->permissions)
-            ->contains(fn ($permission) => $permission->clave === $permissionSlug);
-    }
 }

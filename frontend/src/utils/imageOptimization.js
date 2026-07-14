@@ -1,5 +1,8 @@
 const OPTIMIZABLE_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
+// Flujo compartido por portada, galería, documentos y perfiles. Las vistas
+// sólo seleccionan límites particulares; la conversión permanece aquí.
+
 function optimizedFileName(name, mimeType) {
   const extension = mimeType === 'image/webp' ? 'webp' : mimeType === 'image/png' ? 'png' : 'jpg'
   return `${String(name || 'imagen').replace(/\.[^.]+$/, '')}.${extension}`

@@ -114,14 +114,14 @@ export default {
   border: 1px solid rgba(15, 47, 95, 0.14);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.94);
-  color: #0f2f5f;
+  color: var(--cr-navy-dark);
   font-weight: 800;
   text-decoration: none;
-  box-shadow: 0 10px 24px rgba(15, 47, 95, 0.08);
+  box-shadow: 0 10px 24px var(--cr-navy-shadow);
 }
 
 .login-back-link:hover {
-  color: #e01e1e;
+  color: var(--cr-red);
   border-color: rgba(224, 30, 30, 0.35);
 }
 
@@ -135,7 +135,7 @@ export default {
   padding: 3.75rem 2.5rem;
   border-radius: 30px;
   background: rgba(255, 255, 255, 0.97);
-  border: 1px solid rgba(15, 47, 95, 0.08);
+  border: 1px solid var(--cr-navy-shadow);
   box-shadow: 0 30px 70px rgba(15, 47, 95, 0.12);
 }
 
@@ -156,7 +156,7 @@ export default {
 }
 
 .login-field span {
-  color: #0f2f5f;
+  color: var(--cr-navy-dark);
   font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.05em;
@@ -168,16 +168,16 @@ export default {
   min-height: 58px;
   border-radius: 18px;
   border: 1px solid #ccd7e4;
-  background: #fff;
-  color: #163a69;
+  background: var(--cr-white);
+  color: var(--cr-navy-medium);
   padding: 1rem 1.1rem;
   outline: none;
   font-size: 1rem;
 }
 
 .login-field input:focus {
-  border-color: #0f2f5f;
-  box-shadow: 0 0 0 3px rgba(15, 47, 95, 0.08);
+  border-color: var(--cr-navy-dark);
+  box-shadow: 0 0 0 3px var(--cr-navy-shadow);
 }
 
 .login-help {
@@ -190,8 +190,8 @@ export default {
   min-height: 58px;
   border: none;
   border-radius: 999px;
-  background: #e01e1e;
-  color: #fff;
+  background: var(--cr-red);
+  color: var(--cr-white);
   padding: 1rem 1.2rem;
   font-size: 1rem;
   font-weight: 800;
@@ -205,7 +205,7 @@ export default {
 
 .login-recovery-link {
   justify-self: center;
-  color: #0f2f5f;
+  color: var(--cr-navy-dark);
   font-size: 0.96rem;
   font-weight: 700;
   text-decoration: none;

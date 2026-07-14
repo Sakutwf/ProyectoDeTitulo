@@ -16,6 +16,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
+/**
+ * Centraliza el flujo pendiente/aprobado/rechazado de antecedentes de la hoja
+ * de vida. Es compartido por HojaVidaAnualController y
+ * SolicitudHojaVidaController para evitar duplicar archivos y notificaciones.
+ */
 class LifeSheetApprovalService
 {
     private const DEFINITIONS = [

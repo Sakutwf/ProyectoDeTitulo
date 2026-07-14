@@ -515,27 +515,6 @@ export default {
   padding: 20px 30px;
 }
 
-.role-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
-}
-
-.role-card {
-  display: flex;
-  gap: 10px;
-  padding: 12px;
-  border: 1px solid #d9d9d9;
-  border-radius: 8px;
-  background: #fff;
-  cursor: pointer;
-}
-
-.role-card.selected {
-  border-color: #dc3545;
-  box-shadow: 0 0 0 0.15rem rgba(220, 53, 69, 0.15);
-}
-
 .volunteer-section-title {
   font-weight: 700;
   color: #dc3545;

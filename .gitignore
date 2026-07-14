@@ -1,0 +1,15 @@
+/.agents/
+/.codex/
+/artifacts/
+/tmp/
+/escalera/
+/.env.docker
+
+/frontend/dist/
+/frontend/dist-build-*/
+/frontend/*.log
+/frontend/*.out.log
+/frontend/*.err.log
+
+**/.DS_Store
+**/Thumbs.db

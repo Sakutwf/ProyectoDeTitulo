@@ -235,6 +235,7 @@ import { API_BASE } from '../config/api'
 import { show_alerta } from '../funciones'
 import { useStore } from 'vuex'
 import { optimizeImage } from '../utils/imageOptimization'
+import { fetchAllPages } from '../utils/apiPagination'
 
 const store = useStore()
 const currentUser = computed(() => store.getters.authUser)
@@ -346,21 +347,7 @@ async function loadActivities() {
   isLoading.value = true
 
   try {
-    const firstPage = await axios.get(`${API_BASE}/actividad`, { params: { page: 1 } })
-    const totalPages = Number(firstPage.data?.last_page || 1)
-    const pages = [firstPage.data]
-
-    if (totalPages > 1) {
-      const responses = await Promise.all(
-        Array.from({ length: totalPages - 1 }, (_, index) =>
-          axios.get(`${API_BASE}/actividad`, { params: { page: index + 2 } })
-        )
-      )
-
-      pages.push(...responses.map((response) => response.data))
-    }
-
-    activities.value = pages.flatMap((page) => page.data || [])
+    activities.value = await fetchAllPages(axios, `${API_BASE}/actividad`)
   } catch (error) {
     activities.value = []
     show_alerta('No se pudieron cargar las actividades activas.', 'error')
@@ -561,23 +548,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.content-wrapper {
-  flex: 1;
-  background-color: #f5f7fa;
-  min-height: 100vh;
-}
-
-.content-header {
-  padding: 1rem 1.5rem;
-  background-color: #fff;
-  border-bottom: 1px solid #e0e0e0;
-  margin-bottom: 1.5rem;
-}
-
-.content {
-  padding: 0 1.5rem 1.5rem;
-}
-
 .volunteer-card {
   border: none;
   border-radius: 8px;
@@ -603,8 +573,8 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  background: #eef4fb;
-  color: #0f2f5f;
+  background: var(--cr-blue-pale);
+  color: var(--cr-navy-dark);
   font-weight: 700;
   padding: 0.5rem 0.9rem;
 }
@@ -612,9 +582,9 @@ onMounted(async () => {
 .empty-state {
   border-radius: 18px;
   border: 1px dashed #d6dde7;
-  background: #fafbfd;
+  background: var(--cr-surface);
   padding: 1.2rem;
-  color: #65758a;
+  color: var(--cr-gray-600);
 }
 
 .activity-grid {
@@ -627,7 +597,7 @@ onMounted(async () => {
   border: 1px solid #e1e6ef;
   border-radius: 18px;
   padding: 1rem;
-  background: #fff;
+  background: var(--cr-white);
   display: grid;
   gap: 0.85rem;
 }
@@ -645,8 +615,8 @@ onMounted(async () => {
   align-items: center;
   padding: 0.35rem 0.7rem;
   border-radius: 999px;
-  background: #e01e1e;
-  color: #fff;
+  background: var(--cr-red);
+  color: var(--cr-white);
   font-size: 0.8rem;
   font-weight: 700;
 }
@@ -666,7 +636,7 @@ onMounted(async () => {
 
 .activity-event {
   margin: 0;
-  color: #0f2f5f;
+  color: var(--cr-navy-dark);
   font-weight: 600;
 }
 
@@ -693,7 +663,7 @@ onMounted(async () => {
 }
 
 .asset-panel {
-  border-top: 1px solid #e5ebf2;
+  border-top: 1px solid var(--cr-border-light);
   padding-top: 1rem;
   display: grid;
   gap: 0.9rem;
@@ -717,8 +687,8 @@ onMounted(async () => {
   gap: 0.75rem;
   padding: 0.9rem;
   border-radius: 14px;
-  background: #f8fafc;
-  border: 1px solid #e5ebf2;
+  background: var(--cr-gray-50);
+  border: 1px solid var(--cr-border-light);
 }
 
 .asset-form__grid {
@@ -736,7 +706,7 @@ onMounted(async () => {
   border-radius: 14px;
   border: 1px dashed #d7e0ea;
   padding: 0.9rem;
-  color: #66788c;
+  color: var(--cr-blue-gray);
 }
 
 .gallery-grid {
@@ -749,7 +719,7 @@ onMounted(async () => {
   border: 1px solid #e1e6ef;
   border-radius: 16px;
   overflow: hidden;
-  background: #fff;
+  background: var(--cr-white);
 }
 
 .gallery-card__image {
@@ -772,7 +742,7 @@ onMounted(async () => {
 .gallery-card__body small,
 .gallery-card__body p {
   margin: 0;
-  color: #66788c;
+  color: var(--cr-blue-gray);
 }
 
 .receipt-list {
@@ -784,7 +754,7 @@ onMounted(async () => {
   border: 1px solid #e1e6ef;
   border-radius: 14px;
   padding: 0.9rem;
-  background: #fff;
+  background: var(--cr-white);
 }
 
 .receipt-card__top {
@@ -797,7 +767,7 @@ onMounted(async () => {
 
 .receipt-card p {
   margin: 0 0 0.45rem;
-  color: #66788c;
+  color: var(--cr-blue-gray);
 }
 
 .receipt-state {
@@ -813,7 +783,7 @@ onMounted(async () => {
 }
 
 .receipt-link {
-  color: #0f2f5f;
+  color: var(--cr-navy-dark);
   font-weight: 700;
   text-decoration: none;
 }
@@ -823,9 +793,6 @@ onMounted(async () => {
 }
 
 @media (max-width: 767.98px) {
-  .content {
-    padding: 0 1rem 1rem;
-  }
 
   .asset-form__grid {
     grid-template-columns: 1fr;

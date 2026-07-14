@@ -1,0 +1,16 @@
+.content-wrapper {
+  flex: 1;
+  min-height: 100vh;
+  background-color: var(--cr-gray-100);
+}
+
+.content-header {
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+  background-color: var(--cr-white);
+  border-bottom: 1px solid var(--cr-gray-300);
+}
+
+.content {
+  padding: 0 1.5rem 1.5rem;
+}

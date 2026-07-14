@@ -82,7 +82,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   overflow: hidden;
   border-radius: 24px;
-  background: #fff;
+  background: var(--cr-white);
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.38);
 }
 
@@ -97,7 +97,7 @@ onBeforeUnmount(() => {
 }
 
 .evidence-modal__header small {
-  color: #e01e1e;
+  color: var(--cr-red);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -105,7 +105,7 @@ onBeforeUnmount(() => {
 
 .evidence-modal__header h2 {
   margin: 0.15rem 0 0;
-  color: #12284c;
+  color: var(--cr-navy-ink);
   font-size: 1.25rem;
   font-weight: 800;
 }
@@ -125,13 +125,13 @@ onBeforeUnmount(() => {
   border: 0;
   border-radius: 50%;
   background: #edf1f6;
-  color: #173352;
+  color: var(--cr-navy-soft);
   text-decoration: none;
 }
 
 .evidence-modal__actions button {
-  background: #e01e1e;
-  color: #fff;
+  background: var(--cr-red);
+  color: var(--cr-white);
 }
 
 .evidence-modal__body {
@@ -150,7 +150,7 @@ onBeforeUnmount(() => {
   max-height: 100%;
   object-fit: contain;
   border-radius: 10px;
-  background: #fff;
+  background: var(--cr-white);
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
 }
 
@@ -159,7 +159,7 @@ onBeforeUnmount(() => {
   height: 100%;
   border: 0;
   border-radius: 10px;
-  background: #fff;
+  background: var(--cr-white);
 }
 
 .evidence-modal__unsupported {
@@ -170,7 +170,7 @@ onBeforeUnmount(() => {
 }
 
 .evidence-modal__unsupported > i {
-  color: #e01e1e;
+  color: var(--cr-red);
   font-size: 3rem;
 }
 

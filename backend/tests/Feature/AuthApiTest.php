@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Role;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class AuthApiTest extends TestCase
@@ -41,6 +43,7 @@ class AuthApiTest extends TestCase
         $this->seed();
 
         $volunteerRoleId = Role::query()->where('clave', 'voluntario')->value('id');
+        Sanctum::actingAs(User::query()->where('username', 'admin')->firstOrFail());
 
         $this->postJson('/api/user', [
             'roles' => [$volunteerRoleId],

@@ -231,6 +231,7 @@
             </header>
 
             <section class="print-section narrative-block analysis-intro-copy">
+              <span class="analysis-intro-copy__prefix">Este documento tiene como objetivo </span>
               <p>{{ analysis.proposito_documento || 'Sin información registrada.' }}</p>
             </section>
 
@@ -389,7 +390,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import logoSrc from '../assets/LogoVertical.svg'
 import { buildApiUrl } from '../config/api'
-import { show_alerta } from '../funciones'
+import { useDocumentPrint } from '../composables/useDocumentPrint'
 
 const route = useRoute()
 const router = useRouter()
@@ -414,6 +415,7 @@ const documentType = computed(() => documento.value?.tipo_documento || '')
 const isNarrativeType = computed(() => documentType.value === 'informe_narrativo')
 const isContextAnalysisType = computed(() => documentType.value === 'analisis_contexto')
 const readyToPrint = computed(() => Boolean(documento.value))
+const { printDocument: printNow } = useDocumentPrint(readyToPrint)
 
 const filialName = computed(() => filial.value?.nombre || 'Filial sin registro')
 const creatorName = computed(() => creator.value?.name || creator.value?.username || 'Sin responsable asignado')
@@ -563,62 +565,9 @@ function goBack() {
   })
 }
 
-function printNow() {
-  if (!readyToPrint.value) return
-
-  try {
-    window.print()
-  } catch {
-    show_alerta('Hubo un problema al descargar el documento.', 'error')
-  }
-}
 </script>
 
 <style scoped>
-.pdf-export-page {
-  min-height: 100vh;
-  padding: 1.5rem;
-  background: #eef2f7;
-}
-
-.pdf-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-}
-
-.pdf-toolbar__button {
-  border: none;
-  border-radius: 999px;
-  padding: 0.75rem 1.15rem;
-  background: #d7deea;
-  color: #173763;
-  font-weight: 700;
-}
-
-.pdf-toolbar__button--primary {
-  background: #e01e1e;
-  color: #fff;
-}
-
-.pdf-toolbar__hint {
-  color: #5f7085;
-  font-size: 0.92rem;
-}
-
-.pdf-state {
-  display: grid;
-  place-items: center;
-  min-height: 60vh;
-  color: #4d617d;
-}
-
-.pdf-state--error {
-  color: #a3212b;
-}
-
 .pdf-document {
   display: grid;
   gap: 1.2rem;
@@ -632,7 +581,7 @@ function printNow() {
   width: 8.5in;
   min-height: 11in;
   box-sizing: border-box;
-  background: #fff;
+  background: var(--cr-white);
   color: #111;
   box-shadow: 0 18px 40px rgba(15, 47, 95, 0.15);
   page-break-after: always;
@@ -793,12 +742,6 @@ function printNow() {
   font-weight: 700;
 }
 
-.print-table .subheader-row th {
-  background: #fafafa;
-  font-weight: 700;
-  text-align: left;
-}
-
 .label-cell {
   width: 32%;
   font-weight: 700;
@@ -891,15 +834,7 @@ function printNow() {
   gap: 0.015in;
 }
 
-.photo-instruction {
-  border: 1px solid #1f1f1f;
-  padding: 0.14in;
-  font-size: 10.5pt;
-  line-height: 1.35;
-}
-
-.photo-cell,
-.climate-photo-cell {
+.photo-cell {
   width: 42%;
 }
 
@@ -911,8 +846,7 @@ function printNow() {
   vertical-align: middle;
 }
 
-.print-photo,
-.print-climate-photo {
+.print-photo {
   display: block;
   width: 100%;
   object-fit: cover;
@@ -922,10 +856,6 @@ function printNow() {
 .print-photo {
   aspect-ratio: 4 / 3;
   border: 0;
-}
-
-.print-climate-photo {
-  aspect-ratio: 3 / 2;
 }
 
 .photo-description-cell strong {
@@ -1153,9 +1083,6 @@ function printNow() {
 }
 
 @media (max-width: 1100px) {
-  .pdf-export-page {
-    overflow-x: auto;
-  }
 
   .pdf-document {
     justify-content: start;
@@ -1177,30 +1104,28 @@ function printNow() {
   }
 }
 
+.analysis-intro-copy {
+  font-size: 11.7pt;
+  line-height: 1.5;
+}
+
+.analysis-intro-copy__prefix,
+.analysis-intro-copy p {
+  display: inline;
+}
+
+.analysis-intro-copy p {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.analysis-intro-copy + .analysis-section,
+.analysis-section--compact + .analysis-section--paired-climate,
+.analysis-narrative-section + .analysis-narrative-section {
+  margin-top: 0.32in;
+}
+
 @media print {
-  .print-page,
-  .print-page * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    color-adjust: exact !important;
-  }
-
-  @page {
-    size: letter portrait;
-    margin: 0;
-  }
-
-  html,
-  body,
-  .pdf-export-page {
-    margin: 0;
-    padding: 0;
-    background: #fff;
-  }
-
-  .no-print {
-    display: none !important;
-  }
 
   .pdf-document {
     display: block;

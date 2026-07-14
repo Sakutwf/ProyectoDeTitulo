@@ -9,6 +9,10 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
+/**
+ * Adaptador de Laravel Mail para la plantilla única de notificaciones.
+ * EnviarCorreoCampana lo construye con la campaña y el nombre del destinatario.
+ */
 class NotificacionSistemaMail extends Mailable
 {
     use Queueable, SerializesModels;

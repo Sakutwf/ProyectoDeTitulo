@@ -1462,29 +1462,6 @@ function formatDate(value) {
   return parsed.toLocaleDateString('es-CL')
 }
 
-function formatAttendance(record) {
-  if (!record) {
-    return 'Sin registro'
-  }
-
-  const hours = record.asistencia_anual_horas
-  const percentage = record.asistencia_anual_porcentaje
-
-  if ((hours === null || hours === undefined || hours === '') && (percentage === null || percentage === undefined || percentage === '')) {
-    return 'Sin registro'
-  }
-
-  if (hours !== null && hours !== undefined && hours !== '' && percentage !== null && percentage !== undefined && percentage !== '') {
-    return `${Number(percentage)}% · ${Number(hours)} h`
-  }
-
-  if (percentage !== null && percentage !== undefined && percentage !== '') {
-    return `${Number(percentage)}%`
-  }
-
-  return `${Number(hours)} h`
-}
-
 function formatActivityDateRange(start, end) {
   if (!start && !end) {
     return 'Sin registro'
@@ -1571,7 +1548,7 @@ function matchesSearch(value) {
 }
 
 .panel-kicker--section-title {
-  color: #173b70;
+  color: var(--cr-navy);
   font-family: 'Montserrat', sans-serif;
   font-size: clamp(1.35rem, 1.05rem + 0.9vw, 2.2rem);
   font-weight: 800;
@@ -1584,7 +1561,7 @@ function matchesSearch(value) {
 .hero-panel h2,
 .panel-header h3 {
   margin: 0;
-  color: #163a69;
+  color: var(--cr-navy-medium);
 }
 
 .panel-header h3 {
@@ -1593,7 +1570,7 @@ function matchesSearch(value) {
 }
 
 .section-personal-panel__title {
-  color: #f5333f;
+  color: var(--cr-red-vivid);
 }
 .panel-record-count {
   display: inline-flex;
@@ -1601,10 +1578,10 @@ function matchesSearch(value) {
   justify-content: center;
   min-height: 38px;
   padding: 0.48rem 0.95rem;
-  border: 1.5px solid #f5333f;
+  border: 1.5px solid var(--cr-red-vivid);
   border-radius: 999px;
-  background: #ffffff;
-  color: #f5333f;
+  background: var(--cr-white);
+  color: var(--cr-red-vivid);
   font-family: 'Montserrat', sans-serif;
   font-size: 0.98rem;
   font-weight: 800;
@@ -1665,12 +1642,10 @@ function matchesSearch(value) {
 .photo-card,
 .hero-panel,
 .panel,
-.action-panel,
 .search-shell,
-.status-pill,
 .panel-empty {
-  border: 1px solid #e4e8ee;
-  background: #fff;
+  border: 1px solid var(--cr-border);
+  background: var(--cr-white);
 }
 
 .back-button,
@@ -1681,9 +1656,9 @@ function matchesSearch(value) {
 
 .back-button {
   grid-area: back;
-  color: #fff;
-  background: #173b70;
-  border-color: #173b70;
+  color: var(--cr-white);
+  background: var(--cr-navy);
+  border-color: var(--cr-navy);
   font-size: 0.96rem;
 }
 
@@ -1692,9 +1667,9 @@ function matchesSearch(value) {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ff3743;
-  border-color: #ff3743;
-  color: #fff;
+  background: var(--cr-red-bright);
+  border-color: var(--cr-red-bright);
+  color: var(--cr-white);
   font-size: 1.2rem;
   font-weight: 800;
 }
@@ -1702,10 +1677,9 @@ function matchesSearch(value) {
 .photo-card,
 .hero-panel,
 .panel,
-.action-panel,
 .panel-empty {
   border-radius: 18px;
-  box-shadow: 0 16px 36px rgba(15, 47, 95, 0.08);
+  box-shadow: 0 16px 36px var(--cr-navy-shadow);
 }
 
 .photo-card {
@@ -1745,8 +1719,8 @@ function matchesSearch(value) {
   border: none;
   border-radius: 999px;
   min-height: 38px;
-  background: #173b70;
-  color: #fff;
+  background: var(--cr-navy);
+  color: var(--cr-white);
   font-size: 0.9rem;
   font-weight: 700;
 }
@@ -1807,11 +1781,11 @@ function matchesSearch(value) {
   min-width: 112px;
   height: 90px;
   border-radius: 16px;
-  border: 1px solid #e4e8ee;
+  border: 1px solid var(--cr-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #fff;
+  background: var(--cr-white);
 }
 .hero-side {
   width: 7.2rem;
@@ -1863,8 +1837,7 @@ function matchesSearch(value) {
 .commission-item,
 .stack-card,
 .counter-chip,
-.mini-pill,
-.status-pill {
+.mini-pill {
   border-radius: 14px;
 }
 
@@ -1882,7 +1855,7 @@ function matchesSearch(value) {
 
 .hero-stat span {
   margin-bottom: 0.2rem;
-  color: #173b70;
+  color: var(--cr-navy);
   font-size: 1.05rem;
   line-height: 1.2;
   text-transform: none;
@@ -1900,7 +1873,7 @@ function matchesSearch(value) {
 }
 
 .hero-stat strong {
-  color: #0f2f5f;
+  color: var(--cr-navy-dark);
   font-size: 1.22rem;
   line-height: 1.3;
 }
@@ -1913,26 +1886,6 @@ function matchesSearch(value) {
   width: 100%;
   max-width: none;
   margin-bottom: 0;
-}
-
-.action-panel--hero {
-  grid-area: actions;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  align-self: stretch;
-  width: fit-content;
-  max-width: 100%;
-  margin-inline: auto;
-  padding: 0.8rem;
-  min-height: 216px;
-  box-sizing: border-box;
-}
-
-.action-panel--hero .action-button {
-  align-self: center;
-  margin-inline: auto;
 }
 
 .search-shell {
@@ -1955,9 +1908,9 @@ function matchesSearch(value) {
   border: none;
   outline: none;
   background: transparent;
-  color: #173b70;
-  -webkit-text-fill-color: #173b70;
-  caret-color: #173b70;
+  color: var(--cr-navy);
+  -webkit-text-fill-color: var(--cr-navy);
+  caret-color: var(--cr-navy);
   font-size: 1.08rem;
 }
 
@@ -1966,7 +1919,7 @@ function matchesSearch(value) {
   opacity: 1;
 }
 
-.status-pill,
+
 .counter-chip,
 .mini-pill {
   display: inline-flex;
@@ -1975,18 +1928,6 @@ function matchesSearch(value) {
   padding: 0.6rem 0.95rem;
   font-weight: 700;
   font-size: 0.96rem;
-}
-
-.status-pill--success {
-  background: #ebf8ee;
-  border-color: #d6eddc;
-  color: #1f7a3f;
-}
-
-.status-pill--warning {
-  background: #fff4db;
-  border-color: #f2dfad;
-  color: #936d00;
 }
 
 .content-grid {
@@ -2056,8 +1997,8 @@ function matchesSearch(value) {
   max-height: min(78vh, 42rem);
   overflow: auto;
   border-radius: 22px;
-  background: #fff;
-  border: 1px solid #e4e8ee;
+  background: var(--cr-white);
+  border: 1px solid var(--cr-border);
   box-shadow: 0 20px 48px rgba(15, 47, 95, 0.18);
   padding: 1rem;
 }
@@ -2084,8 +2025,8 @@ function matchesSearch(value) {
   height: 2.4rem;
   border: 1px solid #d6dfeb;
   border-radius: 999px;
-  background: #fff;
-  color: #173b70;
+  background: var(--cr-white);
+  color: var(--cr-navy);
 }
 
 .history-modal__list {
@@ -2115,10 +2056,10 @@ function matchesSearch(value) {
   justify-content: center;
   border: 1px solid #c7d8ea;
   border-radius: 16px;
-  background: #fff;
-  color: #173b70;
+  background: var(--cr-white);
+  color: var(--cr-navy);
   font-size: 1.2rem;
-  box-shadow: 0 10px 22px rgba(15, 47, 95, 0.08);
+  box-shadow: 0 10px 22px var(--cr-navy-shadow);
 }
 
 .history-panel__action-button--danger {
@@ -2149,10 +2090,10 @@ function matchesSearch(value) {
   justify-content: center;
   border: 1px solid #c7d8ea;
   border-radius: 16px;
-  background: #fff;
-  color: #173b70;
+  background: var(--cr-white);
+  color: var(--cr-navy);
   font-size: 1.2rem;
-  box-shadow: 0 10px 22px rgba(15, 47, 95, 0.08);
+  box-shadow: 0 10px 22px var(--cr-navy-shadow);
 }
 
 .history-panel__action-button--danger {
@@ -2186,8 +2127,8 @@ function matchesSearch(value) {
   min-height: 40px;
   padding: 0.45rem 0.8rem;
   border-radius: 999px;
-  background: #eef4fb;
-  color: #173b70;
+  background: var(--cr-blue-pale);
+  color: var(--cr-navy);
   font-size: 0.95rem;
   font-weight: 700;
 }
@@ -2207,8 +2148,8 @@ function matchesSearch(value) {
   height: 42px;
   border: 1px solid #d6dfeb;
   border-radius: 999px;
-  background: #fff;
-  color: #173b70;
+  background: var(--cr-white);
+  color: var(--cr-navy);
 }
 
 .history-nav__button:disabled {
@@ -2219,14 +2160,13 @@ function matchesSearch(value) {
   width: 100%;
 }
 
-.panel,
-.action-panel {
+.panel {
   padding: 1.05rem 1.15rem;
 }
 
 .counter-chip {
-  background: #eef4fb;
-  color: #173b70;
+  background: var(--cr-blue-pale);
+  color: var(--cr-navy);
 }
 
 .fact-grid {
@@ -2241,8 +2181,8 @@ function matchesSearch(value) {
 
 .fact-tile {
   padding: 0.95rem 1rem;
-  background: #f8fafc;
-  border: 1px solid #e7edf4;
+  background: var(--cr-gray-50);
+  border: 1px solid var(--cr-gray-200);
 }
 
 .fact-tile--personal {
@@ -2272,7 +2212,7 @@ function matchesSearch(value) {
 
 .fact-tile--personal strong {
   min-width: 0;
-  color: #163a69;
+  color: var(--cr-navy-medium);
   font-size: clamp(1.05rem, 0.98rem + 0.2vw, 1.24rem);
   line-height: 1.26;
   font-weight: 800;
@@ -2310,9 +2250,9 @@ function matchesSearch(value) {
 }
 
 .commission-card {
-  border: 1px solid #e7edf4;
+  border: 1px solid var(--cr-gray-200);
   border-radius: 16px;
-  background: #f8fafc;
+  background: var(--cr-gray-50);
   padding: 0.85rem 0.95rem;
 }
 
@@ -2324,8 +2264,8 @@ function matchesSearch(value) {
 
 .commission-item {
   padding: 0.75rem 0.85rem;
-  background: #fff;
-  border: 1px solid #e7edf4;
+  background: var(--cr-white);
+  border: 1px solid var(--cr-gray-200);
 }
 
 .commission-item--wide {
@@ -2334,7 +2274,7 @@ function matchesSearch(value) {
 
 .mini-pill {
   background: #edf3fb;
-  color: #173b70;
+  color: var(--cr-navy);
 }
 
 .mini-pill--active {
@@ -2367,13 +2307,13 @@ function matchesSearch(value) {
 
 .sheet-table th {
   background: #f7f9fc;
-  color: #173b70;
+  color: var(--cr-navy);
   font-size: 0.82rem;
   text-transform: uppercase;
 }
 
 .sheet-link {
-  color: #173b70;
+  color: var(--cr-navy);
   font-weight: 700;
   text-decoration: none;
 }
@@ -2388,8 +2328,8 @@ function matchesSearch(value) {
 }
 
 .stack-card {
-  background: #f8fafc;
-  border: 1px solid #e7edf4;
+  background: var(--cr-gray-50);
+  border: 1px solid var(--cr-gray-200);
   padding: 0.8rem 0.88rem;
 }
 
@@ -2408,8 +2348,8 @@ function matchesSearch(value) {
 }
 
 .recognition-item {
-  background: #f8fafc;
-  border: 1px solid #e7edf4;
+  background: var(--cr-gray-50);
+  border: 1px solid var(--cr-gray-200);
   padding: 0.62rem 0.74rem;
   display: grid;
   gap: 0.12rem;
@@ -2425,18 +2365,12 @@ function matchesSearch(value) {
   min-height: 120px;
   padding: 1.05rem 1.15rem;
   border-radius: 16px;
-  background: #f8fafc;
-  border: 1px solid #e7edf4;
+  background: var(--cr-gray-50);
+  border: 1px solid var(--cr-gray-200);
   color: #323232;
   white-space: pre-line;
   line-height: 1.65;
   font-size: 1.02rem;
-}
-
-.action-panel {
-  display: grid;
-  gap: 0.85rem;
-  justify-items: start;
 }
 
 .action-button {
@@ -2448,21 +2382,21 @@ function matchesSearch(value) {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  border: 1px solid #173b70;
-  background: #173b70;
-  color: #fff;
+  border: 1px solid var(--cr-navy);
+  background: var(--cr-navy);
+  color: var(--cr-white);
   font-weight: 700;
   font-size: 1.02rem;
 }
 
 .action-button--primary {
-  background: #ff3743;
-  border-color: #ff3743;
+  background: var(--cr-red-bright);
+  border-color: var(--cr-red-bright);
 }
 
 .action-button--ghost {
-  background: #fff;
-  color: #173b70;
+  background: var(--cr-white);
+  color: var(--cr-navy);
 }
 
 .action-button:disabled {
@@ -2478,9 +2412,9 @@ function matchesSearch(value) {
   display: grid;
   gap: 0.95rem;
   padding: 1.05rem 1.05rem 0.95rem;
-  background: #ffffff;
-  border: 1px solid #e7edf4;
-  box-shadow: 0 12px 26px rgba(15, 47, 95, 0.08);
+  background: var(--cr-white);
+  border: 1px solid var(--cr-gray-200);
+  box-shadow: 0 12px 26px var(--cr-navy-shadow);
 }
 
 .volunteer-activity-card__header {
@@ -2490,7 +2424,7 @@ function matchesSearch(value) {
 
 .volunteer-activity-card__name {
   margin: 0;
-  color: #173b70;
+  color: var(--cr-navy);
   font-family: 'Montserrat', sans-serif;
   font-size: clamp(1.05rem, 0.98rem + 0.22vw, 1.28rem);
   font-weight: 800;
@@ -2529,7 +2463,7 @@ function matchesSearch(value) {
   gap: 0.82rem;
   align-items: center;
   padding: 0.78rem 0;
-  border-top: 1px solid #e7edf4;
+  border-top: 1px solid var(--cr-gray-200);
 }
 
 .volunteer-activity-card__item:first-child {
@@ -2548,7 +2482,7 @@ function matchesSearch(value) {
   align-items: center;
   justify-content: center;
   border-radius: 0.85rem;
-  color: #f5333f;
+  color: var(--cr-red-vivid);
   background: #fff5f5;
   font-size: 1.1rem;
 }
@@ -2560,7 +2494,7 @@ function matchesSearch(value) {
 }
 
 .volunteer-activity-card__label {
-  color: #173b70;
+  color: var(--cr-navy);
   font-family: 'Montserrat', sans-serif;
   font-size: 0.86rem;
   font-weight: 700;
@@ -2587,10 +2521,10 @@ function matchesSearch(value) {
   max-width: 100%;
   min-height: 40px;
   padding: 0.58rem 1rem;
-  border: 1px solid #f5333f;
+  border: 1px solid var(--cr-red-vivid);
   border-radius: 0.95rem;
-  background: #f5333f;
-  color: #ffffff;
+  background: var(--cr-red-vivid);
+  color: var(--cr-white);
   box-shadow: 0 10px 24px rgba(245, 51, 63, 0.18);
   font-size: 0.94rem;
   font-weight: 800;
@@ -2602,7 +2536,7 @@ function matchesSearch(value) {
 .section-upload-button:focus-visible {
   background: #dc2430;
   border-color: #dc2430;
-  color: #ffffff;
+  color: var(--cr-white);
   box-shadow: 0 12px 28px rgba(220, 36, 48, 0.24);
   transform: translateY(-1px);
 }
@@ -3107,17 +3041,13 @@ function matchesSearch(value) {
   }
 
   .search-shell input {
-    color: #173b70;
-    -webkit-text-fill-color: #173b70;
-    caret-color: #173b70;
+    color: var(--cr-navy);
+    -webkit-text-fill-color: var(--cr-navy);
+    caret-color: var(--cr-navy);
     font-size: 0.9rem;
   }
 
   .fact-grid--personal {
-    grid-template-columns: 1fr;
-  }
-
-  .receipt-upload-form__grid {
     grid-template-columns: 1fr;
   }
 
@@ -3135,7 +3065,6 @@ function matchesSearch(value) {
     white-space: normal;
   }
   .search-shell,
-  .status-pill,
   .history-counter {
     width: 100%;
     justify-content: center;
@@ -3156,13 +3085,13 @@ function matchesSearch(value) {
   width: 5.25rem;
   height: 5.25rem;
   margin: 0 auto 1rem;
-  border: 4px solid #ff3743 !important;
+  border: 4px solid var(--cr-red-bright) !important;
   border-radius: 999px;
-  color: #ff3743 !important;
+  color: var(--cr-red-bright) !important;
 }
 
 :deep(.annual-delete-alert__icon .swal2-icon-content) {
-  color: #ff3743 !important;
+  color: var(--cr-red-bright) !important;
   font-size: 3rem;
   line-height: 1;
 }
@@ -3195,11 +3124,11 @@ function matchesSearch(value) {
   border-radius: 0.28rem;
   font-size: 0.98rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--cr-white);
 }
 
 :deep(.annual-delete-alert__confirm) {
-  background: #ff3743;
+  background: var(--cr-red-bright);
 }
 
 :deep(.annual-delete-alert__cancel) {
@@ -3211,7 +3140,7 @@ function matchesSearch(value) {
   outline: none;
   box-shadow: 0 0 0 3px rgba(23, 59, 112, 0.12);
 }
-.pending-requests-panel{margin:0 0 1rem;background:#fff8e5;border:1px solid #f0d58a;border-radius:18px;padding:1rem 1.2rem}.pending-requests-panel h3{margin:.15rem 0 .8rem}.pending-request-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.65rem}.pending-request-list article{display:grid;gap:.25rem;background:#fff;border-radius:12px;padding:.75rem}.pending-request-list small{color:#667085}.pending-status{width:max-content;padding:.2rem .45rem;border-radius:999px;font-size:.7rem;font-weight:800;text-transform:uppercase;background:#ffefb6;color:#7b5700}.pending-status--aprobada{background:#dff7e8;color:#176b3a}.pending-status--rechazada{background:#fde2e3;color:#a4212a}
+.pending-requests-panel{margin:0 0 1rem;background:#fff8e5;border:1px solid #f0d58a;border-radius:18px;padding:1rem 1.2rem}.pending-requests-panel h3{margin:.15rem 0 .8rem}.pending-request-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.65rem}.pending-request-list article{display:grid;gap:.25rem;background:var(--cr-white);border-radius:12px;padding:.75rem}.pending-request-list small{color:var(--cr-slate)}.pending-status{width:max-content;padding:.2rem .45rem;border-radius:999px;font-size:.7rem;font-weight:800;text-transform:uppercase;background:#ffefb6;color:#7b5700}.pending-status--aprobada{background:#dff7e8;color:#176b3a}.pending-status--rechazada{background:#fde2e3;color:#a4212a}
 </style>
 
 

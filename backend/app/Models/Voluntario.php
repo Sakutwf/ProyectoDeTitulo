@@ -6,9 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Voluntario extends Model
 {
-    private const PROFILE_PHOTO_CATEGORY = 'foto_perfil';
+    public const PROFILE_PHOTO_CATEGORY = 'foto_perfil';
 
-    private const ENTITY_TYPE = 'voluntario';
+    public const ENTITY_TYPE = 'voluntario';
 
     protected $fillable = [
         'user_id',

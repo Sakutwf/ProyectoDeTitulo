@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Archivo;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Voluntario;
@@ -400,9 +399,9 @@ class UserController extends Controller
 
         $voluntario->archivoFotoPerfil()->updateOrCreate(
             [
-                'entidad' => 'voluntario',
+                'entidad' => Voluntario::ENTITY_TYPE,
                 'entidad_id' => $voluntario->id,
-                'categoria' => 'foto_perfil',
+                'categoria' => Voluntario::PROFILE_PHOTO_CATEGORY,
             ],
             [
                 'ruta' => $optimized['path'],
@@ -454,5 +453,3 @@ class UserController extends Controller
         }
     }
 }
-
-

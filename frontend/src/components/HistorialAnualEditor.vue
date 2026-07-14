@@ -1318,10 +1318,6 @@ function roundToTwo(value) {
   return Math.round(numericValue * 100) / 100
 }
 
-function formatHours(value) {
-  return `${new Intl.NumberFormat('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(roundToTwo(value))} hrs`
-}
-
 function formatWholeHours(value) {
   return `${new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 }).format(Math.round(roundToTwo(value)))} hrs`
 }
@@ -1453,36 +1449,6 @@ function addAttachmentSlot(row) {
   }
 
   row.archivos_adjuntos.push(createEmptyAttachment())
-}
-
-function removeAttachmentSlot(row, attachmentIndex) {
-  if (!row?.archivos_adjuntos?.length) {
-    return
-  }
-
-  const attachment = row.archivos_adjuntos[attachmentIndex]
-
-  if (attachment) {
-    revokeAttachmentPreview(attachment)
-  }
-
-  if (row.archivos_adjuntos.length === 1) {
-    row.archivos_adjuntos.splice(0, 1, createEmptyAttachment())
-    return
-  }
-
-  row.archivos_adjuntos.splice(attachmentIndex, 1)
-}
-
-function clearAttachmentSlot(row, attachmentIndex) {
-  const attachment = row?.archivos_adjuntos?.[attachmentIndex]
-
-  if (!attachment) {
-    return
-  }
-
-  revokeAttachmentPreview(attachment)
-  Object.assign(attachment, createEmptyAttachment())
 }
 
 function appendAttachmentPayload(formData, key, attachments = []) {
@@ -1624,10 +1590,6 @@ function addTitleAttachment(index) {
   addAttachmentSlot(form.titulos[index])
 }
 
-function removeTitleAttachment(index, attachmentIndex) {
-  removeAttachmentSlot(form.titulos[index], attachmentIndex)
-}
-
 function removeTitleRow(index) {
   const row = form.titulos[index]
 
@@ -1647,10 +1609,6 @@ function addCourseRow() {
 
 function addCourseAttachment(index) {
   addAttachmentSlot(form.cursos[index])
-}
-
-function removeCourseAttachment(index, attachmentIndex) {
-  removeAttachmentSlot(form.cursos[index], attachmentIndex)
 }
 
 function removeCourseRow(index) {
@@ -1782,14 +1740,6 @@ function onOtherDocumentFileSelected(index, attachmentIndex, event) {
   event.target.value = ''
 }
 
-function clearTitleAttachment(index, attachmentIndex) {
-  clearAttachmentSlot(form.titulos[index], attachmentIndex)
-}
-
-function clearCourseAttachment(index, attachmentIndex) {
-  clearAttachmentSlot(form.cursos[index], attachmentIndex)
-}
-
 async function submit() {
   if (!isSectionModal.value || props.initialSection === 'personal') {
     if (!nullableText(form.registro_filial)) {
@@ -1872,7 +1822,7 @@ async function submit() {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--cr-white);
   border: 1px solid #d7e1ec;
   border-radius: 24px;
   box-shadow: 0 28px 60px rgba(10, 25, 48, 0.24);
@@ -1890,7 +1840,7 @@ async function submit() {
 
 .editor-panel__header {
   padding: 1.25rem 1.25rem 1rem;
-  background: #fff;
+  background: var(--cr-white);
   border-bottom: 1px solid #d7e1ec;
 }
 
@@ -1906,7 +1856,7 @@ async function submit() {
 .editor-panel__header h3,
 .editor-card h4 {
   margin: 0;
-  color: #0f2f5f;
+  color: var(--cr-navy-dark);
 }
 
 .editor-description {
@@ -1921,8 +1871,8 @@ async function submit() {
   height: 42px;
   border: 1px solid #d7e0eb;
   border-radius: 999px;
-  background: #fff;
-  color: #173b70;
+  background: var(--cr-white);
+  color: var(--cr-navy);
 }
 
 .period-chip {
@@ -1933,7 +1883,7 @@ async function submit() {
   border-radius: 999px;
   background: #edf4fb;
   border: 1px solid #c6d6e6;
-  color: #173b70;
+  color: var(--cr-navy);
   font-size: 0.88rem;
   font-weight: 700;
 }
@@ -1971,13 +1921,6 @@ async function submit() {
   grid-column: span 3;
 }
 
-.field-hint {
-  color: #5a6d86;
-  font-size: 0.82rem;
-  font-weight: 500;
-  line-height: 1.45;
-}
-
 .attendance-card__header {
   display: flex;
   align-items: center;
@@ -1995,8 +1938,8 @@ async function submit() {
   min-height: 46px;
   padding: 0.45rem 1rem;
   border-radius: 16px;
-  background: #ff3743;
-  color: #fff;
+  background: var(--cr-red-bright);
+  color: var(--cr-white);
   font-size: 1.3rem;
   font-weight: 900;
   line-height: 1;
@@ -2023,16 +1966,6 @@ async function submit() {
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
-}
-
-.attendance-summary__eyebrow {
-  display: block;
-  margin-bottom: 0.22rem;
-  color: #c92a35;
-  font-size: 0.92rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .attendance-summary__header strong {
@@ -2080,7 +2013,7 @@ async function submit() {
   padding: 0.9rem 1rem;
   border: 2px solid #c9d9e8;
   border-radius: 18px;
-  background: #fff;
+  background: var(--cr-white);
   box-shadow: 0 10px 18px rgba(16, 44, 79, 0.05);
 }
 
@@ -2116,8 +2049,8 @@ async function submit() {
   height: 42px;
   border: none;
   border-radius: 999px;
-  background: #ff3743;
-  color: #fff;
+  background: var(--cr-red-bright);
+  color: var(--cr-white);
   font-size: 1.7rem;
   font-weight: 900;
   line-height: 1;
@@ -2179,7 +2112,7 @@ async function submit() {
   border-radius: 999px;
   padding: 0.55rem 1rem;
   background: #0f3c74;
-  color: #fff;
+  color: var(--cr-white);
   font-weight: 800;
   line-height: 1;
 }
@@ -2217,7 +2150,7 @@ async function submit() {
   gap: 1rem;
   border-radius: 24px;
   padding: 1.25rem;
-  background: #fff;
+  background: var(--cr-white);
   box-shadow: 0 26px 60px rgba(12, 30, 58, 0.22);
 }
 
@@ -2318,17 +2251,6 @@ async function submit() {
   font-size: 0.92rem;
 }
 
-.section-header--compact {
-  align-items: flex-start;
-  margin-bottom: 0.7rem;
-}
-
-.section-subtitle {
-  margin: 0;
-  color: #143761;
-  font-size: 1rem;
-}
-
 .section-toggle--compact {
   margin-top: 0;
 }
@@ -2354,9 +2276,9 @@ async function submit() {
   align-items: flex-start;
   border: 1px solid #c9d8e6;
   border-radius: 16px;
-  background: #fff;
+  background: var(--cr-white);
   padding: 0.95rem 1rem;
-  color: #173b70;
+  color: var(--cr-navy);
   cursor: pointer;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
@@ -2451,7 +2373,7 @@ async function submit() {
   padding: 0.85rem;
   border: 1px solid #c9d8e6;
   border-radius: 14px;
-  background: #ffffff;
+  background: var(--cr-white);
 }
 
 .attachment-preview__image {
@@ -2467,12 +2389,12 @@ async function submit() {
   height: 280px;
   border: 1px solid #d8e3ee;
   border-radius: 12px;
-  background: #fff;
+  background: var(--cr-white);
 }
 
 .attachment-preview__open {
   justify-self: start;
-  color: #173b70;
+  color: var(--cr-navy);
   font-size: 0.88rem;
   font-weight: 700;
   text-decoration: none;
@@ -2483,7 +2405,7 @@ async function submit() {
 }
 
 .attachment-link {
-  color: #173b70;
+  color: var(--cr-navy);
   font-weight: 700;
   text-decoration: none;
 }
@@ -2495,15 +2417,10 @@ async function submit() {
 .attachment-badge {
   border-radius: 999px;
   background: #edf3fb;
-  color: #173b70;
+  color: var(--cr-navy);
   padding: 0.35rem 0.7rem;
   font-size: 0.82rem;
   font-weight: 700;
-}
-
-.attachment-badge--warning {
-  background: #fff1d9;
-  color: #936d00;
 }
 
 .comments-field {
@@ -2539,7 +2456,7 @@ async function submit() {
   align-items: center;
   border: 1px solid #e5ebf3;
   border-radius: 14px;
-  background: #fff;
+  background: var(--cr-white);
   padding: 0.8rem 0.9rem;
   color: #1d385f;
   font-weight: 600;
@@ -2608,8 +2525,8 @@ async function submit() {
   min-height: 46px;
   padding: 0.45rem 1rem;
   border-radius: 16px;
-  background: #ff3743;
-  color: #fff;
+  background: var(--cr-red-bright);
+  color: var(--cr-white);
   font-size: 1.3rem;
   font-weight: 900;
   line-height: 1;

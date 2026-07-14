@@ -140,6 +140,8 @@ import { API_BASE } from '../config/api'
 import { show_alerta } from '../funciones'
 import { useStore } from 'vuex'
 import { optimizeImage } from '../utils/imageOptimization'
+import { formatDate, formatDateRange } from '../utils/formatters'
+import { fetchAllPages } from '../utils/apiPagination'
 
 const store = useStore()
 const currentUser = computed(() => store.getters.authUser)
@@ -168,19 +170,6 @@ function createEmptyGalleryForm() {
   }
 }
 
-function formatDate(value) {
-  if (!value) return '-'
-  const parsed = new Date(`${String(value).slice(0, 10)}T00:00:00`)
-  if (Number.isNaN(parsed.getTime())) return String(value)
-  return parsed.toLocaleDateString('es-CL')
-}
-
-function formatDateRange(start, end) {
-  if (!start && !end) return '-'
-  if (start && end) return `${formatDate(start)} - ${formatDate(end)}`
-  return formatDate(start || end)
-}
-
 async function loadActivities() {
   if (!currentVolunteerId.value) {
     activities.value = []
@@ -190,21 +179,7 @@ async function loadActivities() {
   isLoading.value = true
 
   try {
-    const firstPage = await axios.get(`${API_BASE}/actividad`, { params: { page: 1 } })
-    const totalPages = Number(firstPage.data?.last_page || 1)
-    const pages = [firstPage.data]
-
-    if (totalPages > 1) {
-      const responses = await Promise.all(
-        Array.from({ length: totalPages - 1 }, (_, index) =>
-          axios.get(`${API_BASE}/actividad`, { params: { page: index + 2 } })
-        )
-      )
-
-      pages.push(...responses.map((response) => response.data))
-    }
-
-    activities.value = pages.flatMap((page) => page.data || [])
+    activities.value = await fetchAllPages(axios, `${API_BASE}/actividad`)
   } catch (error) {
     activities.value = []
     show_alerta('No se pudieron cargar tus actividades inscritas.', 'error')
@@ -325,23 +300,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.content-wrapper {
-  flex: 1;
-  background-color: #f5f7fa;
-  min-height: 100vh;
-}
-
-.content-header {
-  padding: 1rem 1.5rem;
-  background-color: #fff;
-  border-bottom: 1px solid #e0e0e0;
-  margin-bottom: 1.5rem;
-}
-
-.content {
-  padding: 0 1.5rem 1.5rem;
-}
-
 .volunteer-card {
   border: none;
   border-radius: 8px;
@@ -367,8 +325,8 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  background: #eef4fb;
-  color: #0f2f5f;
+  background: var(--cr-blue-pale);
+  color: var(--cr-navy-dark);
   font-weight: 700;
   padding: 0.5rem 0.9rem;
 }
@@ -376,9 +334,9 @@ onMounted(async () => {
 .empty-state {
   border-radius: 18px;
   border: 1px dashed #d6dde7;
-  background: #fafbfd;
+  background: var(--cr-surface);
   padding: 1.2rem;
-  color: #65758a;
+  color: var(--cr-gray-600);
 }
 
 .empty-state--nested {
@@ -394,7 +352,7 @@ onMounted(async () => {
   border: 1px solid #e1e6ef;
   border-radius: 20px;
   padding: 1rem;
-  background: #fff;
+  background: var(--cr-white);
   display: grid;
   gap: 1rem;
 }
@@ -415,7 +373,7 @@ onMounted(async () => {
 
 .activity-card__top p {
   margin: 0;
-  color: #66788c;
+  color: var(--cr-blue-gray);
 }
 
 .activity-badge {
@@ -423,8 +381,8 @@ onMounted(async () => {
   align-items: center;
   padding: 0.35rem 0.7rem;
   border-radius: 999px;
-  background: #e01e1e;
-  color: #fff;
+  background: var(--cr-red);
+  color: var(--cr-white);
   font-size: 0.8rem;
   font-weight: 700;
 }
@@ -436,7 +394,7 @@ onMounted(async () => {
 }
 
 .gallery-panel {
-  border-top: 1px solid #e7edf4;
+  border-top: 1px solid var(--cr-gray-200);
   padding-top: 1rem;
   display: grid;
   gap: 1rem;
@@ -444,14 +402,14 @@ onMounted(async () => {
 
 .gallery-panel__copy h4 {
   margin: 0 0 0.3rem;
-  color: #163a69;
+  color: var(--cr-navy-medium);
   font-size: 1.05rem;
   font-weight: 800;
 }
 
 .gallery-panel__copy p {
   margin: 0;
-  color: #66788c;
+  color: var(--cr-blue-gray);
 }
 
 .gallery-form {
@@ -459,8 +417,8 @@ onMounted(async () => {
   gap: 0.8rem;
   padding: 1rem;
   border-radius: 18px;
-  background: #f8fafc;
-  border: 1px solid #e5ebf2;
+  background: var(--cr-gray-50);
+  border: 1px solid var(--cr-border-light);
 }
 
 .gallery-form__grid {
@@ -485,7 +443,7 @@ onMounted(async () => {
   border: 1px solid #e1e6ef;
   border-radius: 18px;
   overflow: hidden;
-  background: #fff;
+  background: var(--cr-white);
 }
 
 .gallery-item-card__download {
@@ -499,14 +457,14 @@ onMounted(async () => {
   border: 0;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.94);
-  color: #e01e1e;
+  color: var(--cr-red);
   box-shadow: 0 6px 16px rgba(15, 47, 95, 0.2);
 }
 
 .gallery-item-card__download:hover,
 .gallery-item-card__download:focus-visible {
-  background: #e01e1e;
-  color: #fff;
+  background: var(--cr-red);
+  color: var(--cr-white);
 }
 
 .gallery-item-card__image {
@@ -529,18 +487,10 @@ onMounted(async () => {
 .gallery-item-card__body small,
 .gallery-item-card__body p {
   margin: 0;
-  color: #66788c;
+  color: var(--cr-blue-gray);
 }
 
 @media (max-width: 767.98px) {
-  .content-header {
-    padding: 1rem 1rem 0.9rem;
-    margin-bottom: 1rem;
-  }
-
-  .content {
-    padding: 0 1rem 1rem;
-  }
 
   .gallery-form__grid {
     grid-template-columns: 1fr;

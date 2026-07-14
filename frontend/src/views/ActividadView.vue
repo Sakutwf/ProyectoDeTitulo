@@ -232,6 +232,7 @@ import ActividadEditView from './ActividadEditView.vue'
 import ActividadCreateView from './ActividadCreateView.vue'
 import volunteersIcon from '../assets/icons/cruz-roja/voluntary-service.png'
 import documentsIcon from '../assets/icons/cruz-roja/documents.png'
+import { formatDate } from '../utils/formatters'
 
 const router = useRouter()
 const actividades = ref([])
@@ -351,23 +352,112 @@ async function deleteActividad(id) {
 
 function showVolunteers(actividad) {
   const volunteers = actividad.voluntarios || []
+  const modalClasses = {
+    popup: 'volunteer-roster-popup',
+    title: 'volunteer-roster-title',
+    htmlContainer: 'volunteer-roster-content',
+    actions: 'volunteer-roster-actions',
+    confirmButton: 'volunteer-roster-close'
+  }
 
   if (!volunteers.length) {
-    Swal.fire('Voluntarios asociados', 'No hay voluntarios asociados a esta actividad.', 'info')
+    Swal.fire({
+      title: 'Voluntarios asociados',
+      html: '<div class="volunteer-roster-empty"><i class="fa-solid fa-users"></i><p>No hay voluntarios asociados a esta actividad.</p></div>',
+      confirmButtonText: 'Cerrar',
+      buttonsStyling: false,
+      customClass: modalClasses
+    })
     return
   }
 
   const html = volunteers.map((volunteer) => {
-    const fullName = [volunteer.nombres, volunteer.apellidos].filter(Boolean).join(' ') || volunteer.user?.username || volunteer.registro_filial || 'Voluntario'
+    const firstName = String(volunteer.nombres || '').trim().split(/\s+/)[0] || ''
+    const firstSurname = String(volunteer.apellidos || '').trim().split(/\s+/)[0] || ''
+    const fullName = [firstName, firstSurname].filter(Boolean).join(' ') || String(volunteer.user?.username || 'Voluntario').trim().split(/\s+/)[0]
     const hours = Number(volunteer.pivot?.horas_asistidas ?? 0)
-    return `<li><strong>${fullName}</strong> · Reg. ${volunteer.registro_filial || '-'} · ${hours} h</li>`
+    const numericHours = Number.isFinite(hours) ? (hours % 1 === 0 ? hours.toFixed(0) : hours.toFixed(2)) : '0'
+    const formattedHours = `${numericHours} ${Number(numericHours) === 1 ? 'hora' : 'horas'}`
+    const avatar = volunteer.foto_perfil_url
+      ? `<button type="button" class="volunteer-roster-avatar volunteer-roster-avatar--photo" data-profile-photo="${escapeHtml(volunteer.foto_perfil_url)}" data-profile-name="${escapeHtml(fullName)}" aria-label="Ampliar foto de ${escapeHtml(fullName)}" title="Ampliar foto"><img src="${escapeHtml(volunteer.foto_perfil_url)}" alt="Foto de ${escapeHtml(fullName)}"></button>`
+      : '<span class="volunteer-roster-avatar" aria-hidden="true"><i class="fa-solid fa-user"></i></span>'
+
+    return `
+      <article class="volunteer-roster-item">
+        ${avatar}
+        <div class="volunteer-roster-identity">
+          <strong>${escapeHtml(fullName)}</strong>
+        </div>
+        <span class="volunteer-roster-hours"><i class="fa-regular fa-clock"></i> ${formattedHours}</span>
+      </article>
+    `
   }).join('')
 
   Swal.fire({
     title: `Voluntarios asociados (${volunteers.length})`,
-    html: `<ul style="text-align:left;padding-left:1.25rem;margin:0">${html}</ul>`,
-    confirmButtonText: 'Cerrar'
+    html: `
+      <div class="volunteer-roster-list">${html}</div>
+      <div class="volunteer-photo-viewer" hidden>
+        <section class="volunteer-photo-viewer__dialog" role="dialog" aria-modal="true" aria-label="Foto de perfil ampliada">
+          <img class="volunteer-photo-viewer__image" alt="">
+        </section>
+      </div>
+    `,
+    confirmButtonText: 'Cerrar',
+    buttonsStyling: false,
+    customClass: modalClasses,
+    didOpen: (popup) => {
+      setupVolunteerPhotoViewer(popup)
+    }
   })
+}
+
+// Abre la foto sin cerrar la lista y devuelve el foco a la miniatura al salir.
+function setupVolunteerPhotoViewer(popup) {
+  const viewer = popup.querySelector('.volunteer-photo-viewer')
+  const image = viewer?.querySelector('.volunteer-photo-viewer__image')
+  const actions = popup.querySelector('.volunteer-roster-actions')
+
+  if (!viewer || !image) {
+    return
+  }
+
+  let lastTrigger = null
+
+  const closeViewer = () => {
+    viewer.hidden = true
+    popup.classList.remove('volunteer-photo-open')
+    actions?.removeAttribute('hidden')
+    image.removeAttribute('src')
+    lastTrigger?.focus()
+  }
+
+  popup.querySelectorAll('[data-profile-photo]').forEach((button) => {
+    button.addEventListener('click', () => {
+      lastTrigger = button
+      image.src = button.dataset.profilePhoto
+      image.alt = `Foto ampliada de ${button.dataset.profileName}`
+      popup.classList.add('volunteer-photo-open')
+      actions?.setAttribute('hidden', '')
+      viewer.hidden = false
+    })
+  })
+
+  viewer.addEventListener('click', (event) => {
+    if (event.target === viewer) {
+      closeViewer()
+    }
+  })
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>'"]/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    "'": '&#39;',
+    '"': '&quot;'
+  }[character]))
 }
 
 function associatedDocuments(actividad) {
@@ -458,19 +548,6 @@ function volunteerButtonLabel(actividad) {
   return `${count} voluntario${count === 1 ? '' : 's'}`
 }
 
-function formatDate(value) {
-  if (!value) return '-'
-  const parsed = new Date(`${String(value).slice(0, 10)}T00:00:00`)
-  if (Number.isNaN(parsed.getTime())) return String(value)
-  return parsed.toLocaleDateString('es-CL')
-}
-
-function formatDateRange(start, end) {
-  if (!start && !end) return '-'
-  if (start && end) return `${formatDate(start)} - ${formatDate(end)}`
-  return formatDate(start || end)
-}
-
 function formatHours(value) {
   if (value === null || value === undefined || value === '') return '-'
   const numericValue = Number(value)
@@ -509,12 +586,12 @@ onBeforeUnmount(() => {
   height: 2.3rem;
   border: 1px solid #d5deea;
   border-radius: 999px;
-  background: #fff;
+  background: var(--cr-white);
   color: #274062;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 18px rgba(15, 47, 95, 0.08);
+  box-shadow: 0 8px 18px var(--cr-navy-shadow);
 }
 
 .table-scroll-button:disabled {
@@ -548,7 +625,7 @@ onBeforeUnmount(() => {
 .custom-table td {
   padding: 8px 12px;
   vertical-align: middle;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--cr-gray-300);
   white-space: normal;
   overflow-wrap: normal;
   word-break: normal;
@@ -560,23 +637,6 @@ onBeforeUnmount(() => {
   border: none;
   border-radius: 8px;
   overflow: hidden;
-}
-
-.content-wrapper {
-  flex: 1;
-  background-color: #f5f7fa;
-  min-height: 100vh;
-}
-
-.content-header {
-  padding: 1rem 1.5rem;
-  background-color: #fff;
-  border-bottom: 1px solid #e0e0e0;
-  margin-bottom: 1.5rem;
-}
-
-.content {
-  padding: 0 1.5rem 1.5rem;
 }
 
 .activities-header {
@@ -620,25 +680,25 @@ onBeforeUnmount(() => {
 }
 
 .cruz-roja-pagination .page-link {
-  color: #e01e1e;
+  color: var(--cr-red);
   font-weight: 600;
-  border: 1px solid #e01e1e;
-  background: #fff;
+  border: 1px solid var(--cr-red);
+  background: var(--cr-white);
   border-radius: 6px;
   margin: 0 2px;
 }
 
 .cruz-roja-pagination .page-item.active .page-link,
 .cruz-roja-pagination .page-link:hover {
-  background: #e01e1e;
-  color: #fff;
-  border-color: #e01e1e;
+  background: var(--cr-red);
+  color: var(--cr-white);
+  border-color: var(--cr-red);
 }
 
 .cruz-roja-pagination .page-item.disabled .page-link {
   color: #aaa;
   background: #f5f5f5;
-  border-color: #e0e0e0;
+  border-color: var(--cr-gray-300);
 }
 
 .actions-cell {
@@ -661,16 +721,16 @@ onBeforeUnmount(() => {
 }
 
 .activity-action-button {
-  border-color: #0f4c81;
-  color: #0f4c81;
+  border-color: var(--cr-blue);
+  color: var(--cr-blue);
   border-radius: 12px;
 }
 
 .activity-action-button:hover,
 .activity-action-button:focus,
 .activity-action-button:active {
-  border-color: #0c416d;
-  color: #0c416d;
+  border-color: var(--cr-blue-dark);
+  color: var(--cr-blue-dark);
   background: #edf5fb;
 }
 
@@ -690,10 +750,10 @@ onBeforeUnmount(() => {
   justify-content: center;
   min-height: 38px;
   padding: 0.45rem 0.95rem;
-  border: 1.5px solid #0f4c81;
+  border: 1.5px solid var(--cr-blue);
   border-radius: 0.9rem;
-  color: #0f4c81;
-  background: #fff;
+  color: var(--cr-blue);
+  background: var(--cr-white);
   font-size: 1rem;
   font-weight: 800;
   line-height: 1;
@@ -722,7 +782,7 @@ onBeforeUnmount(() => {
   padding: 0.62rem 1rem;
   border: 1.5px solid #df3342;
   border-radius: 999px;
-  color: #fff;
+  color: var(--cr-white);
   background: #df3342;
   font-weight: 700;
   line-height: 1.1;
@@ -733,14 +793,14 @@ onBeforeUnmount(() => {
 .volunteer-pill-button:focus,
 .volunteer-pill-button:active {
   border-color: #c92b39;
-  color: #fff;
+  color: var(--cr-white);
   background: #c92b39;
 }
 
 
 .document-icon-button {
   padding: 0;
-  background: #fff;
+  background: var(--cr-white);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -777,6 +837,234 @@ onBeforeUnmount(() => {
   color: #8a97a6;
 }
 
+:global(.volunteer-roster-popup) {
+  width: min(92vw, 650px);
+  padding: 0;
+  overflow: hidden;
+  border-radius: 22px;
+  border-top: 6px solid var(--cr-red);
+  background: var(--cr-white);
+  box-shadow: 0 24px 70px rgba(11, 43, 75, 0.28);
+}
+
+:global(.volunteer-roster-title) {
+  margin: 0;
+  padding: 1.35rem 1.5rem 0.9rem;
+  color: var(--cr-navy-medium);
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  font-weight: 800;
+  text-align: left;
+}
+
+:global(.volunteer-roster-content) {
+  margin: 0;
+  padding: 0 1.5rem;
+  color: var(--cr-navy-medium);
+}
+
+:global(.volunteer-roster-list) {
+  display: grid;
+  max-height: min(52vh, 430px);
+  gap: 0.7rem;
+  overflow-y: auto;
+  padding: 0.15rem 0.2rem 0.2rem 0;
+  text-align: left;
+}
+
+:global(.volunteer-roster-item) {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #dce5ef;
+  border-left: 4px solid var(--cr-red);
+  border-radius: 15px;
+  background: #fbfcfe;
+}
+
+:global(.volunteer-roster-avatar) {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--cr-white);
+  background: var(--cr-red);
+  font-size: 1rem;
+}
+
+:global(.volunteer-roster-avatar--photo) {
+  overflow: hidden;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  padding: 0;
+  cursor: zoom-in;
+  border: 3px solid var(--cr-red);
+  background: var(--cr-white);
+}
+
+:global(.volunteer-roster-avatar--photo img) {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+:global(.volunteer-roster-avatar--photo:hover),
+:global(.volunteer-roster-avatar--photo:focus-visible) {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 3px rgba(224, 30, 30, 0.16);
+  outline: none;
+}
+
+:global(.volunteer-photo-viewer) {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(10, 24, 43, 0.97);
+  backdrop-filter: none;
+}
+
+:global(.volunteer-photo-viewer[hidden]) {
+  display: none;
+}
+
+:global(.volunteer-photo-viewer__dialog) {
+  width: min(72vw, 300px);
+  aspect-ratio: 1;
+  overflow: hidden;
+  padding: 0;
+  border: 3px solid var(--cr-red);
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+}
+
+:global(.volunteer-photo-viewer__image) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+}
+
+:global(.volunteer-roster-identity) {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+:global(.volunteer-roster-identity strong) {
+  overflow-wrap: anywhere;
+  color: var(--cr-navy-medium);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+:global(.volunteer-roster-hours) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.42rem 0.65rem;
+  border-radius: 999px;
+  color: var(--cr-navy-medium);
+  background: #eaf1f8;
+  font-size: 0.88rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+:global(.volunteer-roster-hours i) {
+  color: var(--cr-red);
+}
+
+:global(.volunteer-roster-actions) {
+  position: static;
+  z-index: auto;
+  width: 100%;
+  justify-content: flex-end;
+  margin: 0;
+  padding: 1rem 1.5rem 1.3rem;
+}
+
+:global(.volunteer-roster-popup.volunteer-photo-open .volunteer-roster-actions),
+:global(.volunteer-roster-actions[hidden]) {
+  display: none !important;
+}
+
+:global(.volunteer-roster-close) {
+  min-width: 110px;
+  padding: 0.65rem 1.1rem;
+  border: 1px solid var(--cr-red);
+  border-radius: 10px;
+  color: var(--cr-white);
+  background: var(--cr-red);
+  font-weight: 700;
+}
+
+:global(.volunteer-roster-close:hover),
+:global(.volunteer-roster-close:focus) {
+  border-color: var(--cr-red-dark);
+  background: var(--cr-red-dark);
+  box-shadow: 0 0 0 3px rgba(224, 30, 30, 0.16);
+}
+
+:global(.volunteer-roster-empty) {
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+  padding: 1rem 0;
+  color: var(--cr-gray-600);
+  text-align: center;
+}
+
+:global(.volunteer-roster-empty i) {
+  color: var(--cr-red);
+  font-size: 2rem;
+}
+
+:global(.volunteer-roster-empty p) {
+  margin: 0;
+}
+
+@media (max-width: 480px) {
+  :global(.volunteer-roster-title) {
+    padding: 1.1rem 1rem 0.8rem;
+  }
+
+  :global(.volunteer-roster-content) {
+    padding: 0 1rem;
+  }
+
+  :global(.volunteer-roster-item) {
+    grid-template-columns: 38px minmax(0, 1fr);
+    padding: 0.75rem;
+  }
+
+  :global(.volunteer-roster-avatar) {
+    width: 38px;
+    height: 38px;
+  }
+
+  :global(.volunteer-roster-hours) {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  :global(.volunteer-roster-actions) {
+    padding: 0.9rem 1rem 1.1rem;
+  }
+}
+
 :deep(.associated-document-modal) {
   text-align: left;
 }
@@ -795,9 +1083,9 @@ onBeforeUnmount(() => {
   width: 100%;
   margin: 0;
   border-radius: 16px;
-  border: 1.5px solid #0f4c81;
-  background: #fff;
-  color: #0f4c81;
+  border: 1.5px solid var(--cr-blue);
+  background: var(--cr-white);
+  color: var(--cr-blue);
   display: grid;
   gap: 0.2rem;
   justify-items: start;
@@ -854,7 +1142,7 @@ onBeforeUnmount(() => {
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(250, 252, 255, 0.98)),
       radial-gradient(circle at top right, rgba(224, 30, 30, 0.08), transparent 38%);
-    box-shadow: 0 16px 30px rgba(15, 47, 95, 0.08);
+    box-shadow: 0 16px 30px var(--cr-navy-shadow);
   }
 
   .activity-card--empty {
@@ -877,7 +1165,7 @@ onBeforeUnmount(() => {
 
   .activity-card__heading h4 {
     margin: 0 0 0.7rem;
-    color: #12284c;
+    color: var(--cr-navy-ink);
     font-size: 1.55rem;
     line-height: 1.1;
     font-weight: 800;
@@ -933,13 +1221,9 @@ onBeforeUnmount(() => {
     min-width: 8rem;
   }
 
-  .activity-card__label--stacked {
-    align-items: center;
-  }
-
   .activity-card__label i {
     width: 1.2rem;
-    color: #e01e1e;
+    color: var(--cr-red);
     font-size: 1.15rem;
     text-align: center;
   }
@@ -952,7 +1236,7 @@ onBeforeUnmount(() => {
   }
 
   .activity-card__value {
-    color: #12284c;
+    color: var(--cr-navy-ink);
     font-size: 1.05rem;
     line-height: 1.3;
     text-align: right;
@@ -966,14 +1250,6 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 767.98px) {
-  .content {
-    padding: 0 1rem 1rem;
-  }
-
-  .content-header {
-    padding: 1rem 1rem 0.9rem;
-    margin-bottom: 1rem;
-  }
 
   .activities-header__top {
     align-items: center;

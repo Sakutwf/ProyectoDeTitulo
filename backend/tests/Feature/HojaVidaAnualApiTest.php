@@ -5,11 +5,13 @@ namespace Tests\Feature;
 use App\Models\Archivo;
 use App\Models\Filial;
 use App\Models\HojaVidaAnual;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\Voluntario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class HojaVidaAnualApiTest extends TestCase
@@ -103,6 +105,7 @@ class HojaVidaAnualApiTest extends TestCase
             'anio' => 2024,
             'asistencia_anual_horas' => 95,
             'asistencia_anual_porcentaje' => 97,
+            'asistencia_anual_ajuste_horas' => 95,
             'comentarios' => 'Actualizado desde prueba automatizada.',
             'titulos' => [
                 [
@@ -118,7 +121,7 @@ class HojaVidaAnualApiTest extends TestCase
             ],
         ])
             ->assertOk()
-            ->assertJsonPath('asistencia_anual_horas', '95.00')
+            ->assertJsonPath('asistencia_anual_horas', 95)
             ->assertJsonPath('titulos.0.titulo', 'Respuesta en Desastres')
             ->assertJsonCount(0, 'cursos')
             ->assertJsonCount(0, 'sanciones')
@@ -232,6 +235,14 @@ class HojaVidaAnualApiTest extends TestCase
     }
     private function createVolunteer(): Voluntario
     {
+        $administrator = User::factory()->create();
+        $administratorRole = Role::query()->create([
+            'nombre' => 'Administrador',
+            'clave' => 'administrador',
+        ]);
+        $administrator->roles()->attach($administratorRole);
+        Sanctum::actingAs($administrator);
+
         $user = User::factory()->create();
         $filial = Filial::query()->create([
             'nombre' => 'Filial Curico',
@@ -251,6 +262,4 @@ class HojaVidaAnualApiTest extends TestCase
         ]);
     }
 }
-
-
 

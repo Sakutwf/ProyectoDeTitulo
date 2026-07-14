@@ -70,11 +70,6 @@ class ActividadController extends Controller
         return response()->json($query->orderBy('id')->paginate(8), 200);
     }
 
-    public function create()
-    {
-        //
-    }
-
     public function store(Request $request)
     {
         $data = $this->validateActividad($request);
@@ -123,11 +118,6 @@ class ActividadController extends Controller
         );
 
         return response()->json($campaign->load('destinatarios'), 202);
-    }
-
-    public function edit(Actividad $actividad)
-    {
-        //
     }
 
     public function update($id, Request $request)

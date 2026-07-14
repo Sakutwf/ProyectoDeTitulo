@@ -75,7 +75,7 @@ export default {
   padding: 3rem;
   border-radius: 32px;
   background: rgba(255, 255, 255, 0.97);
-  border: 1px solid rgba(15, 47, 95, 0.08);
+  border: 1px solid var(--cr-navy-shadow);
   box-shadow: 0 28px 72px rgba(15, 47, 95, 0.12);
   text-align: center;
 }
@@ -89,7 +89,7 @@ export default {
 
 .access-copy h1 {
   margin: 0 0 0.85rem;
-  color: #0f2f5f;
+  color: var(--cr-navy-dark);
   font-size: clamp(2rem, 4vw, 3.2rem);
   font-weight: 900;
 }
@@ -127,7 +127,7 @@ export default {
   display: grid;
   justify-items: center;
   gap: 0.95rem;
-  color: #fff;
+  color: var(--cr-white);
   min-height: 220px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -160,12 +160,12 @@ export default {
 }
 
 .access-option.volunteer {
-  background: linear-gradient(160deg, #0f2f5f 0%, #214f8f 100%);
+  background: linear-gradient(160deg, var(--cr-navy-dark) 0%, #214f8f 100%);
   box-shadow: 0 20px 36px rgba(15, 47, 95, 0.2);
 }
 
 .access-option.admin {
-  background: linear-gradient(160deg, #e01e1e 0%, #ff4a4a 100%);
+  background: linear-gradient(160deg, var(--cr-red) 0%, #ff4a4a 100%);
   box-shadow: 0 20px 36px rgba(224, 30, 30, 0.2);
 }
 

@@ -255,8 +255,8 @@ export default {
 .sidebar {
     width: 250px;
     min-height: 100vh;
-    background-color: #e01e1e;
-    color: #fff;
+    background-color: var(--cr-red);
+    color: var(--cr-white);
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -293,7 +293,7 @@ export default {
     border: 1px solid rgba(255, 255, 255, 0.22);
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.12);
-    color: #fff;
+    color: var(--cr-white);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -358,9 +358,9 @@ export default {
 
 .sidebar .nav-link:hover,
 .sidebar .nav-item.active .nav-link {
-    color: #fff;
+    color: var(--cr-white);
     background-color: rgba(255, 255, 255, 0.15);
-    border-left-color: #ffffff;
+    border-left-color: var(--cr-white);
 }
 
 .sidebar .nav-item.active .nav-link {
@@ -493,7 +493,7 @@ export default {
     .sidebar .nav-link:hover,
     .sidebar .nav-item.active .nav-link {
         border-left-color: transparent;
-        border-top-color: #ffffff;
+        border-top-color: var(--cr-white);
     }
 
     .nav-link__icon {

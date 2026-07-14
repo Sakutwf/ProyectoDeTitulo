@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="d-flex">
     <SidebarMenu />
 
@@ -576,25 +576,6 @@ async function downloadAlbumPhoto(photo) {
   }
 }
 
-async function updatePhoto(photo) {
-  try {
-    await persistPhoto(photo)
-    Swal.fire({
-      title: 'Actualizada',
-      text: 'La foto fue actualizada correctamente.',
-      icon: 'success',
-      customClass: { container: 'swal-over-gallery-modal' }
-    })
-  } catch (error) {
-    Swal.fire({
-      title: 'Error',
-      text: 'No se pudo actualizar la foto.',
-      icon: 'error',
-      customClass: { container: 'swal-over-gallery-modal' }
-    })
-  }
-}
-
 function getActorId() {
   return Number(currentUser.value?.id || currentUser.value?.user_id || currentUser.value?.usuario_id || 0)
 }
@@ -691,23 +672,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.content-wrapper {
-  flex: 1;
-  background-color: #f5f7fa;
-  min-height: 100vh;
-}
-
-.content-header {
-  padding: 1rem 1.5rem;
-  background-color: #fff;
-  border-bottom: 1px solid #e0e0e0;
-  margin-bottom: 1.5rem;
-}
-
-.content {
-  padding: 0 1.5rem 1.5rem;
-}
-
 .gallery-header {
   display: grid;
   gap: 0.9rem;
@@ -769,16 +733,16 @@ onMounted(async () => {
 }
 
 .gallery-action-button {
-  border-color: #0f4c81;
-  color: #0f4c81;
+  border-color: var(--cr-blue);
+  color: var(--cr-blue);
   border-radius: 12px;
 }
 
 .gallery-action-button:hover,
 .gallery-action-button:focus,
 .gallery-action-button:active {
-  border-color: #0c416d;
-  color: #0c416d;
+  border-color: var(--cr-blue-dark);
+  color: var(--cr-blue-dark);
   background: #edf5fb;
 }
 
@@ -788,7 +752,7 @@ onMounted(async () => {
   border-radius: 999px;
   border: 1px solid #e23745;
   background: #e23745;
-  color: #fff;
+  color: var(--cr-white);
   font-size: 1rem;
   font-weight: 800;
   line-height: 1;
@@ -800,7 +764,7 @@ onMounted(async () => {
 .gallery-photo-pill:active {
   border-color: #c92b39;
   background: #c92b39;
-  color: #fff;
+  color: var(--cr-white);
 }
 
 .custom-table th {
@@ -828,7 +792,7 @@ onMounted(async () => {
   width: min(720px, 100%);
   max-height: 92vh;
   overflow: auto;
-  background: #fff;
+  background: var(--cr-white);
   border-radius: 8px;
   padding: 1.25rem;
   box-shadow: 0 24px 60px rgba(15, 29, 51, 0.24);
@@ -847,7 +811,7 @@ onMounted(async () => {
 }
 
 .gallery-modal__title-block h5 {
-  color: #0f2f5f;
+  color: var(--cr-navy-dark);
   font-size: 1.65rem;
   font-weight: 800;
   margin: 0.25rem 0 0;
@@ -856,21 +820,21 @@ onMounted(async () => {
 .modal-exit-button {
   min-width: 86px;
   font-weight: 700;
-  background: #e01e1e;
-  border-color: #e01e1e;
+  background: var(--cr-red);
+  border-color: var(--cr-red);
 }
 
 .modal-badge {
   display: flex;
   font-size: 0.72rem;
   font-weight: 700;
-  color: #173b70;
+  color: var(--cr-navy);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .modal-badge--album {
-  color: #0f2f5f;
+  color: var(--cr-navy-dark);
   font-size: 1.44rem;
   line-height: 1.15;
   text-transform: none;
@@ -894,25 +858,25 @@ onMounted(async () => {
 }
 
 .btn-cruz-roja-outline {
-  color: #0f2f5f;
-  border-color: #0f2f5f;
+  color: var(--cr-navy-dark);
+  border-color: var(--cr-navy-dark);
   font-weight: 700;
 }
 
 .btn-cruz-roja-outline:hover,
 .btn-cruz-roja-outline:focus {
-  color: #fff;
-  background: #0f2f5f;
-  border-color: #0f2f5f;
+  color: var(--cr-white);
+  background: var(--cr-navy-dark);
+  border-color: var(--cr-navy-dark);
 }
 
 .gallery-open-button i {
-  color: #0f2f5f;
+  color: var(--cr-navy-dark);
 }
 
 .gallery-open-button:hover i,
 .gallery-open-button:focus-visible i {
-  color: #fff;
+  color: var(--cr-white);
 }
 
 .album-photo-grid {
@@ -929,7 +893,7 @@ onMounted(async () => {
   border: 1px solid #e3eaf3;
   border-radius: 8px;
   overflow: hidden;
-  background: #fff;
+  background: var(--cr-white);
 }
 
 .album-photo-card__image {
@@ -990,7 +954,7 @@ onMounted(async () => {
   overflow: hidden;
   border: 1px solid #e2e8f0;
   border-radius: 999px;
-  background: #fff;
+  background: var(--cr-white);
   box-shadow: 0 8px 18px rgba(15, 47, 95, 0.12);
 }
 
@@ -998,8 +962,8 @@ onMounted(async () => {
   width: 42px;
   height: 36px;
   border: 0;
-  background: #fff;
-  color: #e01e1e;
+  background: var(--cr-white);
+  color: var(--cr-red);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1081,13 +1045,6 @@ onMounted(async () => {
 }
 
 @media (max-width: 575.98px) {
-  .content-header {
-    padding: 0.9rem 1rem;
-  }
-
-  .content {
-    padding: 0 1rem 1rem;
-  }
 
   .gallery-create-button {
     width: auto;
@@ -1117,8 +1074,8 @@ onMounted(async () => {
     border: 1px solid #e5eaf1;
     border-radius: 22px;
     padding: 1.1rem 1rem 1rem;
-    background: #fff;
-    box-shadow: 0 16px 30px rgba(15, 47, 95, 0.08);
+    background: var(--cr-white);
+    box-shadow: 0 16px 30px var(--cr-navy-shadow);
   }
 
   .gallery-album-card--empty {
@@ -1141,7 +1098,7 @@ onMounted(async () => {
 
   .gallery-album-card__heading h4 {
     margin: 0 0 0.7rem;
-    color: #12284c;
+    color: var(--cr-navy-ink);
     font-size: 1.45rem;
     line-height: 1.1;
     font-weight: 800;
@@ -1153,9 +1110,9 @@ onMounted(async () => {
     justify-content: center;
     min-height: 38px;
     padding: 0.45rem 0.95rem;
-    border: 1.5px solid #0f4c81;
+    border: 1.5px solid var(--cr-blue);
     border-radius: 999px;
-    color: #0f4c81;
+    color: var(--cr-blue);
     font-size: 0.95rem;
     font-weight: 700;
     line-height: 1.1;
@@ -1212,13 +1169,13 @@ onMounted(async () => {
 
   .gallery-album-card__label i {
     width: 1.15rem;
-    color: #e01e1e;
+    color: var(--cr-red);
     font-size: 1.05rem;
     text-align: center;
   }
 
   .gallery-album-card__value {
-    color: #12284c;
+    color: var(--cr-navy-ink);
     font-size: 1.05rem;
     line-height: 1.3;
     text-align: right;

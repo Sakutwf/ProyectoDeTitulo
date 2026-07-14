@@ -1,3 +1,8 @@
+/**
+ * Reglas puras de roles y experiencia de navegación. El store y el router son
+ * los consumidores principales; las vistas no deben volver a implementar
+ * estas decisiones por separado.
+ */
 export function getUserRoleSlugs(user) {
   return (user?.roles || []).map((role) => role.clave)
 }

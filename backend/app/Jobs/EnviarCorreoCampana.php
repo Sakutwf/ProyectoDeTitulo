@@ -9,6 +9,10 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Mail;
 use Throwable;
 
+/**
+ * Procesa en segundo plano un destinatario de campaña, registra su resultado
+ * y actualiza el estado global. Sólo lo despacha NotificationCampaignService.
+ */
 class EnviarCorreoCampana implements ShouldQueue
 {
     use Queueable;

@@ -1,0 +1,65 @@
+.pdf-export-page {
+  min-height: 100vh;
+  padding: 1.5rem;
+  background: #eef2f7;
+}
+
+.pdf-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.pdf-toolbar__button {
+  padding: 0.75rem 1.15rem;
+  color: #173763;
+  font-weight: 700;
+  background: #d7deea;
+  border: none;
+  border-radius: 999px;
+}
+
+.pdf-toolbar__button--primary {
+  color: var(--cr-white);
+  background: var(--cr-red);
+}
+
+.pdf-toolbar__hint {
+  color: #5f7085;
+  font-size: 0.92rem;
+}
+
+.pdf-state {
+  display: grid;
+  min-height: 60vh;
+  color: #4d617d;
+  place-items: center;
+}
+
+.pdf-state--error { color: #a3212b; }
+
+@media print {
+  @page {
+    size: letter portrait;
+    margin: 0;
+  }
+
+  html,
+  body,
+  .pdf-export-page {
+    margin: 0;
+    padding: 0;
+    background: var(--cr-white);
+  }
+
+  .no-print { display: none !important; }
+
+  .pdf-document,
+  .pdf-document * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+}

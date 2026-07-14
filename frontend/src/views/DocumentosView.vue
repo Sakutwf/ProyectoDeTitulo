@@ -719,6 +719,7 @@ import Swal from 'sweetalert2'
 import SidebarMenu from '../components/SidebarMenu.vue'
 import { buildApiUrl } from '../config/api'
 import { optimizeImage } from '../utils/imageOptimization'
+import { formatDate, formatDateRange } from '../utils/formatters'
 
 const documentTypes = [
   {
@@ -2402,19 +2403,6 @@ function actividadLabel(actividad) {
   return `${actividad.nombre || 'Actividad'} · ${actividad.filial?.nombre || 'Sin filial'} · ${dates}`
 }
 
-function formatDate(value) {
-  if (!value) return '-'
-  const parsed = new Date(`${String(value).slice(0, 10)}T00:00:00`)
-  if (Number.isNaN(parsed.getTime())) return String(value)
-  return parsed.toLocaleDateString('es-CL')
-}
-
-function formatDateRange(start, end) {
-  if (!start && !end) return '-'
-  if (start && end) return `${formatDate(start)} - ${formatDate(end)}`
-  return formatDate(start || end)
-}
-
 function formatHours(value) {
   if (value === null || value === undefined || value === '') return '-'
   const numericValue = Number(value)
@@ -2448,26 +2436,9 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.content-wrapper {
-  flex: 1;
-  background-color: #f5f7fa;
-  min-height: 100vh;
-}
-
-.content-header {
-  padding: 1rem 1.5rem;
-  background-color: #fff;
-  border-bottom: 1px solid #e0e0e0;
-  margin-bottom: 1.5rem;
-}
-
 .header-copy {
   color: #6e7f95;
   margin-top: 0.35rem;
-}
-
-.content {
-  padding: 0 1.5rem 1.5rem;
 }
 
 .documents-grid {
@@ -2479,15 +2450,15 @@ onBeforeUnmount(() => {
 .document-card {
   border: 1px solid #e3e9f1;
   border-radius: 20px;
-  background: #fff;
-  box-shadow: 0 14px 32px rgba(15, 47, 95, 0.08);
+  background: var(--cr-white);
+  box-shadow: 0 14px 32px var(--cr-navy-shadow);
   padding: 1.35rem;
   display: grid;
   gap: 0.8rem;
 }
 
 .document-card.active {
-  border-color: #173b70;
+  border-color: var(--cr-navy);
   box-shadow: 0 0 0 4px rgba(23, 59, 112, 0.42), 0 18px 36px rgba(23, 59, 112, 0.18);
 }
 
@@ -2498,14 +2469,14 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #eef4fb;
-  color: #173b70;
+  background: var(--cr-blue-pale);
+  color: var(--cr-navy);
   font-size: 1.3rem;
 }
 
 .document-card h4 {
   margin: 0;
-  color: #163a69;
+  color: var(--cr-navy-medium);
   font-size: 1.35rem;
   font-weight: 800;
 }
@@ -2527,8 +2498,8 @@ onBeforeUnmount(() => {
   justify-content: center;
   padding: 0.45rem 0.85rem;
   border-radius: 999px;
-  background: #eef4fb;
-  color: #163a69;
+  background: var(--cr-blue-pale);
+  color: var(--cr-navy-medium);
   font-weight: 700;
 }
 
@@ -2546,7 +2517,7 @@ onBeforeUnmount(() => {
 }
 
 .form-shell__header h4 {
-  color: #163a69;
+  color: var(--cr-navy-medium);
   margin: 0.6rem 0 0.35rem;
   font-size: 1.7rem;
   font-weight: 800;
@@ -2566,7 +2537,7 @@ onBeforeUnmount(() => {
   align-items: stretch;
   border: 1px solid #ced4da;
   border-radius: 0.375rem;
-  background: #fff;
+  background: var(--cr-white);
   overflow: hidden;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -2591,7 +2562,7 @@ onBeforeUnmount(() => {
   width: 48px;
   border: 0;
   border-left: 1px solid #e2e8f0;
-  background: #fff;
+  background: var(--cr-white);
   color: #355782;
   display: inline-flex;
   align-items: center;
@@ -2618,7 +2589,7 @@ onBeforeUnmount(() => {
   padding: 0.45rem;
   border: 1px solid #dbe7f4;
   border-radius: 18px;
-  background: #fff;
+  background: var(--cr-white);
   box-shadow: 0 18px 36px rgba(15, 47, 95, 0.12);
 }
 
@@ -2639,11 +2610,11 @@ onBeforeUnmount(() => {
 }
 
 .activity-combobox__option.is-selected {
-  background: #eef4fb;
+  background: var(--cr-blue-pale);
 }
 
 .activity-combobox__title {
-  color: #173b70;
+  color: var(--cr-navy);
   font-weight: 700;
 }
 
@@ -2695,7 +2666,7 @@ onBeforeUnmount(() => {
 }
 
 .context-card strong {
-  color: #173b70;
+  color: var(--cr-navy);
   font-size: 1.02rem;
 }
 
@@ -2705,14 +2676,14 @@ onBeforeUnmount(() => {
 
 .prefill-panel {
   height: 100%;
-  background: #fff;
+  background: var(--cr-white);
   border: 1px solid #e4ebf3;
   border-radius: 20px;
   padding: 1rem 1.05rem;
 }
 
 .prefill-panel h5 {
-  color: #173b70;
+  color: var(--cr-navy);
   font-weight: 800;
   margin-bottom: 1rem;
 }
@@ -2726,7 +2697,7 @@ onBeforeUnmount(() => {
   color: #304861;
 }
 
-.prefill-list,
+
 .saved-documents {
   margin: 0.5rem 0 0;
   padding-left: 1.15rem;
@@ -2761,7 +2732,7 @@ onBeforeUnmount(() => {
 
 .saved-documents strong {
   display: block;
-  color: #173b70;
+  color: var(--cr-navy);
 }
 
 .saved-documents small {
@@ -2812,7 +2783,7 @@ onBeforeUnmount(() => {
 }
 
 .content-field .form-label {
-  color: #173b70;
+  color: var(--cr-navy);
   font-weight: 700;
 }
 
@@ -2834,7 +2805,7 @@ onBeforeUnmount(() => {
 }
 
 .narrative-section h5 {
-  color: #173b70;
+  color: var(--cr-navy);
   font-weight: 800;
   margin-bottom: 0.75rem;
 }
@@ -2853,90 +2824,16 @@ onBeforeUnmount(() => {
   margin-bottom: 0.5rem;
 }
 
-.narrative-metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 0.9rem;
-}
-
 .narrative-count-list {
   display: grid;
   gap: 0.85rem;
 }
 
 .narrative-count-row {
-  background: #fff;
+  background: var(--cr-white);
   border: 1px solid #e4ebf3;
   border-radius: 16px;
   padding: 0.8rem;
-}
-.metric-field {
-  display: grid;
-  gap: 0.45rem;
-  padding: 0.85rem 0.9rem;
-  border-radius: 16px;
-  background: #fff;
-  border: 1px solid #e4ebf3;
-}
-
-.metric-field span {
-  color: #5f7694;
-  font-weight: 700;
-}
-
-.attendance-groups {
-  display: grid;
-  gap: 1rem;
-}
-
-.attendance-group {
-  background: #fff;
-  border: 1px solid #e3eaf3;
-  border-radius: 18px;
-  padding: 0.95rem;
-}
-
-.attendance-group__header {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.85rem;
-}
-
-.attendance-group__header h6 {
-  margin: 0;
-  color: #173b70;
-  font-weight: 800;
-}
-
-.attendance-group__header span {
-  color: #6f85a1;
-  font-size: 0.9rem;
-}
-
-.attendance-group__rows {
-  display: grid;
-  gap: 0.8rem;
-}
-
-.attendance-row {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 0.75rem;
-  align-items: start;
-}
-
-.attendance-row__index {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 999px;
-  background: #173b70;
-  color: #fff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  margin-top: 1.9rem;
 }
 
 .attendance-row__remove,
@@ -2956,7 +2853,7 @@ onBeforeUnmount(() => {
 
 .photo-report-card,
 .photo-gallery-card {
-  background: #fff;
+  background: var(--cr-white);
   border: 1px solid #e2eaf4;
   border-radius: 18px;
   overflow: hidden;
@@ -2993,7 +2890,7 @@ onBeforeUnmount(() => {
   width: min(1100px, 100%);
   max-height: calc(100vh - 2.5rem);
   overflow: auto;
-  background: #fff;
+  background: var(--cr-white);
   border-radius: 24px;
   padding: 1.15rem;
   box-shadow: 0 24px 60px rgba(15, 29, 51, 0.22);
@@ -3017,16 +2914,16 @@ onBeforeUnmount(() => {
 .photo-modal__tab {
   border: 1px solid #d7e4f2;
   background: #f7faff;
-  color: #173b70;
+  color: var(--cr-navy);
   border-radius: 999px;
   padding: 0.55rem 0.9rem;
   font-weight: 700;
 }
 
 .photo-modal__tab.active {
-  background: #173b70;
-  color: #fff;
-  border-color: #173b70;
+  background: var(--cr-navy);
+  color: var(--cr-white);
+  border-color: var(--cr-navy);
 }
 
 .photo-upload-box {
@@ -3053,24 +2950,9 @@ onBeforeUnmount(() => {
   .context-card--wide {
     grid-column: span 1;
   }
-
-  .attendance-row {
-    grid-template-columns: 1fr;
-  }
-
-  .attendance-row__index {
-    margin-top: 0;
-  }
 }
 
 @media (max-width: 767.98px) {
-  .content {
-    padding: 0 1rem 1rem;
-  }
-
-  .content-header {
-    padding: 1rem;
-  }
 
   .form-shell__header h4 {
     font-size: 1.45rem;
@@ -3117,7 +2999,7 @@ onBeforeUnmount(() => {
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid #dbe5f0;
-  background: #fff;
+  background: var(--cr-white);
 }
 
 .climate-card__preview img {
@@ -3132,7 +3014,7 @@ onBeforeUnmount(() => {
   border: 1px dashed #b8c7d9;
   border-radius: 16px;
   color: #6a7d94;
-  background: #fff;
+  background: var(--cr-white);
 }
 
 .climate-card__actions {

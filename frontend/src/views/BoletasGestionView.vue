@@ -202,6 +202,7 @@ import BoletaEvidenceModal from '../components/BoletaEvidenceModal.vue'
 import { API_BASE } from '../config/api'
 import { show_alerta } from '../funciones'
 import { useStore } from 'vuex'
+import { formatCurrency, formatDate } from '../utils/formatters'
 
 const STATUS_META = {
   solicitado: { label: 'Solicitado', className: 'state-label--requested' },
@@ -312,22 +313,6 @@ function normalizeBoleta(item) {
   }
 }
 
-function formatDate(value) {
-  if (!value) return '-'
-  const parsed = new Date(`${String(value).slice(0, 10)}T00:00:00`)
-  if (Number.isNaN(parsed.getTime())) return String(value)
-  return parsed.toLocaleDateString('es-CL')
-}
-
-function formatCurrency(value) {
-  const numericValue = Number(value || 0)
-  return numericValue.toLocaleString('es-CL', {
-    style: 'currency',
-    currency: 'CLP',
-    maximumFractionDigits: 0
-  })
-}
-
 function statusLabel(value) {
   return STATUS_META[normalizeStatus(value)]?.label || 'Solicitado'
 }
@@ -428,23 +413,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.content-wrapper {
-  flex: 1;
-  background-color: #f5f7fa;
-  min-height: 100vh;
-}
-
-.content-header {
-  padding: 1rem 1.5rem;
-  background-color: #fff;
-  border-bottom: 1px solid #e0e0e0;
-  margin-bottom: 1.5rem;
-}
-
-.content {
-  padding: 0 1.5rem 1.5rem;
-}
-
 .volunteer-card {
   border: none;
   border-radius: 8px;
@@ -470,8 +438,8 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  background: #eef4fb;
-  color: #0f2f5f;
+  background: var(--cr-blue-pale);
+  color: var(--cr-navy-dark);
   font-weight: 700;
   padding: 0.5rem 0.9rem;
 }
@@ -489,7 +457,7 @@ onMounted(async () => {
   border: 1px solid #e2e8f0;
   border-radius: 22px;
   padding: 1.15rem;
-  background: linear-gradient(180deg, #ffffff, #fbfcfe);
+  background: linear-gradient(180deg, var(--cr-white), #fbfcfe);
 }
 
 .boleta-section-panel__header {
@@ -501,7 +469,7 @@ onMounted(async () => {
 
 .boleta-section-panel__header h3 {
   margin: 0;
-  color: #163a69;
+  color: var(--cr-navy-medium);
   font-size: 1.15rem;
   font-weight: 800;
 }
@@ -539,9 +507,9 @@ onMounted(async () => {
 .empty-state {
   border-radius: 18px;
   border: 1px dashed #d6dde7;
-  background: #fafbfd;
+  background: var(--cr-surface);
   padding: 1.2rem;
-  color: #65758a;
+  color: var(--cr-gray-600);
 }
 
 .table-shell {
@@ -574,7 +542,7 @@ onMounted(async () => {
 .custom-table td {
   padding: 8px 12px;
   vertical-align: middle;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--cr-gray-300);
   white-space: normal;
   line-height: 1.35;
 }
@@ -603,16 +571,16 @@ onMounted(async () => {
 }
 
 .action-button {
-  border-color: #0f4c81;
-  color: #0f4c81;
-  background: #fff;
+  border-color: var(--cr-blue);
+  color: var(--cr-blue);
+  background: var(--cr-white);
 }
 
 .action-button:hover,
 .action-button:focus,
 .action-button:active {
-  border-color: #0c416d;
-  color: #0c416d;
+  border-color: var(--cr-blue-dark);
+  color: var(--cr-blue-dark);
   background: #edf5fb;
 }
 
@@ -625,7 +593,7 @@ onMounted(async () => {
   padding: 0.45rem 0.95rem;
   border: 1.5px solid currentColor;
   border-radius: 0.9rem;
-  background: #fff;
+  background: var(--cr-white);
   font-size: 0.85rem;
   font-weight: 800;
   line-height: 1;
@@ -642,15 +610,15 @@ onMounted(async () => {
 }
 
 .state-label--requested {
-  color: #e01e1e;
+  color: var(--cr-red);
 }
 
 .state-label--approved {
-  color: #0f2f5f;
+  color: var(--cr-navy-dark);
 }
 
 .state-label--neutral {
-  color: #667085;
+  color: var(--cr-slate);
 }
 
 .status-cell {
@@ -686,7 +654,7 @@ onMounted(async () => {
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(250, 252, 255, 0.98)),
       radial-gradient(circle at top right, rgba(224, 30, 30, 0.08), transparent 38%);
-    box-shadow: 0 16px 30px rgba(15, 47, 95, 0.08);
+    box-shadow: 0 16px 30px var(--cr-navy-shadow);
   }
 
   .boleta-card--empty {
@@ -705,7 +673,7 @@ onMounted(async () => {
 
   .boleta-card__heading h4 {
     margin: 0 0 0.35rem;
-    color: #12284c;
+    color: var(--cr-navy-ink);
     font-size: 1.45rem;
     line-height: 1.1;
     font-weight: 800;
@@ -752,14 +720,6 @@ onMounted(async () => {
 }
 
 @media (max-width: 767.98px) {
-  .content-header {
-    padding: 1rem 1rem 0.9rem;
-    margin-bottom: 1rem;
-  }
-
-  .content {
-    padding: 0 1rem 1rem;
-  }
 
   .boleta-section-panel__header,
   .boleta-toolbar {

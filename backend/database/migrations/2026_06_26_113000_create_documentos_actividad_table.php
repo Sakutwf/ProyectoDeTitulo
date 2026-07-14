@@ -62,7 +62,10 @@ return new class extends Migration
                 ->where(function ($query) {
                     $query->whereNull('titulo')->orWhere('titulo', '');
                 })
-                ->update(['titulo' => DB::raw("CONCAT('Documento ', id)")]);
+                ->pluck('id')
+                ->each(fn ($id) => DB::table('documentos_actividad')
+                    ->where('id', $id)
+                    ->update(['titulo' => "Documento {$id}"]));
         }
 
         if (Schema::hasColumn('documentos_actividad', 'estado')) {

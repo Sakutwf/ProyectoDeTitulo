@@ -1,22 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { Modal } from 'bootstrap'
 import HomeView from '../views/HomeView.vue'
-import WelcomeView from '../views/WelcomeView.vue'
-import UserView from '../views/UserView.vue'
-import ActividadView from '../views/ActividadView.vue'
-import HistorialView from '../views/HistorialView.vue'
-import HistorialPdfView from '../views/HistorialPdfView.vue'
-import DocumentoActividadPdfView from '../views/DocumentoActividadPdfView.vue'
 import LoginView from '../views/LoginView.vue'
-import AccessSelectionView from '../views/AccessSelectionView.vue'
-import VolunteerActivitiesView from '../views/VolunteerActivitiesView.vue'
-import VolunteerGalleryView from '../views/VolunteerGalleryView.vue'
-import VolunteerBoletasView from '../views/VolunteerBoletasView.vue'
-import BoletasGestionView from '../views/BoletasGestionView.vue'
-import DocumentosView from '../views/DocumentosView.vue'
-import GaleriaFotosView from '../views/GaleriaFotosView.vue'
-import PortadaEditorView from '../views/PortadaEditorView.vue'
-import SolicitudesHojaVidaView from '../views/SolicitudesHojaVidaView.vue'
 import store from '../store'
 import { defaultRouteForUser } from '../utils/auth'
 
@@ -50,7 +35,7 @@ const routes = [
   {
     path: '/inicio',
     name: 'inicio',
-    component: WelcomeView,
+    component: () => import('../views/WelcomeView.vue'),
     meta: { requiresAuth: true }
   },
   {
@@ -61,85 +46,85 @@ const routes = [
   {
     path: '/seleccionar-acceso',
     name: 'access-selection',
-    component: AccessSelectionView,
+    component: () => import('../views/AccessSelectionView.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/voluntarios',
     name: 'voluntarios',
-    component: UserView,
+    component: () => import('../views/UserView.vue'),
     meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
   },
   {
     path: '/actividades',
     name: 'actividades',
-    component: ActividadView,
+    component: () => import('../views/ActividadView.vue'),
     meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
   },
   {
     path: '/documentos',
     name: 'documentos',
-    component: DocumentosView,
+    component: () => import('../views/DocumentosView.vue'),
     meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
   },
   {
     path: '/boletas',
     name: 'boletas-gestion',
-    component: BoletasGestionView,
+    component: () => import('../views/BoletasGestionView.vue'),
     meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
   },
   {
     path: '/galeria-fotos',
     name: 'galeria-fotos',
-    component: GaleriaFotosView,
+    component: () => import('../views/GaleriaFotosView.vue'),
     meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
   },
   {
     path: '/solicitudes-hoja-vida',
     name: 'solicitudes-hoja-vida',
-    component: SolicitudesHojaVidaView,
+    component: () => import('../views/SolicitudesHojaVidaView.vue'),
     meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
   },
   {
     path: '/administrar-portada',
     name: 'administrar-portada',
-    component: PortadaEditorView,
+    component: () => import('../views/PortadaEditorView.vue'),
     meta: { requiresAuth: true, roles: ['administrador'], experience: 'admin' }
   },
   {
     path: '/mis-actividades',
     name: 'volunteer-activities',
-    component: VolunteerActivitiesView,
+    component: () => import('../views/VolunteerActivitiesView.vue'),
     meta: { requiresAuth: true, roles: ['voluntario'], experience: 'volunteer' }
   },
   {
     path: '/mi-galeria',
     name: 'volunteer-gallery',
-    component: VolunteerGalleryView,
+    component: () => import('../views/VolunteerGalleryView.vue'),
     meta: { requiresAuth: true, roles: ['voluntario'], experience: 'volunteer' }
   },
   {
     path: '/mis-boletas',
     name: 'volunteer-boletas',
-    component: VolunteerBoletasView,
+    component: () => import('../views/VolunteerBoletasView.vue'),
     meta: { requiresAuth: true, roles: ['voluntario'], experience: 'volunteer' }
   },
   {
     path: '/historial/:id',
     name: 'HistorialView',
-    component: HistorialView,
+    component: () => import('../views/HistorialView.vue'),
     meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva', 'voluntario'] }
   },
   {
     path: '/historial/:id/pdf',
     name: 'HistorialPdfView',
-    component: HistorialPdfView,
+    component: () => import('../views/HistorialPdfView.vue'),
     meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva', 'voluntario'] }
   },
   {
     path: '/documentos-actividad/:id/pdf',
     name: 'DocumentoActividadPdfView',
-    component: DocumentoActividadPdfView,
+    component: () => import('../views/DocumentoActividadPdfView.vue'),
     meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
   }
 ]

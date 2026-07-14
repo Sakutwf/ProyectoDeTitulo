@@ -484,12 +484,12 @@ export default {
   height: 2.3rem;
   border: 1px solid #d5deea;
   border-radius: 999px;
-  background: #fff;
+  background: var(--cr-white);
   color: #274062;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 18px rgba(15, 47, 95, 0.08);
+  box-shadow: 0 8px 18px var(--cr-navy-shadow);
 }
 
 .table-scroll-button:disabled {
@@ -525,7 +525,7 @@ export default {
   line-height: 1.35;
   padding: 6px 12px;
   vertical-align: middle;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--cr-gray-300);
   white-space: nowrap;
   overflow-wrap: normal;
   word-break: normal;
@@ -582,10 +582,10 @@ export default {
   justify-content: center;
   min-height: 38px;
   padding: 0.45rem 0.95rem;
-  border: 1.5px solid #0f4c81;
+  border: 1.5px solid var(--cr-blue);
   border-radius: 0.9rem;
-  color: #0f4c81;
-  background: #fff;
+  color: var(--cr-blue);
+  background: var(--cr-white);
   font-size: 1rem;
   font-weight: 800;
   line-height: 1;
@@ -599,7 +599,7 @@ export default {
 
 .cargo-badge,
 .role-badges--mobile .badge.cargo-badge-mobile {
-  background: #fff;
+  background: var(--cr-white);
   border-color: #dc3545;
   color: #dc3545;
   white-space: pre-line;
@@ -630,16 +630,16 @@ export default {
 }
 
 .profile-action-button {
-  border-color: #0f4c81;
-  color: #0f4c81;
+  border-color: var(--cr-blue);
+  color: var(--cr-blue);
   border-radius: 12px;
 }
 
 .profile-action-button:hover,
 .profile-action-button:focus,
 .profile-action-button:active {
-  border-color: #0c416d;
-  color: #0c416d;
+  border-color: var(--cr-blue-dark);
+  color: var(--cr-blue-dark);
   background: #edf5fb;
 }
 
@@ -671,37 +671,20 @@ export default {
   background: #c92b39;
 }
 
-.content-wrapper {
-  flex: 1;
-  background-color: #f5f7fa;
-  min-height: 100vh;
-}
-
-.content-header {
-  padding: 1rem 1.5rem;
-  background-color: #fff;
-  border-bottom: 1px solid #e0e0e0;
-  margin-bottom: 1.5rem;
-}
-
-.content {
-  padding: 0 1.5rem 1.5rem;
-}
-
 .cruz-roja-pagination .page-link {
-  color: #e01e1e;
+  color: var(--cr-red);
   font-weight: 600;
-  border: 1px solid #e01e1e;
-  background: #fff;
+  border: 1px solid var(--cr-red);
+  background: var(--cr-white);
   border-radius: 6px;
   margin: 0 2px;
 }
 
 .cruz-roja-pagination .page-item.active .page-link,
 .cruz-roja-pagination .page-link:hover {
-  background: #e01e1e;
-  color: #fff;
-  border-color: #e01e1e;
+  background: var(--cr-red);
+  color: var(--cr-white);
+  border-color: var(--cr-red);
 }
 
 @media (min-width: 768px) {
@@ -737,13 +720,6 @@ export default {
 }
 
 @media (max-width: 767.98px) {
-  .content-header {
-    padding: 1rem 1rem 0.9rem;
-  }
-
-  .content {
-    padding: 0 1rem 1rem;
-  }
 
   .profiles-header__top {
     align-items: center;
@@ -791,7 +767,7 @@ export default {
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(250, 252, 255, 0.98)),
       radial-gradient(circle at top right, rgba(224, 30, 30, 0.08), transparent 38%);
-    box-shadow: 0 16px 30px rgba(15, 47, 95, 0.08);
+    box-shadow: 0 16px 30px var(--cr-navy-shadow);
   }
 
   .profile-card--empty {
@@ -814,7 +790,7 @@ export default {
 
   .profile-card__identity h4 {
     margin: 0 0 0.55rem;
-    color: #12284c;
+    color: var(--cr-navy-ink);
     font-size: 1.7rem;
     line-height: 1.08;
     font-weight: 800;
@@ -846,7 +822,7 @@ export default {
   }
 
   .profile-card__row strong {
-    color: #12284c;
+    color: var(--cr-navy-ink);
     font-size: 1.05rem;
     line-height: 1.25;
     text-align: right;
@@ -863,7 +839,7 @@ export default {
 
   .profile-card__label i {
     width: 1.15rem;
-    color: #e01e1e;
+    color: var(--cr-red);
     font-size: 1.05rem;
     text-align: center;
   }

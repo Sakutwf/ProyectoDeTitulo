@@ -635,7 +635,7 @@ export default {
   padding: 12px;
   border: 1px solid #d9d9d9;
   border-radius: 8px;
-  background: #fff;
+  background: var(--cr-white);
   cursor: pointer;
   transition: border-color 0.2s, box-shadow 0.2s;
 }

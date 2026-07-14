@@ -822,9 +822,9 @@ class HojaVidaAnualController extends Controller
 
         $voluntario->archivoFotoPerfil()->updateOrCreate(
             [
-                'entidad' => self::VOLUNTEER_PROFILE_ENTITY,
+                'entidad' => Voluntario::ENTITY_TYPE,
                 'entidad_id' => $voluntario->id,
-                'categoria' => self::VOLUNTEER_PROFILE_PHOTO_CATEGORY,
+                'categoria' => Voluntario::PROFILE_PHOTO_CATEGORY,
             ],
             [
                 'ruta' => $optimized['path'],
@@ -851,6 +851,5 @@ class HojaVidaAnualController extends Controller
         return $normalized === '' ? null : $normalized;
     }
 }
-
 
 

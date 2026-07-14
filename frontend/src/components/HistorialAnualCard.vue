@@ -73,17 +73,17 @@ const summaryText = computed(() => {
   grid-template-columns: clamp(72px, 4.8vw, 92px) 1fr;
   gap: clamp(0.7rem, 0.65vw, 0.9rem);
   align-items: stretch;
-  background: #ffffff;
+  background: var(--cr-white);
   border: 1px solid #ece8e2;
   border-radius: 18px;
   padding: clamp(0.72rem, 0.7vw, 0.9rem);
-  color: #0f2f5f;
+  color: var(--cr-navy-dark);
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .annual-card:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(15, 47, 95, 0.08);
+  box-shadow: 0 10px 24px var(--cr-navy-shadow);
   border-color: #d6dfe9;
 }
 
@@ -99,7 +99,7 @@ const summaryText = computed(() => {
   min-height: clamp(72px, 4.6vw, 92px);
   border-radius: 20px;
   background: #ff313d;
-  color: #fff;
+  color: var(--cr-white);
   font-size: clamp(1.24rem, 0.7vw + 1.1rem, 1.62rem);
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -125,8 +125,8 @@ const summaryText = computed(() => {
   white-space: nowrap;
   padding: 0.18rem 0.5rem;
   border-radius: 999px;
-  background: #eef4fb;
-  color: #0f2f5f;
+  background: var(--cr-blue-pale);
+  color: var(--cr-navy-dark);
   font-size: clamp(0.78rem, 0.14vw + 0.76rem, 0.88rem);
   font-weight: 700;
 }

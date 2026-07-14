@@ -6,7 +6,6 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FilialController;
 use App\Http\Controllers\HojaVidaAnualController;
 use App\Http\Controllers\DocumentoActividadController;
-use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ActividadController;
@@ -28,8 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('user/search', [UserController::class, 'search']);
     Route::post('user/{user}/foto-perfil', [UserController::class, 'updateVolunteerPhoto']);
     Route::apiResource('user', UserController::class);
-    Route::apiResource('role', RoleController::class);
-    Route::apiResource('permissions', PermissionController::class);
+    Route::get('role', [RoleController::class, 'index']);
     Route::get('filiales', [FilialController::class, 'index']);
 
     Route::get('albumes', [AlbumController::class, 'index']);
@@ -64,7 +62,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('boletas/{boletaViatico}/estado', [ActividadController::class, 'actualizarEstadoBoleta']);
     Route::delete('boletas/{boletaViatico}', [ActividadController::class, 'eliminarBoleta']);
     Route::apiResource('actividad', ActividadController::class);
-    Route::apiResource('voluntarios', VoluntarioController::class);
+    Route::get('voluntarios', [VoluntarioController::class, 'index']);
 
     Route::get('voluntarios/{voluntario}/hoja-vida-anual', [HojaVidaAnualController::class, 'index']);
     Route::post('voluntarios/{voluntario}/hoja-vida-anual', [HojaVidaAnualController::class, 'store']);
@@ -75,10 +73,4 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('mis-solicitudes-hoja-vida', [SolicitudHojaVidaController::class, 'mine']);
     Route::put('solicitudes-hoja-vida/{solicitudHojaVida}/revisar', [SolicitudHojaVidaController::class, 'review']);
 
-    Route::get('/users', function () {
-        return App\Models\User::with('voluntario')->get()->map(fn ($user) => [
-            'id' => $user->id,
-            'name' => $user->name,
-        ]);
-    });
 });

@@ -6,7 +6,7 @@
           <h5 class="modal-title" id="newActividadModalLabel">
             <i class="fa-solid fa-calendar-plus me-2"></i>Nueva actividad
           </h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          <button type="button" class="btn-close btn-close-white" aria-label="Cerrar" @click="hide"></button>
         </div>
 
         <div class="modal-body activity-modal-body">
@@ -78,80 +78,24 @@
               </div>
             </div>
 
-            <hr class="my-4">
-
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-              <div>
-                <h6 class="mb-1">Voluntarios asociados</h6>
-                <small class="text-muted">Puedes dejarlo vacío y asociarlos después.</small>
-              </div>
-            </div>
-
-            <div v-if="volunteers.length" class="volunteer-grid">
-              <article v-for="volunteer in volunteers" :key="volunteer.id" class="volunteer-card">
-                <label class="form-check d-flex align-items-start gap-2">
-                  <input
-                    :checked="isSelected(volunteer.id)"
-                    class="form-check-input mt-1"
-                    type="checkbox"
-                    @change="toggleVolunteer(volunteer.id)"
-                  >
-                  <span>
-                    <strong>{{ fullVolunteerName(volunteer) }}</strong>
-                    <small class="d-block text-muted">Registro filial {{ volunteer.registro_filial }}</small>
-                  </span>
-                </label>
-
-                <div v-if="isSelected(volunteer.id)" class="mt-3">
-                  <label class="form-label">Horas asistidas</label>
-                  <input
-                    v-model="volunteerHours[volunteer.id]"
-                    type="number"
-                    min="0"
-                    :max="activityHoursLimit ?? null"
-                    step="0.25"
-                    class="form-control"
-                  >
-                </div>
-              </article>
-            </div>
-
-            <div v-else class="empty-state">
-              No hay voluntarios disponibles para asociar.
-            </div>
-
-            <hr class="my-4">
-
-            <section class="notification-panel">
-              <label class="form-check d-flex align-items-start gap-2 mb-3">
-                <input v-model="notifyVolunteers" class="form-check-input mt-1" type="checkbox">
-                <span>
-                  <strong>Notificar voluntarios a través de correo</strong>
-                  <small class="d-block text-muted">El envío se realizará solamente después de guardar la actividad.</small>
-                </span>
-              </label>
-
-              <div v-if="notifyVolunteers">
-                <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
-                  <small>{{ notificationRecipients.length }} destinatario(s) seleccionado(s)</small>
-                  <button type="button" class="btn btn-sm btn-outline-danger" @click="toggleAllNotificationRecipients">
-                    {{ allNotificationRecipientsSelected ? 'Desmarcar todos' : 'Seleccionar todos' }}
-                  </button>
-                </div>
-                <div class="notification-list">
-                  <label v-for="volunteer in notifiableVolunteers" :key="`notify-${volunteer.id}`" class="form-check notification-recipient">
-                    <input v-model="notificationRecipients" class="form-check-input" type="checkbox" :value="volunteer.id">
-                    <span><strong>{{ fullVolunteerName(volunteer) }}</strong><small>{{ volunteer.correo_electronico }}</small></span>
-                  </label>
-                </div>
-                <div v-if="!notifiableVolunteers.length" class="text-muted small">No hay voluntarios con correo válido.</div>
-              </div>
-            </section>
+            <ActivityVolunteerSelectors
+              ref="volunteerSelectors"
+              v-model:selected-volunteers="selectedVolunteers"
+              v-model:volunteer-hours="volunteerHours"
+              v-model:notify-volunteers="notifyVolunteers"
+              v-model:notification-recipients="notificationRecipients"
+              :volunteers="volunteers"
+              :activity-hours-limit="activityHoursLimit"
+              id-prefix="create-activity"
+              participant-description="Puedes dejar la nómina vacía y asociarla posteriormente."
+              notification-title="Notificar voluntarios a través de correo"
+              notification-description="El envío se realizará solamente después de guardar la actividad."
+            />
           </form>
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-secondary" @click="hide">Cancelar</button>
           <button type="button" class="btn btn-danger" :disabled="isSubmitting || !isFormValid" @click="saveActivity">
             <i class="fa-solid fa-save me-1"></i>{{ isSubmitting ? 'Guardando...' : 'Guardar actividad' }}
           </button>
@@ -167,9 +111,11 @@ import { Modal } from 'bootstrap'
 import { ACTIVITY_TYPE_OPTIONS } from '../constants/activityTypes'
 import { API_BASE } from '../config/api'
 import { show_alerta } from '../funciones'
+import ActivityVolunteerSelectors from '../components/ActivityVolunteerSelectors.vue'
 
 export default {
   name: 'ActividadCreateView',
+  components: { ActivityVolunteerSelectors },
   emits: ['actividad-created'],
   data() {
     return {
@@ -222,12 +168,6 @@ export default {
       }
 
       return Number(((endMinutes - startMinutes) / 60).toFixed(2))
-    },
-    notifiableVolunteers() {
-      return this.volunteers.filter((volunteer) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(volunteer.correo_electronico || ''))
-    },
-    allNotificationRecipientsSelected() {
-      return this.notifiableVolunteers.length > 0 && this.notificationRecipients.length === this.notifiableVolunteers.length
     }
   },
   mounted() {
@@ -271,7 +211,7 @@ export default {
 
         this.filiales = Array.isArray(filialesResponse.data) ? filialesResponse.data : []
         this.volunteers = Array.isArray(volunteersResponse.data) ? volunteersResponse.data : []
-        this.notificationRecipients = this.notifiableVolunteers.map((volunteer) => volunteer.id)
+        this.notificationRecipients = []
 
         if (!this.form.filial_id) {
           this.form.filial_id = this.findCuricoFilialId()
@@ -286,6 +226,7 @@ export default {
       this.modalInstance.show()
     },
     hide() {
+      this.$refs.volunteerSelectors?.closeAll()
       this.modalInstance.hide()
     },
     resetForm() {
@@ -294,19 +235,11 @@ export default {
       this.selectedVolunteers = []
       this.volunteerHours = {}
       this.notifyVolunteers = false
-      this.notificationRecipients = this.notifiableVolunteers.map((volunteer) => volunteer.id)
+      this.notificationRecipients = []
       this.isSubmitting = false
     },
     fullVolunteerName(volunteer) {
       return [volunteer.nombres, volunteer.apellidos].filter(Boolean).join(' ') || volunteer.user?.username || 'Voluntario'
-    },
-    isSelected(voluntarioId) {
-      return this.selectedVolunteers.includes(voluntarioId)
-    },
-    toggleAllNotificationRecipients() {
-      this.notificationRecipients = this.allNotificationRecipientsSelected
-        ? []
-        : this.notifiableVolunteers.map((volunteer) => volunteer.id)
     },
     calculateScheduledHours() {
       const startValue = this.normalizeTimeValue(this.form.hora_inicio)
@@ -359,21 +292,6 @@ export default {
 
       if (scheduledHours !== null) {
         this.form.horas_totales = scheduledHours
-      }
-    },
-    toggleVolunteer(voluntarioId) {
-      if (this.isSelected(voluntarioId)) {
-        this.selectedVolunteers = this.selectedVolunteers.filter((value) => value !== voluntarioId)
-        const nextHours = { ...this.volunteerHours }
-        delete nextHours[voluntarioId]
-        this.volunteerHours = nextHours
-        return
-      }
-
-      this.selectedVolunteers = [...this.selectedVolunteers, voluntarioId]
-      this.volunteerHours = {
-        ...this.volunteerHours,
-        [voluntarioId]: this.volunteerHours[voluntarioId] ?? 0
       }
     },
     validateVolunteerHours() {
@@ -518,33 +436,6 @@ export default {
 .activity-modal-body {
   overflow-y: auto;
 }
-
-.volunteer-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 0.9rem;
-}
-
-.volunteer-card {
-  border: 1px solid #e4e8ef;
-  border-radius: 16px;
-  padding: 0.95rem;
-  background: #fbfcfe;
-}
-
-.empty-state {
-  border-radius: 18px;
-  border: 1px dashed #d6dde7;
-  background: #fafbfd;
-  padding: 1.2rem;
-  color: #65758a;
-}
-
-.notification-panel { border: 1px solid #f1c7ca; border-radius: 16px; padding: 1rem; background: #fff8f8; }
-.notification-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .55rem; max-height: 230px; overflow-y: auto; }
-.notification-recipient { display: flex; gap: .6rem; padding: .65rem; border-radius: 10px; background: #fff; }
-.notification-recipient span { display: grid; }
-.notification-recipient small { color: #65758a; }
 
 @media (max-width: 991.98px) {
   #newActividadModal {

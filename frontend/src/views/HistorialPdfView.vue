@@ -291,7 +291,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import logoSrc from '../assets/LogoVertical.svg'
 import { API_BASE } from '../config/api'
-import { show_alerta } from '../funciones'
+import { useDocumentPrint } from '../composables/useDocumentPrint'
 
 const route = useRoute()
 const router = useRouter()
@@ -350,6 +350,7 @@ const sanctionSummary = computed(() => {
 
 const commentText = computed(() => selectedAnnual.value?.comentarios || '')
 const readyToPrint = computed(() => Boolean(volunteer.value && selectedAnnual.value))
+const { printDocument: printNow } = useDocumentPrint(readyToPrint)
 
 onMounted(() => {
   fetchUser()
@@ -400,65 +401,9 @@ function goBack() {
   })
 }
 
-function printNow() {
-  if (!readyToPrint.value) return
-
-  try {
-    window.print()
-  } catch {
-    show_alerta('Hubo un problema al descargar el documento.', 'error')
-  }
-}
 </script>
 
 <style scoped>
-.pdf-export-page {
-  min-height: 100vh;
-  padding: 1.5rem;
-  background: #eef2f7;
-}
-
-.pdf-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.pdf-toolbar__button {
-  border: none;
-  border-radius: 999px;
-  padding: 0.75rem 1.15rem;
-  background: #d7deea;
-  color: #173763;
-  font-weight: 700;
-}
-
-.pdf-toolbar__button--primary {
-  background: #e01e1e;
-  color: #fff;
-}
-
-.pdf-toolbar__button:disabled {
-  opacity: 0.7;
-}
-
-.pdf-toolbar__hint {
-  color: #5f7085;
-  font-size: 0.92rem;
-}
-
-.pdf-state {
-  display: grid;
-  place-items: center;
-  min-height: 60vh;
-  color: #4d617d;
-}
-
-.pdf-state--error {
-  color: #a3212b;
-}
-
 .pdf-document {
   display: grid;
   gap: 1.25rem;
@@ -469,7 +414,7 @@ function printNow() {
   width: 8.5in;
   min-height: 11in;
   padding: 0.72in 0.55in 0.58in;
-  background: #fff;
+  background: var(--cr-white);
   color: #111;
   box-shadow: 0 18px 40px rgba(15, 47, 95, 0.15);
 }
@@ -539,7 +484,7 @@ function printNow() {
 
 .section-bar th {
   background: #f10808;
-  color: #fff;
+  color: var(--cr-white);
   font-weight: 800;
   text-align: center;
   font-size: 0.16in;
@@ -627,30 +572,10 @@ function printNow() {
 }
 
 @media print {
-  @page {
-    size: letter;
-    margin: 0;
-  }
-
-  .pdf-sheet,
-  .pdf-sheet * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    color-adjust: exact !important;
-  }
 
   .section-bar th {
     background-color: #f10808 !important;
-    color: #fff !important;
-  }
-
-  .pdf-export-page {
-    padding: 0;
-    background: #fff;
-  }
-
-  .no-print {
-    display: none !important;
+    color: var(--cr-white) !important;
   }
 
   .pdf-document {

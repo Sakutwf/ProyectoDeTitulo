@@ -8,6 +8,11 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Intervention\Image\Laravel\Facades\Image;
 
+/**
+ * Última barrera de optimización de imágenes antes de almacenarlas.
+ * Se inyecta en los controladores de álbumes, actividades, portada, usuarios
+ * y hojas de vida, además del servicio de aprobación de antecedentes.
+ */
 class ImageOptimizer
 {
     public const MAX_DIMENSION = 1920;

@@ -14,6 +14,11 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
+/**
+ * Crea campañas, selecciona destinatarios y encola cada correo una sola vez.
+ * Lo utilizan ActividadController, SolicitudHojaVidaController y
+ * LifeSheetApprovalService para todos los avisos funcionales del sistema.
+ */
 class NotificationCampaignService
 {
     public function availableVolunteers(): Collection
