@@ -38,6 +38,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('albumes/{album}', [AlbumController::class, 'update']);
     Route::delete('albumes/{album}', [AlbumController::class, 'destroy']);
     Route::post('albumes/{album}/fotos', [AlbumController::class, 'uploadPhoto']);
+    Route::get('albumes/{album}/fotos/{archivo}/descargar', [AlbumController::class, 'downloadPhoto']);
     Route::put('albumes/{album}/fotos/{archivo}', [AlbumController::class, 'updatePhoto']);
     Route::delete('albumes/{album}/fotos/{archivo}', [AlbumController::class, 'destroyPhoto']);
 

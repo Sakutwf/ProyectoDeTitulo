@@ -2035,6 +2035,10 @@ function matchesSearch(value) {
   min-height: 100%;
 }
 
+.hero-history-panel > .annual-list {
+  margin-top: 1.25rem;
+}
+
 .history-modal {
   position: fixed;
   inset: 0;

@@ -101,6 +101,16 @@
                   <div v-else-if="galleryItems.length" class="gallery-grid-inner">
                     <article v-for="item in galleryItems" :key="item.id" class="gallery-item-card">
                       <img :src="item.imagen_url" :alt="item.titulo || 'Imagen de actividad'" class="gallery-item-card__image">
+                      <button
+                        v-if="item.album_id && item.archivo_id"
+                        type="button"
+                        class="gallery-item-card__download"
+                        title="Descargar foto"
+                        aria-label="Descargar foto"
+                        @click="downloadAlbumPhoto(item)"
+                      >
+                        <i class="fa-solid fa-download"></i>
+                      </button>
                       <div class="gallery-item-card__body">
                         <strong>{{ item.titulo || 'Imagen sin nombre' }}</strong>
                         <small>{{ formatDate(item.fecha) }}</small>
@@ -282,6 +292,33 @@ async function uploadGalleryImage(actividad) {
   }
 }
 
+async function downloadAlbumPhoto(item) {
+  try {
+    const response = await axios.get(
+      `${API_BASE}/albumes/${item.album_id}/fotos/${item.archivo_id}/descargar`,
+      { responseType: 'blob' }
+    )
+    const objectUrl = URL.createObjectURL(response.data)
+    const link = document.createElement('a')
+    link.href = objectUrl
+    const baseName = item.titulo || `fotografia-${item.archivo_id}`
+    link.download = /\.[a-z0-9]+$/i.test(baseName)
+      ? baseName
+      : `${baseName}.${item.archivo?.extension || 'webp'}`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(objectUrl)
+  } catch (error) {
+    show_alerta(
+      error?.response?.status === 403
+        ? 'No tienes permisos para descargar esta fotografía.'
+        : 'No se pudo descargar la fotografía.',
+      'error'
+    )
+  }
+}
+
 onMounted(async () => {
   await loadActivities()
 })
@@ -444,10 +481,32 @@ onMounted(async () => {
 }
 
 .gallery-item-card {
+  position: relative;
   border: 1px solid #e1e6ef;
   border-radius: 18px;
   overflow: hidden;
   background: #fff;
+}
+
+.gallery-item-card__download {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  width: 2.45rem;
+  height: 2.45rem;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.94);
+  color: #e01e1e;
+  box-shadow: 0 6px 16px rgba(15, 47, 95, 0.2);
+}
+
+.gallery-item-card__download:hover,
+.gallery-item-card__download:focus-visible {
+  background: #e01e1e;
+  color: #fff;
 }
 
 .gallery-item-card__image {

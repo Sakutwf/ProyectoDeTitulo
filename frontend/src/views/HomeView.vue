@@ -45,7 +45,6 @@
         </section>
         <section v-else-if="!loading" class="empty-home"><i class="fa-regular fa-newspaper"></i><h2>Pronto compartiremos nuevas historias</h2><p>La portada todavía no tiene novedades publicadas.</p></section>
         <footer class="landing-footer">
-          <div class="footer-logo"><router-link to="/portada" aria-label="Ir a Inicio y novedades"><img :src="brandLogo" alt="Cruz Roja"></router-link></div>
           <div class="footer-brand">
             <div class="footer-info-block">
               <h2>Dirección</h2>
@@ -140,4 +139,6 @@ export default {
 @media(max-width:1100px){.news-card--completo,.news-card--completo.news-card--reverse{grid-column:span 6;display:block;min-height:0}.news-card--completo .news-card__image{height:clamp(150px,32vw,260px);min-height:0}.news-card--reverse .news-card__image,.news-card--reverse .news-card__body{order:initial}}
 .news-card h2{font-size:clamp(1.55rem,2.2vw,2rem);line-height:1.08;margin:0 0 .65rem}.news-card--completo .news-card__body{justify-content:flex-start;padding-top:clamp(1rem,1.5vw,1.25rem)}
 .landing-footer .footer-socials a{width:50px;height:50px;font-size:1.45rem}.landing-footer .footer-socials i{font-size:1.45rem!important}
+.carousel-caption{text-align:left}
+.landing-footer{padding:clamp(1.5rem,2.5vw,2.25rem) clamp(1.25rem,3vw,3rem);align-items:start}
 </style>

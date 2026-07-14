@@ -133,7 +133,13 @@
             <h2 id="participant-modal-title">Seleccionar voluntarios</h2>
             <span>Marca a quienes participarán y registra sus horas asistidas.</span>
           </div>
-          <button type="button" class="participant-modal__close" aria-label="Cerrar" @click="closeParticipantModal"><i class="fa-solid fa-xmark"></i></button>
+          <div class="participant-modal__header-actions">
+            <div class="participant-modal__total-hours">
+              <span>Horas de la actividad</span>
+              <strong>{{ activityHoursLabel }}</strong>
+            </div>
+            <button type="button" class="participant-modal__close" aria-label="Cerrar" @click="closeParticipantModal"><i class="fa-solid fa-xmark"></i></button>
+          </div>
         </header>
 
         <div class="participant-modal__toolbar">
@@ -251,6 +257,12 @@ export default {
 
       return Number(((endMinutes - startMinutes) / 60).toFixed(2))
     },
+    activityHoursLabel() {
+      if (this.activityHoursLimit === null) return 'Sin definir'
+
+      const formatted = Number(this.activityHoursLimit).toLocaleString('es-CL', { maximumFractionDigits: 2 })
+      return `${formatted} ${Number(this.activityHoursLimit) === 1 ? 'hora' : 'horas'}`
+    },
     notifiableVolunteers() {
       return this.volunteers.filter((volunteer) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(volunteer.correo_electronico || ''))
     },
@@ -334,7 +346,6 @@ export default {
 
         this.filiales = Array.isArray(filialesResponse.data) ? filialesResponse.data : []
         this.volunteers = Array.isArray(volunteersResponse.data) ? volunteersResponse.data : []
-        this.notificationRecipients = this.notifiableVolunteers.map((volunteer) => volunteer.id)
       } catch (error) {
         this.filiales = []
         this.volunteers = []
@@ -374,7 +385,9 @@ export default {
       this.notificationSearch = ''
       this.notificationRecipientDraft = this.notifyVolunteers
         ? [...this.notificationRecipients]
-        : this.notifiableVolunteers.map((volunteer) => volunteer.id)
+        : this.notifiableVolunteers
+          .filter((volunteer) => this.selectedVolunteers.some((id) => Number(id) === Number(volunteer.id)))
+          .map((volunteer) => volunteer.id)
       this.notificationModalOpen = true
     },
     closeNotificationModal() {
@@ -471,7 +484,7 @@ export default {
           (activity.voluntarios || []).map((volunteer) => [volunteer.id, Number(volunteer.pivot?.horas_asistidas ?? 0)])
         )
         this.notifyVolunteers = false
-        this.notificationRecipients = this.notifiableVolunteers.map((volunteer) => volunteer.id)
+        this.notificationRecipients = []
 
         this.show()
       } catch (error) {
@@ -583,6 +596,10 @@ export default {
 .participant-modal__header p { margin:0;color:#e01e1e;font-size:.72rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase; }
 .participant-modal__header h2 { margin:.2rem 0;color:#163a69;font-size:1.45rem;font-weight:800; }
 .participant-modal__header span { color:#65758a; }
+.participant-modal__header-actions { display:flex;align-items:flex-start;gap:.75rem; }
+.participant-modal__total-hours { min-width:145px;padding:.55rem .8rem;border:1px solid #cbd9e8;border-radius:12px;background:#f7f9fc;text-align:right; }
+.participant-modal__total-hours span { display:block;color:#65758a;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em; }
+.participant-modal__total-hours strong { display:block;margin-top:.1rem;color:#163a69;font-size:1rem; }
 .participant-modal__close { width:40px;height:40px;flex:0 0 auto;border:0;border-radius:50%;background:#eef1f5;color:#173352; }
 .participant-modal__toolbar { display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1.4rem;background:#f8fafc;border-bottom:1px solid #e4e8ef;color:#163a69; }
 .participant-modal__toolbar label { position:relative;width:min(100%,420px); }

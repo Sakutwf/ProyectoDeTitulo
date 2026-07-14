@@ -403,16 +403,9 @@ function goBack() {
 function printNow() {
   if (!readyToPrint.value) return
 
-  const handlePrintFinished = () => {
-    show_alerta('Documento descargado exitosamente.', 'success')
-  }
-
-  window.addEventListener('afterprint', handlePrintFinished, { once: true })
-
   try {
     window.print()
   } catch {
-    window.removeEventListener('afterprint', handlePrintFinished)
     show_alerta('Hubo un problema al descargar el documento.', 'error')
   }
 }

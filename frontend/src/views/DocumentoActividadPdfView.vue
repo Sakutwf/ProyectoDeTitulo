@@ -389,6 +389,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import logoSrc from '../assets/LogoVertical.svg'
 import { buildApiUrl } from '../config/api'
+import { show_alerta } from '../funciones'
 
 const route = useRoute()
 const router = useRouter()
@@ -564,7 +565,12 @@ function goBack() {
 
 function printNow() {
   if (!readyToPrint.value) return
-  window.print()
+
+  try {
+    window.print()
+  } catch {
+    show_alerta('Hubo un problema al descargar el documento.', 'error')
+  }
 }
 </script>
 
@@ -637,7 +643,8 @@ function printNow() {
 }
 
 .print-page__content {
-  /*padding: 0.45in 0.45in 0.65in;*/
+  box-sizing: border-box;
+  padding: 0.45in 0.45in 0.65in;
 }
 
 .print-page__content--footer-sheet {
@@ -1171,9 +1178,11 @@ function printNow() {
 }
 
 @media print {
-  * {
+  .print-page,
+  .print-page * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
 
   @page {
@@ -1195,46 +1204,59 @@ function printNow() {
 
   .pdf-document {
     display: block;
+    width: auto;
+    gap: 0;
     margin: 0;
-    padding: 0;
+    padding: 0.45in 0.45in 0.65in;
+    box-sizing: border-box;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
   }
 
   .print-page {
-    width: 8.5in;
-    min-height: 11in;
+    position: static;
+    width: auto;
+    min-height: 0;
     box-shadow: none;
     margin: 0;
-    overflow: hidden;
-    break-after: page;
-    page-break-after: always;
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-
-  .print-page:last-child {
     break-after: auto;
     page-break-after: auto;
   }
 
   .print-page__content {
-    padding:0 !important;
+    padding: 0;
   }
 
   .print-page__content--footer-sheet {
-    min-height: calc(11in - 1.1in);
+    display: block;
+    min-height: 0;
   }
 
-  .print-section,
-  .narrative-block,
+  .print-page + .print-page .print-page__content {
+    margin-top: 0.12in;
+  }
+
+  .page-footer {
+    display: none;
+  }
+
+  .document-cover,
+  .analysis-event-grid,
+  .analysis-climate-card,
+  .analysis-risk-card,
+  .analysis-narrative-section,
   .signoff-sheet,
-  .photo-instruction,
+  .print-table--signoff,
   .print-table tr,
-  .print-table th,
-  .print-table td,
-  .print-photo,
-  .print-climate-photo {
+  .photo-row {
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+
+  .section-row,
+  .analysis-section__heading {
+    break-after: avoid;
+    page-break-after: avoid;
   }
 }
 </style>

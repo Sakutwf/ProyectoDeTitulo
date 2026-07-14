@@ -146,6 +146,30 @@ class AlbumController extends Controller
         return response()->json($this->loadPhoto($archivo->fresh()), 200);
     }
 
+    public function downloadPhoto(Request $request, Album $album, Archivo $archivo)
+    {
+        $this->ensurePhotoBelongsToAlbum($album, $archivo);
+
+        $actor = $request->user()?->loadMissing('roles');
+        abort_unless(
+            $actor?->roles->contains(fn ($role) => in_array($role->clave, ['administrador', 'voluntario'], true)),
+            403,
+            'No tienes permisos para descargar fotografias de este album.'
+        );
+
+        abort_unless($archivo->ruta && Storage::disk('public')->exists($archivo->ruta), 404);
+
+        $extension = $archivo->extension ?: pathinfo($archivo->ruta, PATHINFO_EXTENSION);
+        $baseName = pathinfo($archivo->nombre_original ?: 'fotografia', PATHINFO_FILENAME);
+        $safeName = preg_replace('/[^\pL\pN._-]+/u', '-', $baseName) ?: 'fotografia';
+
+        return Storage::disk('public')->download(
+            $archivo->ruta,
+            $safeName.'.'.$extension,
+            ['Content-Type' => $archivo->mime_type ?: 'application/octet-stream']
+        );
+    }
+
     public function destroyPhoto(Request $request, Album $album, Archivo $archivo)
     {
         $this->ensurePhotoBelongsToAlbum($album, $archivo);

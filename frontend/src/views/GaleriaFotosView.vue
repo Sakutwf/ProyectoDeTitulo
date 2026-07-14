@@ -40,7 +40,7 @@
                     <button type="button" class="btn btn-sm gallery-action-button" title="Editar álbum" aria-label="Editar álbum" @click="openAlbumModal(album)">
                       <i class="fa-solid fa-edit"></i>
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Abrir fotos" aria-label="Abrir fotos" @click="openPhotosModal(album)">
+                    <button type="button" class="btn btn-sm btn-outline-secondary gallery-open-button" title="Abrir fotos" aria-label="Abrir fotos" @click="openPhotosModal(album)">
                       <i class="fa-solid fa-images"></i>
                     </button>
                     <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar álbum" aria-label="Eliminar álbum" :disabled="!canDeleteAlbum(album)" @click="deleteAlbum(album)">
@@ -102,7 +102,7 @@
                         <button type="button" class="btn btn-sm gallery-action-button" title="Editar álbum" @click="openAlbumModal(album)">
                           <i class="fa-solid fa-edit"></i>
                         </button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" title="Abrir fotos" @click="openPhotosModal(album)">
+                        <button type="button" class="btn btn-sm btn-outline-secondary gallery-open-button" title="Abrir fotos" @click="openPhotosModal(album)">
                           <i class="fa-solid fa-images"></i>
                         </button>
                         <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar álbum" :disabled="!canDeleteAlbum(album)" @click="deleteAlbum(album)">
@@ -208,6 +208,9 @@
           <article v-for="photo in paginatedAlbumPhotos" :key="photo.id" class="album-photo-card">
             <img :src="photo.url_publica" :alt="photo.nombre_original || 'Foto de álbum'" class="album-photo-card__image">
             <div class="album-photo-card__actions album-photo-card__actions--overlay">
+              <button type="button" class="btn btn-sm btn-light" title="Descargar foto" aria-label="Descargar foto" @click="downloadAlbumPhoto(photo)">
+                <i class="fa-solid fa-download"></i>
+              </button>
               <button type="button" class="btn btn-sm btn-light" title="Editar datos de foto" @click="openPhotoEditModal(photo)">
                 <i class="fa-solid fa-pen-to-square"></i>
               </button>
@@ -544,6 +547,35 @@ async function persistPhoto(photo) {
   return response.data
 }
 
+async function downloadAlbumPhoto(photo) {
+  if (!selectedAlbum.value) return
+
+  try {
+    const response = await axios.get(
+      buildApiUrl(`albumes/${selectedAlbum.value.id}/fotos/${photo.id}/descargar`),
+      { responseType: 'blob' }
+    )
+    const objectUrl = URL.createObjectURL(response.data)
+    const link = document.createElement('a')
+    link.href = objectUrl
+    const baseName = photo.nombre_original || `fotografia-${photo.id}`
+    link.download = /\.[a-z0-9]+$/i.test(baseName) ? baseName : `${baseName}.${photo.extension || 'webp'}`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(objectUrl)
+  } catch (error) {
+    Swal.fire({
+      title: 'Error',
+      text: error?.response?.status === 403
+        ? 'No tienes permisos para descargar esta fotografía.'
+        : 'No se pudo descargar la fotografía.',
+      icon: 'error',
+      customClass: { container: 'swal-over-gallery-modal' }
+    })
+  }
+}
+
 async function updatePhoto(photo) {
   try {
     await persistPhoto(photo)
@@ -874,6 +906,15 @@ onMounted(async () => {
   border-color: #0f2f5f;
 }
 
+.gallery-open-button i {
+  color: #0f2f5f;
+}
+
+.gallery-open-button:hover i,
+.gallery-open-button:focus-visible i {
+  color: #fff;
+}
+
 .album-photo-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -910,8 +951,8 @@ onMounted(async () => {
   bottom: 0.4rem;
   padding: 0.25rem;
   border-radius: 999px;
-  background: rgba(15, 47, 95, 0.72);
-  backdrop-filter: blur(4px);
+  background: transparent;
+  backdrop-filter: none;
 }
 
 .album-photo-card__actions--overlay .btn {
