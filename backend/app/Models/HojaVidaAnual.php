@@ -139,6 +139,7 @@ class HojaVidaAnual extends Model
         $totals = DB::table('actividad_voluntario as actividad_voluntario')
             ->join('actividades as actividades', 'actividades.id', '=', 'actividad_voluntario.actividad_id')
             ->where('actividad_voluntario.voluntario_id', $voluntarioId)
+            ->where('actividad_voluntario.estado', Actividad::INSCRIPCION_APROBADA)
             ->whereYear('actividades.fecha_inicio', $anio)
             ->whereIn('actividades.tipo', [
                 self::ACTIVITY_TYPE_REUNION,

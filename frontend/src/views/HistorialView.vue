@@ -792,6 +792,7 @@ import HistorialAnualEditor from '../components/HistorialAnualEditor.vue'
 import { API_BASE } from '../config/api'
 import { show_alerta } from '../funciones'
 import Swal from 'sweetalert2'
+import { formatDate as formatApiDate } from '../utils/formatters'
 import { optimizeImage } from '../utils/imageOptimization'
 
 const route = useRoute()
@@ -1449,17 +1450,7 @@ async function onProfilePhotoSelected(event) {
 }
 
 function formatDate(value) {
-  if (!value) {
-    return 'Sin registro'
-  }
-
-  const parsed = new Date(`${value}T00:00:00`)
-
-  if (Number.isNaN(parsed.getTime())) {
-    return value
-  }
-
-  return parsed.toLocaleDateString('es-CL')
+  return formatApiDate(value, 'Sin registro')
 }
 
 function formatActivityDateRange(start, end) {

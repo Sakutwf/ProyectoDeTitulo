@@ -21,8 +21,4 @@ class UserFactory extends Factory
         ];
     }
 
-    public function unverified(): static
-    {
-        return $this;
-    }
 }

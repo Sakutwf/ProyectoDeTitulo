@@ -49,6 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('actividad/{id}/voluntarios', [ActividadController::class, 'asociarVoluntario']);
     Route::delete('actividad/{id}/voluntarios', [ActividadController::class, 'desasociarVoluntario']);
+    Route::put('actividad/{id}/voluntarios/{voluntario}/solicitud', [ActividadController::class, 'revisarInscripcion']);
     Route::put('actividad/{id}/climas', [ActividadController::class, 'guardarClimas']);
     Route::get('actividad/{id}/galeria', [ActividadController::class, 'galeria']);
     Route::get('actividad/{id}/notificaciones/destinatarios', [ActividadController::class, 'destinatariosNotificacion']);

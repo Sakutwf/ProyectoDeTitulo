@@ -6,6 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Actividad extends Model
 {
+    public const INSCRIPCION_PENDIENTE = 'pendiente';
+
+    public const INSCRIPCION_APROBADA = 'aprobada';
+
+    public const INSCRIPCION_RECHAZADA = 'rechazada';
+
     protected $table = 'actividades';
 
     protected $fillable = [
@@ -50,7 +56,33 @@ class Actividad extends Model
             'actividad_id',
             'voluntario_id'
         )
-            ->withPivot('horas_asistidas', 'registrado_por')
+            ->wherePivot('estado', self::INSCRIPCION_APROBADA)
+            ->withPivot('horas_asistidas', 'estado', 'registrado_por', 'revisado_por', 'revisado_en')
+            ->withTimestamps();
+    }
+
+    public function inscripciones()
+    {
+        return $this->belongsToMany(
+            Voluntario::class,
+            'actividad_voluntario',
+            'actividad_id',
+            'voluntario_id'
+        )
+            ->withPivot('horas_asistidas', 'estado', 'registrado_por', 'revisado_por', 'revisado_en')
+            ->withTimestamps();
+    }
+
+    public function solicitudesPendientes()
+    {
+        return $this->belongsToMany(
+            Voluntario::class,
+            'actividad_voluntario',
+            'actividad_id',
+            'voluntario_id'
+        )
+            ->wherePivot('estado', self::INSCRIPCION_PENDIENTE)
+            ->withPivot('horas_asistidas', 'estado', 'registrado_por', 'revisado_por', 'revisado_en')
             ->withTimestamps();
     }
 
@@ -80,7 +112,6 @@ class Actividad extends Model
         return $this->hasMany(Album::class, 'actividad_id');
     }
 }
-
 
 
 

@@ -1,0 +1,526 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for src/views/HomeView.vue</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/views</a> HomeView.vue</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>0/62</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>0/136</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>0/13</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>0/62</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line low'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a>
+<a name='L107'></a><a href='#L107'>107</a>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a>
+<a name='L130'></a><a href='#L130'>130</a>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a>
+<a name='L146'></a><a href='#L146'>146</a>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">&lt;template&gt;
+  &lt;div class="home-shell"&gt;
+    &lt;div class="home-content"&gt;
+      &lt;header class="landing-<span class="cstat-no" title="statement not covered" >header"&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;router-link to="/portada" class="landing-brand"&gt;&lt;img :src="brandLogo" alt="Cruz Roja"&gt;&lt;div&gt;&lt;small&gt;Cruz Roja&lt;/small&gt;&lt;strong&gt;Ven a conocer nuestras novedades&lt;/strong&gt;&lt;/div&gt;&lt;/router-link&gt;</span>
+        &lt;div class="header-actions"&gt;
+          &lt;router-link v-if="isAuthenticated" :to="profileRoute" class="button button--red"&gt;&lt;i class="fa-solid fa-user"&gt;&lt;/i&gt; Mi perfil&lt;/router-link&gt;
+<span class="cstat-no" title="statement not covered" >          &lt;button v-if="!i</span>sAuthenticated" class="button button--red" @click="goToLogin"&gt;&lt;i class="fa-solid fa-right-to-bracket"&gt;&lt;/i&gt; Iniciar sesión&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/header&gt;
+&nbsp;
+      &lt;main&gt;
+        &lt;section v-if="slides.length" class="carousel" aria-label="Actividades destacadas"&gt;
+          &lt;div v-for="(slide, index) in slides" v-show="index === activeSlide" :key="slide.id" class="carousel-slide"&gt;
+            &lt;div class="carousel-images" :class="`carousel-images--${slide.imagenes.length}`"&gt;
+              &lt;span v-for="image in slide.imagenes" :key="image.id" class="carousel-image-cell"&gt;&lt;img :src="image.url_publica" :style="{ objectPosition: `${image.pivot?.posicion_x ?? 50}% ${image.pivot?.posicion_y ?? 50}%`, transform: `scale(${(image.pivot?.zoom ?? 100) / 100})`, transformOrigin: `${image.pivot?.posicion_x ?? 50}% ${image.pivot?.posicion_y ?? 50}%` }" :alt="slide.titulo || 'Actividad de Cruz Roja'"&gt;&lt;/span&gt;
+            &lt;/div&gt;
+            &lt;div v-if="texts.carrusel_etiqueta || slide.titulo || slide.bajada" class="carousel-caption" :style="{ '--carousel-title-color': slide.titulo_color || texts.carrusel_texto_color, '--carousel-subtitle-color': slide.bajada_color || texts.carrusel_texto_color, '--carousel-label-color': texts.carrusel_etiqueta_color }"&gt;&lt;p v-if="texts.carrusel_etiqueta"&gt;{{ texts.carrusel_etiqueta }}&lt;/p&gt;&lt;h1 v-if="slide.titulo"&gt;{{ slide.titulo }}&lt;/h1&gt;&lt;span v-if="slide.bajada"&gt;{{ slide.bajada }}&lt;/span&gt;&lt;/div&gt;
+          &lt;/div&gt;
+          &lt;button v-if="slides.length &gt; 1" class="carousel-arrow carousel-arrow--left" aria-label="Anterior" @click="previousSlide"&gt;&lt;i class="fa-solid fa-chevron-left"&gt;&lt;/i&gt;&lt;/button&gt;
+          &lt;button v-if="slides.length &gt; 1" class="carousel-arrow carousel-arrow--right" aria-label="Siguiente" @click="nextSlide"&gt;&lt;i class="fa-solid fa-chevron-right"&gt;&lt;/i&gt;&lt;/button&gt;
+          &lt;div v-if="slides.length &gt; 1" class="carousel-dots"&gt;&lt;button v-for="(slide, index) in slides" :key="slide.id" :class="{ active: index === activeSlide }" :aria-label="`Ir a diapositiva ${index + 1}`" @click="activeSlide = index"&gt;&lt;/button&gt;&lt;/div&gt;
+        &lt;/section&gt;
+&nbsp;
+        &lt;section v-if="texts.novedades_etiqueta || texts.novedades_titulo || texts.novedades_descripcion" class="intro" :style="{ '--news-label-color': texts.novedades_etiqueta_color, '--news-title-color': texts.novedades_titulo_color, '--news-description-color': texts.novedades_descripcion_color }"&gt;
+          &lt;p v-if="texts.novedades_etiqueta"&gt;{{ texts.novedades_etiqueta }}&lt;/p&gt;
+          &lt;h1 v-if="texts.novedades_titulo"&gt;{{ texts.novedades_titulo }}&lt;/h1&gt;
+          &lt;span v-if="texts.novedades_descripcion"&gt;{{ texts.novedades_descripcion }}&lt;/span&gt;
+        &lt;/section&gt;
+&nbsp;
+        &lt;section v-if="news.length" class="news-grid"&gt;
+          &lt;article v-for="(item, index) in news" :key="item.id" class="news-card news-card--completo" :class="{ 'news-card--reverse': index % 2 === 1 }"&gt;
+            &lt;div v-if="item.archivo_portada?.url_publica" class="news-card__image"&gt;&lt;img :src="item.archivo_portada.url_publica" :style="{ objectPosition: `${item.posicion_x ?? 50}% ${item.posicion_y ?? 50}%`, transform: `scale(${(item.zoom ?? 100) / 100})`, transformOrigin: `${item.posicion_x ?? 50}% ${item.posicion_y ?? 50}%` }" :alt="item.titulo"&gt;&lt;/div&gt;
+            &lt;div class="news-card__body"&gt;
+              &lt;h2 v-if="item.titulo"&gt;{{ item.titulo }}&lt;/h2&gt;
+              &lt;p v-if="item.resumen"&gt;{{ item.resumen }}&lt;/p&gt;
+              &lt;dl&gt;
+                &lt;template v-for="field in item.campos_visibles || []" :key="field"&gt;
+                  &lt;div v-if="fieldValue(item, field)"&gt;&lt;dt&gt;&lt;i :class="fieldMeta[field].icon"&gt;&lt;/i&gt;{{ fieldMeta[field].label }}&lt;/dt&gt;&lt;dd&gt;{{ fieldValue(item, field) }}&lt;/dd&gt;&lt;/div&gt;
+                &lt;/template&gt;
+              &lt;/dl&gt;
+              &lt;p v-if="item.contenido" class="news-card__content"&gt;{{ item.contenido }}&lt;/p&gt;
+            &lt;/div&gt;
+          &lt;/article&gt;
+        &lt;/section&gt;
+        &lt;section v-else-if="!loading" class="empty-home"&gt;&lt;i class="fa-regular fa-newspaper"&gt;&lt;/i&gt;&lt;h2&gt;Pronto compartiremos nuevas historias&lt;/h2&gt;&lt;p&gt;La portada todavía no tiene novedades publicadas.&lt;/p&gt;&lt;/section&gt;
+        &lt;footer class="landing-footer"&gt;
+          &lt;div class="footer-brand"&gt;
+            &lt;div class="footer-info-block"&gt;
+              &lt;h2&gt;Dirección&lt;/h2&gt;
+              &lt;a v-if="texts.direccion" :href="locationUrl" target="_blank" rel="noopener" class="footer-address"&gt;{{ texts.direccion }}&lt;/a&gt;
+            &lt;/div&gt;
+            &lt;div v-if="texts.horario_atencion" class="footer-info-block"&gt;
+              &lt;h2&gt;Horario de atención&lt;/h2&gt;
+              &lt;p class="footer-hours"&gt;{{ texts.horario_atencion }}&lt;/p&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div class="footer-links"&gt;
+            &lt;h2&gt;Contáctanos en nuestras redes&lt;/h2&gt;
+            &lt;div class="footer-socials"&gt;
+              &lt;a v-if="texts.instagram_url" :href="texts.instagram_url" target="_blank" rel="noopener" aria-label="Instagram"&gt;&lt;i class="fa-brands fa-instagram"&gt;&lt;/i&gt;&lt;/a&gt;
+              &lt;a v-if="texts.facebook_url" :href="texts.facebook_url" target="_blank" rel="noopener" aria-label="Facebook"&gt;&lt;i class="fa-brands fa-facebook-f"&gt;&lt;/i&gt;&lt;/a&gt;
+              &lt;a v-if="whatsappUrl" :href="whatsappUrl" target="_blank" rel="noopener" aria-label="WhatsApp"&gt;&lt;i class="fa-brands fa-whatsapp"&gt;&lt;/i&gt;&lt;/a&gt;
+            &lt;/div&gt;
+            &lt;div class="footer-contact-links"&gt;
+              &lt;a v-if="texts.telefono" :href="`tel:${texts.telefono}`"&gt;&lt;i class="fa-solid fa-phone"&gt;&lt;/i&gt; {{ texts.telefono }}&lt;/a&gt;
+              &lt;a v-if="texts.correo_contacto" :href="`mailto:${texts.correo_contacto}`"&gt;&lt;i class="fa-solid fa-envelope"&gt;&lt;/i&gt; {{ texts.correo_contacto }}&lt;/a&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div class="footer-related"&gt;
+            &lt;h2&gt;Páginas relacionadas&lt;/h2&gt;
+            &lt;a v-for="link in texts.enlaces_relacionados || []" :key="link.url" :href="link.url" target="_blank" rel="noopener"&gt;{{ link.nombre }} &lt;i class="fa-solid fa-arrow-up-right-from-square"&gt;&lt;/i&gt;&lt;/a&gt;
+          &lt;/div&gt;
+        &lt;/footer&gt;
+      &lt;/main&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/template&gt;
+&nbsp;
+&lt;script&gt;
+import axios from 'axios'
+import logoHorizontal from '@/assets/LogoHorizontal.svg'
+import { buildApiUrl } from '../config/api'
+&nbsp;
+export default {
+  name: 'HomeView',
+  data: () =&gt; ({ brandLogo: logoHorizontal, loading: true, slides: [], news: [], texts: { carrusel_etiqueta: 'Historias que nos unen', carrusel_texto_color: '#ffffff', carrusel_etiqueta_color: '#ffffff', novedades_etiqueta: 'Actualidad de nuestra comunidad', novedades_etiqueta_color: '#d72732', novedades_titulo: 'Novedades de Cruz Roja', novedades_titulo_color: '#011e41', novedades_descripcion: 'Conoce las actividades y el impacto de nuestros voluntarios.', novedades_descripcion_color: '#5f6b7c', telefono: '', whatsapp: '', correo_contacto: '', horario_atencion: '', instagram_url: '', facebook_url: '', direccion: '', ubicacion_url: '', directorio: [], enlaces_relacionados: [] }, activeSlide: 0, timer: null,
+    fieldMeta: { objetivo: { label: 'Objetivo', icon: 'fa-solid fa-bullseye' }, fecha: { label: 'Cuándo', icon: 'fa-regular fa-calendar' }, lugar: { label: 'Dónde', icon: 'fa-solid fa-location-dot' }, voluntarios: { label: 'Voluntarios', icon: 'fa-solid fa-people-group' }, personas_ayudadas: { label: 'Beneficiarios', icon: 'fa-solid fa-hand-holding-heart' }, filial: { label: 'Filial', icon: 'fa-solid fa-building' }, tipo: { label: 'Tipo', icon: 'fa-solid fa-tag' } } }),
+  computed: {
+    isAuthenticated() { return this.$store.getters.isAuthenticated },
+    profileRoute() {
+      const userId = this.$store.getters.authUser?.id
+      return this.$store.getters.isVolunteerExperience &amp;&amp; userId ? `/historial/${userId}` : '/inicio'
+    },
+    locationUrl() { return this.texts.ubicacion_url || `https://www.google.com/maps/search/?api=1&amp;query=${encodeURIComponent(this.texts.direccion || '')}` },
+    whatsappUrl() {
+      const number = String(this.texts.whatsapp || '').replace(/\D/g, '')
+      return number ? `https://wa.me/${number}` : ''
+    }
+  },
+  async mounted() {
+    try { const { data } = await axios.get(buildApiUrl('portada')); this.texts = { ...this.texts, ...(data.textos || {}) }; this.slides = data.carrusel || []; this.news = data.novedades || []; this.startCarousel() }
+    catch (error) { console.error('No fue posible cargar la portada.', error) } finally { this.loading = false }
+  },
+  beforeUnmount() { window.clearInterval(this.timer) },
+  methods: {
+    startCarousel() { window.clearInterval(this.timer); if (this.slides.length &gt; 1) this.timer = window.setInterval(this.nextSlide, 5000) },
+    nextSlide() { this.activeSlide = (this.activeSlide + 1) % this.slides.length },
+    previousSlide() { this.activeSlide = (this.activeSlide - 1 + this.slides.length) % this.slides.length },
+    goToLogin() { this.$router.push({ name: 'login', query: { redirect: '/inicio' } }) },
+    fieldValue(item, field) {
+      const activity = item.actividad
+      if (!activity) return ''
+      if (field === 'personas_ayudadas') return item.personas_ayudadas === null || item.personas_ayudadas === undefined ? '' : `${item.personas_ayudadas} personas`
+      if (field === 'objetivo') return activity.objetivo
+      if (field === 'lugar') return activity.lugar
+      if (field === 'tipo') return activity.tipo
+      if (field === 'filial') return activity.filial?.nombre
+      if (field === 'voluntarios') return `${activity.voluntarios?.length || 0} voluntarios participaron`
+      if (field === 'fecha') { const start = this.formatDate(activity.fecha_inicio); const end = this.formatDate(activity.fecha_termino); return end &amp;&amp; end !== start ? `${start} al ${end}` : start }
+      return ''
+    },
+    formatDate(value) { if (!value) return ''; return new Intl.DateTimeFormat('es-CL', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(value)) }
+  }
+}
+&lt;/script&gt;
+&nbsp;
+&lt;style scoped&gt;
+.home-shell{min-height:100vh;background:#f6f7f9;color:var(--cr-navy-deep)}.home-content{flex:1;min-width:0}.landing-header{height:82px;padding:0 2rem;background:var(--cr-white);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e7e9ee;position:relative;z-index:5}.landing-brand{display:flex;align-items:center;gap:1rem;color:var(--cr-navy-deep);text-decoration:none}.landing-brand img{width:165px}.landing-brand small{display:block;text-transform:uppercase;letter-spacing:.15em;color:#7a8495}.landing-brand strong{font-size:1rem}.header-actions{display:flex;gap:.7rem}.button{border:0;border-radius:999px;padding:.75rem 1.1rem;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:.5rem}.button--red{background:var(--cr-red);color:var(--cr-white)}.carousel{position:relative;height:clamp(200px,27.5vw,340px);background:#17243a;overflow:hidden}.carousel-slide,.carousel-images{position:absolute;inset:0}.carousel-images{display:grid;gap:3px}.carousel-images--1{grid-template-columns:1fr}.carousel-images--2{grid-template-columns:repeat(2,1fr)}.carousel-images--3{grid-template-columns:repeat(3,1fr)}.carousel-images img{width:100%;height:100%;object-fit:cover;min-width:0}.carousel-slide::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(1,30,65,.78),rgba(1,30,65,.08) 70%)}.carousel-caption{position:absolute;z-index:2;left:clamp(1.5rem,6vw,6rem);bottom:clamp(2rem,4.5vw,3.5rem);max-width:680px;color:var(--cr-white)}.carousel-caption p{font-weight:800;text-transform:uppercase;letter-spacing:.16em;color:#ffccd0}.carousel-caption h1{font-size:clamp(1.6rem,3.4vw,3.2rem);font-weight:800;line-height:1;margin:.35rem 0}.carousel-caption span{font-size:clamp(.9rem,1.3vw,1.1rem)}.carousel-arrow{position:absolute;z-index:3;top:50%;transform:translateY(-50%);width:42px;height:42px;border:1px solid rgba(255,255,255,.5);border-radius:50%;background:rgba(1,30,65,.35);color:var(--cr-white)}.carousel-arrow--left{left:1.2rem}.carousel-arrow--right{right:1.2rem}.carousel-dots{position:absolute;z-index:3;bottom:1rem;left:50%;transform:translateX(-50%);display:flex;gap:.5rem}.carousel-dots button{width:10px;height:10px;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.55)}.carousel-dots button.active{width:30px;border-radius:10px;background:var(--cr-white)}.intro{text-align:center;padding:2.8rem 1.5rem 1.4rem}.intro p{margin:0;color:var(--cr-red-muted);font-weight:800;text-transform:uppercase;letter-spacing:.14em}.intro h1{font-size:clamp(2rem,3.2vw,2.8rem);margin:.4rem 0;font-weight:800}.intro span{color:#5f6b7c}.news-grid{padding:.7rem clamp(1rem,4vw,4rem) 3rem;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1rem}.news-card{background:var(--cr-white);border-radius:20px;overflow:hidden;box-shadow:0 12px 28px rgba(1,30,65,.08);grid-column:span 2}.news-card--completo{grid-column:span 6;display:grid;grid-template-columns:minmax(260px,38%) 1fr}.news-card__image{height:140px}.news-card--completo .news-card__image{height:100%}.news-card__image img{width:100%;height:100%;object-fit:cover}.news-card__body{padding:1rem}.news-card h2{font-size:1.25rem;margin:.5rem 0}.news-card p{color:#596579;line-height:1.45;margin-bottom:.45rem}.news-card dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.35rem .8rem;margin:.6rem 0 0}.news-card dl div{border-top:1px solid #edf0f3;padding-top:.4rem}.news-card dt{font-size:.68rem;text-transform:uppercase;color:#778195}.news-card dt i{width:19px;color:var(--cr-red)}.news-card dd{margin:.15rem 0 0;font-size:.85rem;font-weight:700}.empty-home{text-align:center;padding:4rem 1rem}.empty-home i{font-size:3rem;color:var(--cr-red)}@media(max-width:1000px){.news-card{grid-column:span 3}}@media(max-width:700px){.landing-header{height:auto;padding:1rem}.landing-brand div{display:none}.landing-brand img{width:140px}.carousel{height:230px}.carousel-caption{left:1rem;right:1rem;bottom:2.2rem}.carousel-images--2,.carousel-images--3{grid-template-columns:1fr}.carousel-images--2 img:not(:first-child),.carousel-images--3 img:not(:first-child){display:none}.news-card,.news-card--completo{grid-column:span 6;display:block}.news-card--completo .news-card__image{height:150px}.news-card dl{grid-template-columns:1fr}}
+.carousel-image-cell{display:block;min-width:0;height:100%;overflow:hidden}.carousel-image-cell img{transition:transform .2s ease}.news-card__image{overflow:hidden}
+.news-card--completo{min-height:190px}.news-card--completo.news-card--reverse{grid-template-columns:1fr minmax(260px,38%)}.news-card--reverse .news-card__image{order:2}.news-card--reverse .news-card__body{order:1}.news-card--completo .news-card__body{display:flex;flex-direction:column;justify-content:center;padding:clamp(1rem,2vw,1.6rem)}@media(max-width:700px){.news-card--completo,.news-card--completo.news-card--reverse{min-height:0;grid-template-columns:1fr}.news-card--reverse .news-card__image,.news-card--reverse .news-card__body{order:initial}}
+.landing-footer{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:clamp(1.25rem,2.5vw,2.5rem);row-gap:1.15rem;padding:clamp(1.25rem,2.5vw,2.25rem) clamp(1.25rem,3vw,3rem);margin-top:1.25rem;background:var(--cr-white);border-top:4px solid var(--cr-red);color:var(--cr-navy-deep)}.landing-footer h2{font-size:.92rem;text-transform:uppercase;letter-spacing:.08em;margin:0 0 .75rem}.footer-brand{display:flex;flex-direction:column;align-items:flex-start}.footer-info-block{display:grid;gap:.25rem;margin-bottom:1rem}.footer-info-block h2{margin:0 0 .1rem}.footer-info-block a{color:inherit;text-decoration:none;line-height:1.4}.footer-links,.footer-related{display:flex;flex-direction:column;align-items:flex-start;width:100%}.footer-related&gt;a{padding:.4rem 0;color:var(--cr-slate-dark);text-decoration:none;border-bottom:1px solid #e7eaf0;width:100%}.footer-related i,.footer-links i{font-size:.7rem;color:var(--cr-red)}.footer-socials{display:flex;gap:.5rem;margin:0 0 1rem}.footer-socials a{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--cr-red);color:var(--cr-white);text-decoration:none;font-size:1rem}@media(max-width:950px){.landing-footer{grid-template-columns:repeat(2,minmax(0,1fr))}.footer-related{grid-column:1/-1}}@media(max-width:700px){.landing-footer{grid-template-columns:1fr;gap:1.25rem}.footer-related{grid-column:auto}.footer-links,.footer-related{width:100%}}
+.landing-footer{background:var(--cr-red);border-top-color:#b5121b;color:var(--cr-white)}.landing-footer h2,.landing-footer p,.landing-footer strong,.landing-footer small,.landing-footer a{color:var(--cr-white)}.footer-socials a{background:var(--cr-white);color:var(--cr-red);border:2px solid rgba(255,255,255,.8)}.footer-socials i{color:var(--cr-red)}.footer-related a{border-bottom-color:rgba(255,255,255,.3)}.footer-links i,.footer-related i{color:var(--cr-white)}
+.landing-footer a:visited{color:var(--cr-white)}.landing-footer a:hover,.landing-footer a:focus{color:#ffe3e5}.footer-socials a:visited{color:var(--cr-red)}.footer-socials a:hover,.footer-socials a:focus{color:#b5121b;background:#fff3f4}.footer-related a:hover{text-decoration:underline;text-decoration-color:rgba(255,255,255,.75)}
+.carousel-slide::after{background:linear-gradient(180deg,rgba(1,30,65,.55) 0%,rgba(1,30,65,.18) 8%,transparent 22%)}.carousel-caption{text-shadow:0 2px 12px rgba(1,30,65,.7)}
+.carousel-caption p{color:var(--carousel-label-color,var(--cr-white))!important}.carousel-caption h1{color:var(--carousel-title-color,var(--cr-white))!important}.carousel-caption span{color:var(--carousel-subtitle-color,var(--cr-white))!important}.intro p{color:var(--news-label-color,var(--cr-red-muted))!important}.intro h1{color:var(--news-title-color,var(--cr-navy-deep))!important}.intro span{color:var(--news-description-color,#5f6b7c)!important}
+.footer-hours{margin:0;white-space:pre-line;line-height:1.5}
+.footer-contact-links{display:grid;width:100%;margin:-.25rem 0 .9rem}.footer-contact-links a{display:flex;align-items:center;gap:.5rem;padding:.3rem 0;color:var(--cr-white);text-decoration:none}.footer-contact-links i{width:18px;font-size:.85rem;color:var(--cr-white)}
+.intro{padding:2.8rem 1.5rem 1.4rem;background:var(--cr-white)}.carousel{background:var(--cr-red)}.news-grid{background:var(--cr-red)}.news-card{background:var(--cr-white);color:var(--cr-navy-deep)}.news-card h2{color:var(--cr-navy-deep)}.news-card p,.news-card dd,.news-card__content{color:#596579}.news-card dt{color:#778195}.news-card dl div{border-top-color:#edf0f3}.news-card dt i{color:var(--cr-red)}@media(max-width:700px){.intro{padding:2.4rem 1rem 1.3rem}}
+.landing-footer .footer-socials i{color:var(--cr-red)}
+.landing-footer{margin-top:0}
+@media(max-width:1100px){.news-card--completo,.news-card--completo.news-card--reverse{grid-column:span 6;display:block;min-height:0}.news-card--completo .news-card__image{height:clamp(150px,32vw,260px);min-height:0}.news-card--reverse .news-card__image,.news-card--reverse .news-card__body{order:initial}}
+.news-card h2{font-size:clamp(1.55rem,2.2vw,2rem);line-height:1.08;margin:0 0 .65rem}.news-card--completo .news-card__body{justify-content:flex-start;padding-top:clamp(1rem,1.5vw,1.25rem)}
+.landing-footer .footer-socials{gap:.75rem}.landing-footer .footer-socials a{width:64px;height:64px;font-size:1.85rem;box-shadow:0 8px 18px rgba(116,0,8,.22);transition:transform .18s ease,box-shadow .18s ease}.landing-footer .footer-socials a:hover,.landing-footer .footer-socials a:focus{transform:translateY(-3px);box-shadow:0 12px 24px rgba(116,0,8,.3)}.landing-footer .footer-socials i{font-size:1.85rem!important}@media(max-width:700px){.landing-footer .footer-socials a{width:56px;height:56px}.landing-footer .footer-socials i{font-size:1.6rem!important}}
+.carousel-caption{text-align:left}
+.landing-footer{padding:clamp(1.5rem,2.5vw,2.25rem) clamp(1.25rem,3vw,3rem);align-items:start}
+&lt;/style&gt;
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-07-14T13:16:45.312Z
+            </div>
+        <script src="../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../sorter.js"></script>
+        <script src="../../block-navigation.js"></script>
+    </body>
+</html>
+    

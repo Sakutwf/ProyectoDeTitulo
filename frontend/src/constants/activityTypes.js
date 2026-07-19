@@ -4,7 +4,3 @@ export const ACTIVITY_TYPE_OPTIONS = [
   { value: 'En filial', label: 'En filial' },
   { value: 'Reunion', label: 'Reunión' }
 ]
-
-export function normalizeCatalogValue(value) {
-  return String(value || '').trim().toUpperCase()
-}

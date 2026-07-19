@@ -12,6 +12,7 @@ describe('formateadores de presentacion', () => {
   test('formatea rangos completos e incompletos', () => {
     expect(formatDateRange(null, null, 'Sin fecha')).toBe('Sin fecha')
     expect(formatDateRange('2026-05-15', null)).toBe(formatDate('2026-05-15'))
+    expect(formatDateRange(null, '2026-05-16')).toBe(formatDate('2026-05-16'))
     expect(formatDateRange('2026-05-15', '2026-05-16')).toBe(
       `${formatDate('2026-05-15')} - ${formatDate('2026-05-16')}`
     )
@@ -22,5 +23,6 @@ describe('formateadores de presentacion', () => {
 
     expect(formatted).toContain('$')
     expect(formatted).toContain('12.346')
+    expect(formatCurrency(null).replace(/\s/g, '')).toContain('$0')
   })
 })

@@ -292,6 +292,7 @@ import { useRoute, useRouter } from 'vue-router'
 import logoSrc from '../assets/LogoVertical.svg'
 import { API_BASE } from '../config/api'
 import { useDocumentPrint } from '../composables/useDocumentPrint'
+import { formatDate as formatApiDate } from '../utils/formatters'
 
 const route = useRoute()
 const router = useRouter()
@@ -377,10 +378,7 @@ async function fetchUser() {
 }
 
 function formatDate(value) {
-  if (!value) return ''
-  const parsed = new Date(`${value}T00:00:00`)
-  if (Number.isNaN(parsed.getTime())) return value
-  return parsed.toLocaleDateString('es-CL')
+  return formatApiDate(value, '')
 }
 
 function padRows(items, minimumRows, createEmptyRow) {

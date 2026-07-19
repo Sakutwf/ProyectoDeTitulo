@@ -46,11 +46,21 @@
                   <span>{{ actividad.voluntarios?.length || 0 }} inscrito(s)</span>
                 </div>
 
+                <p v-if="enrollmentStatus(actividad) === 'pendiente'" class="enrollment-status enrollment-status--pending">
+                  Inscripción En Espera de ser aprobada
+                </p>
+                <p v-else-if="enrollmentStatus(actividad) === 'aprobada'" class="enrollment-status enrollment-status--approved">
+                  Inscripción aprobada: {{ formatHours(assignedEnrollmentHours(actividad)) }} asignadas.
+                </p>
+                <p v-else-if="enrollmentStatus(actividad) === 'rechazada'" class="enrollment-status enrollment-status--rejected">
+                  La solicitud fue rechazada. Puedes enviarla nuevamente.
+                </p>
+
                 <div class="activity-actions">
                   <button
                     type="button"
-                    class="btn"
-                    :class="isEnrolled(actividad) ? 'btn-outline-danger' : 'btn-danger'"
+                    class="btn enrollment-action-button"
+                    :class="enrollmentButtonClass(actividad)"
                     :disabled="loadingActivityId === actividad.id"
                     @click="toggleEnrollment(actividad)"
                   >
@@ -236,6 +246,7 @@ import { show_alerta } from '../funciones'
 import { useStore } from 'vuex'
 import { optimizeImage } from '../utils/imageOptimization'
 import { fetchAllPages } from '../utils/apiPagination'
+import { formatCurrency } from '../utils/formatters'
 
 const store = useStore()
 const currentUser = computed(() => store.getters.authUser)
@@ -270,12 +281,42 @@ function isEnrolled(actividad) {
   return (actividad.voluntarios || []).some((volunteer) => Number(volunteer.id) === Number(currentVolunteerId.value))
 }
 
+function ownEnrollment(actividad) {
+  return (actividad.inscripciones || []).find(
+    (volunteer) => Number(volunteer.id) === Number(currentVolunteerId.value)
+  ) || null
+}
+
+function enrollmentStatus(actividad) {
+  const ownStatus = ownEnrollment(actividad)?.pivot?.estado
+  if (ownStatus) return ownStatus
+  return isEnrolled(actividad) ? 'aprobada' : null
+}
+
+function assignedEnrollmentHours(actividad) {
+  const approvedVolunteer = (actividad.voluntarios || []).find(
+    (volunteer) => Number(volunteer.id) === Number(currentVolunteerId.value)
+  )
+  return approvedVolunteer?.pivot?.horas_asistidas ?? 0
+}
+
+function enrollmentButtonClass(actividad) {
+  const status = enrollmentStatus(actividad)
+  if (status === 'aprobada') return 'btn-outline-danger'
+  return 'btn-danger'
+}
+
 function enrollmentButtonLabel(actividad) {
+  const status = enrollmentStatus(actividad)
+
   if (loadingActivityId.value === actividad.id) {
-    return isEnrolled(actividad) ? 'Quitando...' : 'Inscribiendo...'
+    return ['aprobada', 'pendiente'].includes(status) ? 'Retirando...' : 'Enviando...'
   }
 
-  return isEnrolled(actividad) ? 'Quitar inscripción' : 'Inscribirme'
+  if (status === 'aprobada') return 'Quitar inscripción'
+  if (status === 'pendiente') return 'Cancelar solicitud'
+  if (status === 'rechazada') return 'Volver a solicitar'
+  return 'Solicitar inscripción'
 }
 
 function formatDate(dateString) {
@@ -310,15 +351,6 @@ function boletaStatusLabel(value) {
   }
 
   return 'Solicitado'
-}
-
-function formatCurrency(value) {
-  const numericValue = Number(value || 0)
-  return numericValue.toLocaleString('es-CL', {
-    style: 'currency',
-    currency: 'CLP',
-    maximumFractionDigits: 0
-  })
 }
 
 function createEmptyGalleryForm() {
@@ -521,22 +553,25 @@ async function toggleEnrollment(actividad) {
   loadingActivityId.value = actividad.id
 
   try {
-    if (isEnrolled(actividad)) {
+    const status = enrollmentStatus(actividad)
+
+    if (['aprobada', 'pendiente'].includes(status)) {
       await axios.delete(`${API_BASE}/actividad/${actividad.id}/voluntarios`, {
         data: { voluntario_id: currentVolunteerId.value }
       })
-      show_alerta('Inscripción retirada correctamente.', 'success')
+      show_alerta(status === 'pendiente' ? 'Solicitud cancelada correctamente.' : 'Inscripción retirada correctamente.', 'success')
     } else {
       await axios.post(`${API_BASE}/actividad/${actividad.id}/voluntarios`, {
         voluntario_id: currentVolunteerId.value,
         registrado_por: currentUser.value?.id || null
       })
-      show_alerta('Inscripción realizada correctamente.', 'success')
+      show_alerta('Solicitud enviada. Debe ser aprobada por un administrador.', 'success')
     }
 
     await loadActivities()
   } catch (error) {
-    show_alerta('No se pudo actualizar la inscripción en la actividad.', 'error')
+    const message = error.response?.data?.message || 'No se pudo actualizar la inscripción en la actividad.'
+    show_alerta(message, 'error')
   } finally {
     loadingActivityId.value = null
   }
@@ -585,6 +620,40 @@ onMounted(async () => {
   background: var(--cr-surface);
   padding: 1.2rem;
   color: var(--cr-gray-600);
+}
+
+.enrollment-status {
+  margin: 0;
+  padding: 0.7rem 0.85rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.enrollment-status--pending {
+  display: inline-flex;
+  align-items: center;
+  border: 1.5px solid var(--cr-red);
+  border-radius: 0.9rem;
+  background: var(--cr-white);
+  color: var(--cr-red);
+}
+
+.enrollment-status--approved {
+  background: #e1f5e8;
+  color: #17643a;
+}
+
+.enrollment-status--rejected {
+  background: #fde7e8;
+  color: #98212b;
+}
+
+.enrollment-action-button {
+  border-radius: 999px;
+  padding: 0.62rem 1rem;
+  font-weight: 700;
 }
 
 .activity-grid {

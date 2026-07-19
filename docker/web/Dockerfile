@@ -1,4 +1,4 @@
-FROM node:20-alpine AS frontend_builder
+FROM node:22-alpine AS frontend_builder
 
 WORKDIR /frontend
 
@@ -12,7 +12,7 @@ ENV VUE_APP_API_BASE_URL=${VUE_APP_API_BASE_URL}
 
 RUN npm run build
 
-FROM nginx:1.27-alpine
+FROM nginx:stable-alpine
 
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY --from=frontend_builder /frontend/dist/ /usr/share/nginx/html/

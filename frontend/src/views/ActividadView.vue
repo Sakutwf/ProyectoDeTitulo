@@ -82,9 +82,22 @@
                       <img :src="volunteersIcon" alt="" class="activity-card__asset-icon activity-card__asset-icon--red">
                       Voluntarios
                     </span>
-                    <button class="btn volunteer-pill-button" @click="showVolunteers(actividad)">
-                      {{ volunteerButtonLabel(actividad) }}
-                    </button>
+                    <div class="activity-volunteer-actions">
+                      <button class="btn volunteer-pill-button" @click="showVolunteers(actividad)">
+                        {{ volunteerButtonLabel(actividad) }}
+                      </button>
+                      <button
+                        v-if="pendingEnrollmentCount(actividad)"
+                        type="button"
+                        class="btn pending-enrollment-button"
+                        :aria-label="pendingEnrollmentButtonLabel(actividad)"
+                        :title="pendingEnrollmentButtonLabel(actividad)"
+                        @click="showPendingEnrollments(actividad)"
+                      >
+                        <i class="fa-solid fa-exclamation" aria-hidden="true"></i>
+                        <span class="visually-hidden">{{ pendingEnrollmentButtonLabel(actividad) }}</span>
+                      </button>
+                    </div>
                   </div>
 
 
@@ -150,9 +163,22 @@
                       <td data-label="Lugar">{{ actividad.lugar || '-' }}</td>
                       <td data-label="Horas">{{ formatHours(actividad.horas_totales) }}</td>
                       <td data-label="Voluntarios">
-                        <button class="btn volunteer-pill-button volunteer-pill-button--table" @click="showVolunteers(actividad)">
-                          {{ volunteerButtonLabel(actividad) }}
-                        </button>
+                        <div class="activity-volunteer-actions">
+                          <button class="btn volunteer-pill-button volunteer-pill-button--table" @click="showVolunteers(actividad)">
+                            {{ volunteerButtonLabel(actividad) }}
+                          </button>
+                          <button
+                            v-if="pendingEnrollmentCount(actividad)"
+                            type="button"
+                            class="btn pending-enrollment-button"
+                            :aria-label="pendingEnrollmentButtonLabel(actividad)"
+                            :title="pendingEnrollmentButtonLabel(actividad)"
+                            @click="showPendingEnrollments(actividad)"
+                          >
+                            <i class="fa-solid fa-exclamation" aria-hidden="true"></i>
+                            <span class="visually-hidden">{{ pendingEnrollmentButtonLabel(actividad) }}</span>
+                          </button>
+                        </div>
                       </td>
 
                       <td data-label="Acciones">
@@ -408,6 +434,115 @@ function showVolunteers(actividad) {
     customClass: modalClasses,
     didOpen: (popup) => {
       setupVolunteerPhotoViewer(popup)
+    }
+  })
+}
+
+function pendingEnrollments(actividad) {
+  return actividad?.solicitudes_pendientes || []
+}
+
+function pendingEnrollmentCount(actividad) {
+  return pendingEnrollments(actividad).length
+}
+
+function pendingEnrollmentButtonLabel(actividad) {
+  const count = pendingEnrollmentCount(actividad)
+  return `${count} solicitud${count === 1 ? '' : 'es'} pendiente${count === 1 ? '' : 's'}`
+}
+
+async function showPendingEnrollments(actividad) {
+  const requests = pendingEnrollments(actividad)
+  if (!requests.length) return
+
+  const maximumHours = Number(actividad.horas_totales || 0)
+  const maximumHoursLabel = maximumHours > 0 ? formatHours(maximumHours) : 'Sin máximo registrado'
+  const html = requests.map((volunteer) => {
+    const fullName = [volunteer.nombres, volunteer.apellidos].filter(Boolean).join(' ') || volunteer.user?.username || 'Voluntario'
+
+    return `
+      <article class="enrollment-review-item" data-enrollment-row="${volunteer.id}">
+        <header class="enrollment-review-identity">
+          <span aria-hidden="true"><i class="fa-solid fa-user-check"></i></span>
+          <strong>${escapeHtml(fullName)}</strong>
+        </header>
+        <label class="enrollment-review-label" for="enrollment-hours-${volunteer.id}">
+          <span>Horas asignadas</span>
+          <small>Máximo de la actividad: ${escapeHtml(maximumHoursLabel)}</small>
+        </label>
+        <input
+          id="enrollment-hours-${volunteer.id}"
+          class="form-control enrollment-review-hours"
+          type="number"
+          min="0.25"
+          step="0.25"
+          ${maximumHours > 0 ? `max="${maximumHours}"` : ''}
+          placeholder="Ej. 4"
+        >
+        <div class="enrollment-review-actions">
+          <button type="button" class="btn enrollment-review-action enrollment-review-action--approve" data-enrollment-decision="aprobar" data-volunteer-id="${volunteer.id}">
+            Aprobar y asignar horas
+          </button>
+          <button type="button" class="btn enrollment-review-action enrollment-review-action--reject" data-enrollment-decision="rechazar" data-volunteer-id="${volunteer.id}">
+            Rechazar
+          </button>
+        </div>
+      </article>
+    `
+  }).join('')
+
+  await Swal.fire({
+    title: 'Solicitudes de inscripción',
+    html: `<div class="enrollment-review-list">${html}</div>`,
+    showConfirmButton: false,
+    showCloseButton: true,
+    buttonsStyling: false,
+    customClass: {
+      popup: 'volunteer-roster-popup',
+      title: 'volunteer-roster-title',
+      htmlContainer: 'volunteer-roster-content',
+      closeButton: 'enrollment-review-close'
+    },
+    didOpen: (popup) => {
+      popup.querySelectorAll('[data-enrollment-decision]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const volunteerId = Number(button.dataset.volunteerId)
+          const decision = button.dataset.enrollmentDecision
+          const row = popup.querySelector(`[data-enrollment-row="${volunteerId}"]`)
+          const hours = Number(row?.querySelector('input')?.value || 0)
+
+          if (decision === 'aprobar' && hours <= 0) {
+            Swal.showValidationMessage('Debes asignar una cantidad de horas mayor que cero.')
+            return
+          }
+
+          if (decision === 'aprobar' && maximumHours > 0 && hours > maximumHours) {
+            Swal.showValidationMessage(`No puedes asignar más de ${maximumHoursLabel}.`)
+            return
+          }
+
+          popup.querySelectorAll('button').forEach((item) => { item.disabled = true })
+
+          try {
+            await axios.put(`${API_BASE}/actividad/${actividad.id}/voluntarios/${volunteerId}/solicitud`, {
+              decision,
+              horas_asistidas: decision === 'aprobar' ? hours : null
+            })
+            Swal.close()
+            await fetchActividades(meta.value.current_page)
+            await Swal.fire(
+              decision === 'aprobar' ? 'Solicitud aprobada' : 'Solicitud rechazada',
+              decision === 'aprobar' ? 'El voluntario quedó inscrito con las horas asignadas.' : 'La solicitud fue rechazada.',
+              'success'
+            )
+          } catch (error) {
+            const errors = error.response?.data?.errors || {}
+            const message = Object.values(errors).flat()[0] || error.response?.data?.message || 'No se pudo revisar la solicitud.'
+            Swal.showValidationMessage(message)
+            popup.querySelectorAll('button').forEach((item) => { item.disabled = false })
+          }
+        })
+      })
     }
   })
 }
@@ -780,10 +915,10 @@ onBeforeUnmount(() => {
   gap: 0.5rem;
   min-height: 42px;
   padding: 0.62rem 1rem;
-  border: 1.5px solid #df3342;
+  border: 1.5px solid var(--cr-navy-medium);
   border-radius: 999px;
   color: var(--cr-white);
-  background: #df3342;
+  background: var(--cr-navy-medium);
   font-weight: 700;
   line-height: 1.1;
   white-space: nowrap;
@@ -792,9 +927,39 @@ onBeforeUnmount(() => {
 .volunteer-pill-button:hover,
 .volunteer-pill-button:focus,
 .volunteer-pill-button:active {
-  border-color: #c92b39;
+  border-color: var(--cr-navy-dark);
   color: var(--cr-white);
-  background: #c92b39;
+  background: var(--cr-navy-dark);
+}
+
+.activity-volunteer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: nowrap;
+}
+
+.pending-enrollment-button {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  justify-self: center;
+  color: var(--cr-white);
+  background: var(--cr-red);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  box-shadow: none;
+}
+
+.pending-enrollment-button:hover,
+.pending-enrollment-button:focus,
+.pending-enrollment-button:active {
+  color: var(--cr-white);
+  background: var(--cr-red-dark);
 }
 
 
@@ -1016,6 +1181,108 @@ onBeforeUnmount(() => {
   border-color: var(--cr-red-dark);
   background: var(--cr-red-dark);
   box-shadow: 0 0 0 3px rgba(224, 30, 30, 0.16);
+}
+
+:global(.enrollment-review-close) {
+  width: 40px;
+  height: 40px;
+  margin: 0.75rem 0.75rem 0 0;
+  border-radius: 50%;
+  color: var(--cr-navy-soft);
+  background: #eef1f5;
+}
+
+:global(.enrollment-review-list) {
+  display: grid;
+  gap: 0.8rem;
+}
+
+:global(.enrollment-review-item) {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+  border: 1px solid #dce5ef;
+  border-left: 4px solid var(--cr-red);
+  border-radius: 16px;
+  background: #fbfcfe;
+  text-align: left;
+}
+
+:global(.enrollment-review-identity) {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: var(--cr-navy-medium);
+}
+
+:global(.enrollment-review-identity > span) {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--cr-white);
+  background: var(--cr-red);
+}
+
+:global(.enrollment-review-label) {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0;
+  color: var(--cr-navy-medium);
+  font-weight: 800;
+}
+
+:global(.enrollment-review-label small) {
+  color: var(--cr-gray-600);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+:global(.enrollment-review-hours) {
+  margin: 0;
+  border-radius: 12px;
+}
+
+:global(.enrollment-review-hours:focus) {
+  border-color: var(--cr-red);
+  box-shadow: 0 0 0 3px rgba(224, 30, 30, 0.14);
+}
+
+:global(.enrollment-review-actions) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+:global(.enrollment-review-action) {
+  padding: 0.65rem 1rem;
+  border: 0;
+  border-radius: 999px;
+  color: var(--cr-white);
+  font-weight: 700;
+}
+
+:global(.enrollment-review-action--approve) {
+  background: var(--cr-navy-medium);
+}
+
+:global(.enrollment-review-action--approve:hover),
+:global(.enrollment-review-action--approve:focus) {
+  color: var(--cr-white);
+  background: var(--cr-navy-dark);
+}
+
+:global(.enrollment-review-action--reject) {
+  background: var(--cr-red);
+}
+
+:global(.enrollment-review-action--reject:hover),
+:global(.enrollment-review-action--reject:focus) {
+  color: var(--cr-white);
+  background: var(--cr-red-dark);
 }
 
 :global(.volunteer-roster-empty) {
@@ -1297,10 +1564,6 @@ onBeforeUnmount(() => {
   }
 }
 </style>
-
-
-
-
 
 
 

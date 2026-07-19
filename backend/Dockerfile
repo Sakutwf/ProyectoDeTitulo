@@ -1,7 +1,7 @@
-FROM php:8.2-fpm-alpine
+FROM php:8.3-fpm-alpine
 
-RUN apk add --no-cache \
-        fcgi \
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
+    && apk add --no-cache \
         icu-dev \
         libjpeg-turbo-dev \
         libpng-dev \
@@ -10,11 +10,13 @@ RUN apk add --no-cache \
         oniguruma-dev \
         unzip \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install \
+    && docker-php-ext-install -j"$(nproc)" \
         bcmath \
         exif \
         gd \
         intl \
+        mbstring \
+        opcache \
         pdo_mysql \
         zip
 

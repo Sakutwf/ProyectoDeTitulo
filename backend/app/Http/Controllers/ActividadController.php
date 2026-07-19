@@ -45,6 +45,11 @@ class ActividadController extends Controller
     public function index(Request $request)
     {
         $query = Actividad::with($this->activityRelations());
+        $enrollmentRelations = $this->enrollmentRelations($request);
+
+        if ($enrollmentRelations !== []) {
+            $query->with($enrollmentRelations);
+        }
 
         if ($this->supportsDocumentSummary()) {
             $query->with(['documentos' => function ($documentQuery) {
@@ -82,12 +87,14 @@ class ActividadController extends Controller
         $this->syncVoluntarios($actividad, $request);
         $this->syncClimas($actividad, $request);
 
-        return response()->json($actividad->load($this->activityRelations()), 201);
+        return response()->json($this->loadActivityForActor($actividad, $request), 201);
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        return response()->json(Actividad::with($this->activityRelations())->findOrFail($id), 200);
+        $actividad = Actividad::findOrFail($id);
+
+        return response()->json($this->loadActivityForActor($actividad, $request), 200);
     }
 
     public function destinatariosNotificacion($id, Request $request)
@@ -133,7 +140,7 @@ class ActividadController extends Controller
         $this->syncVoluntarios($actividad, $request);
         $this->syncClimas($actividad, $request);
 
-        return response()->json($actividad->load($this->activityRelations()), 200);
+        return response()->json($this->loadActivityForActor($actividad, $request), 200);
     }
 
     public function destroy($id)
@@ -147,6 +154,7 @@ class ActividadController extends Controller
     public function asociarVoluntario($id, Request $request)
     {
         $actividad = Actividad::findOrFail($id);
+        $actor = $request->user()?->loadMissing('roles', 'voluntario');
 
         $data = $request->validate([
             'voluntario_id' => ['required', 'integer', 'exists:voluntarios,id'],
@@ -154,31 +162,120 @@ class ActividadController extends Controller
             'registrado_por' => ['nullable', 'integer', 'exists:users,id'],
         ]);
 
-        $this->ensureVolunteerHoursWithinActivityTotal($actividad->horas_totales, [[
-            'voluntario_id' => $data['voluntario_id'],
-            'horas_asistidas' => $data['horas_asistidas'] ?? 0,
-        ]]);
+        $isManager = $this->canReviewBoletas($actor);
+        $volunteerId = (int) $data['voluntario_id'];
+        $ownVolunteerId = (int) ($actor?->voluntario?->id ?? 0);
+        $isSelfEnrollment = $ownVolunteerId > 0 && $ownVolunteerId === $volunteerId;
 
-        $actividad->voluntarios()->syncWithoutDetaching([
-            $data['voluntario_id'] => [
-                'horas_asistidas' => $data['horas_asistidas'] ?? 0,
-                'registrado_por' => $data['registrado_por'] ?? null,
-            ],
-        ]);
+        if ($isSelfEnrollment) {
+            $existingState = DB::table('actividad_voluntario')
+                ->where('actividad_id', $actividad->id)
+                ->where('voluntario_id', $volunteerId)
+                ->value('estado');
 
-        return response()->json($actividad->load($this->activityRelations()), 200);
+            if ($existingState === Actividad::INSCRIPCION_APROBADA) {
+                throw ValidationException::withMessages([
+                    'voluntario_id' => ['Ya estas inscrito y aprobado en esta actividad.'],
+                ]);
+            }
+
+            $pivotData = [
+                'horas_asistidas' => 0,
+                'estado' => Actividad::INSCRIPCION_PENDIENTE,
+                'registrado_por' => $actor?->id,
+                'revisado_por' => null,
+                'revisado_en' => null,
+            ];
+        } else {
+            abort_unless($isManager, 403, 'Solo puedes solicitar tu propia inscripcion.');
+            $this->ensureCanManageActivity($actor, $actividad);
+            $hours = $data['horas_asistidas'] ?? 0;
+            $this->ensureVolunteerHoursWithinActivityTotal($actividad->horas_totales, [[
+                'voluntario_id' => $volunteerId,
+                'horas_asistidas' => $hours,
+            ]]);
+
+            $pivotData = [
+                'horas_asistidas' => $hours,
+                'estado' => Actividad::INSCRIPCION_APROBADA,
+                'registrado_por' => $actor?->id,
+                'revisado_por' => $actor?->id,
+                'revisado_en' => now(),
+            ];
+        }
+
+        $actividad->inscripciones()->syncWithoutDetaching([$volunteerId => $pivotData]);
+
+        return response()->json($this->loadActivityForActor($actividad, $request), 200);
     }
 
     public function desasociarVoluntario($id, Request $request)
     {
         $actividad = Actividad::findOrFail($id);
+        $actor = $request->user()?->loadMissing('roles', 'voluntario');
         $data = $request->validate([
             'voluntario_id' => ['required', 'integer', 'exists:voluntarios,id'],
         ]);
 
-        $actividad->voluntarios()->detach($data['voluntario_id']);
+        if ($this->canReviewBoletas($actor)) {
+            $this->ensureCanManageActivity($actor, $actividad);
+        } else {
+            abort_unless(
+                (int) ($actor?->voluntario?->id ?? 0) === (int) $data['voluntario_id'],
+                403,
+                'Solo puedes retirar tu propia inscripcion.'
+            );
+        }
 
-        return response()->json($actividad->load($this->activityRelations()), 200);
+        $actividad->inscripciones()->detach($data['voluntario_id']);
+
+        return response()->json($this->loadActivityForActor($actividad, $request), 200);
+    }
+
+    public function revisarInscripcion($id, Voluntario $voluntario, Request $request)
+    {
+        $actividad = Actividad::findOrFail($id);
+        $actor = $request->user()?->loadMissing('roles', 'voluntario');
+        $this->ensureCanManageActivity($actor, $actividad);
+
+        $data = $request->validate([
+            'decision' => ['required', Rule::in(['aprobar', 'rechazar'])],
+            'horas_asistidas' => ['nullable', 'required_if:decision,aprobar', 'numeric', 'gt:0'],
+        ]);
+
+        $state = DB::table('actividad_voluntario')
+            ->where('actividad_id', $actividad->id)
+            ->where('voluntario_id', $voluntario->id)
+            ->value('estado');
+
+        if ($state !== Actividad::INSCRIPCION_PENDIENTE) {
+            throw ValidationException::withMessages([
+                'solicitud' => ['La solicitud ya no esta pendiente.'],
+            ]);
+        }
+
+        $approved = $data['decision'] === 'aprobar';
+        $hours = $approved ? (float) $data['horas_asistidas'] : 0;
+
+        if ($approved) {
+            $this->ensureVolunteerHoursWithinActivityTotal($actividad->horas_totales, [[
+                'voluntario_id' => $voluntario->id,
+                'horas_asistidas' => $hours,
+            ]]);
+        }
+
+        DB::table('actividad_voluntario')
+            ->where('actividad_id', $actividad->id)
+            ->where('voluntario_id', $voluntario->id)
+            ->update([
+                'estado' => $approved ? Actividad::INSCRIPCION_APROBADA : Actividad::INSCRIPCION_RECHAZADA,
+                'horas_asistidas' => $hours,
+                'revisado_por' => $actor?->id,
+                'revisado_en' => now(),
+                'updated_at' => now(),
+            ]);
+
+        return response()->json($this->loadActivityForActor($actividad, $request), 200);
     }
 
     public function guardarClimas($id, Request $request)
@@ -798,6 +895,47 @@ class ActividadController extends Controller
         return self::RELATIONS;
     }
 
+    private function enrollmentRelations(Request $request): array
+    {
+        $actor = $request->user()?->loadMissing('roles', 'voluntario');
+        $relations = [];
+
+        if ($this->canReviewBoletas($actor)) {
+            $relations[] = 'solicitudesPendientes.user';
+        }
+
+        $volunteerId = (int) ($actor?->voluntario?->id ?? 0);
+
+        if ($volunteerId > 0) {
+            $relations['inscripciones'] = fn ($query) => $query->where('voluntarios.id', $volunteerId);
+        }
+
+        return $relations;
+    }
+
+    private function loadActivityForActor(Actividad $actividad, Request $request): Actividad
+    {
+        $actividad->load($this->activityRelations());
+        $relations = $this->enrollmentRelations($request);
+
+        if ($relations !== []) {
+            $actividad->load($relations);
+        }
+
+        return $actividad;
+    }
+
+    private function ensureCanManageActivity($actor, Actividad $actividad): void
+    {
+        abort_unless($this->canReviewBoletas($actor), 403, 'No tienes permisos para revisar inscripciones.');
+
+        $actorFilialId = (int) ($actor?->voluntario?->filial_id ?? 0);
+
+        if ($actorFilialId > 0) {
+            abort_unless($actorFilialId === (int) $actividad->filial_id, 403, 'No puedes revisar actividades de otra filial.');
+        }
+    }
+
     private function supportsClimateRelations(): bool
     {
         return Schema::hasTable('actividad_climas')
@@ -870,12 +1008,15 @@ class ActividadController extends Controller
                 ->mapWithKeys(fn (array $detalle) => [
                     $detalle['voluntario_id'] => [
                         'horas_asistidas' => $detalle['horas_asistidas'] ?? 0,
-                        'registrado_por' => $detalle['registrado_por'] ?? null,
+                        'estado' => Actividad::INSCRIPCION_APROBADA,
+                        'registrado_por' => $detalle['registrado_por'] ?? $request->user()?->id,
+                        'revisado_por' => $request->user()?->id,
+                        'revisado_en' => now(),
                     ],
                 ])
                 ->all();
 
-            $actividad->voluntarios()->sync($syncData);
+            $this->syncApprovedVolunteers($actividad, $syncData);
 
             return;
         }
@@ -883,12 +1024,32 @@ class ActividadController extends Controller
         if ($request->has('voluntarios')) {
             $syncData = collect($request->input('voluntarios', []))
                 ->mapWithKeys(fn (int $voluntarioId) => [
-                    $voluntarioId => ['horas_asistidas' => 0, 'registrado_por' => null],
+                    $voluntarioId => [
+                        'horas_asistidas' => 0,
+                        'estado' => Actividad::INSCRIPCION_APROBADA,
+                        'registrado_por' => $request->user()?->id,
+                        'revisado_por' => $request->user()?->id,
+                        'revisado_en' => now(),
+                    ],
                 ])
                 ->all();
 
-            $actividad->voluntarios()->sync($syncData);
+            $this->syncApprovedVolunteers($actividad, $syncData);
         }
+    }
+
+    private function syncApprovedVolunteers(Actividad $actividad, array $syncData): void
+    {
+        $selectedIds = array_map('intval', array_keys($syncData));
+        $approved = DB::table('actividad_voluntario')
+            ->where('actividad_id', $actividad->id)
+            ->where('estado', Actividad::INSCRIPCION_APROBADA);
+
+        $selectedIds === []
+            ? $approved->delete()
+            : $approved->whereNotIn('voluntario_id', $selectedIds)->delete();
+
+        $actividad->inscripciones()->syncWithoutDetaching($syncData);
     }
 
     private function syncClimas(Actividad $actividad, Request $request): void

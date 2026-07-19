@@ -28,4 +28,20 @@ describe('fetchAllPages', () => {
     expect(httpClient.get).toHaveBeenNthCalledWith(2, '/items', { params: { page: 2 } })
     expect(httpClient.get).toHaveBeenNthCalledWith(3, '/items', { params: { page: 3 } })
   })
+
+  test('tolera respuestas vacias', async () => {
+    const httpClient = { get: jest.fn().mockResolvedValue({ data: null }) }
+
+    await expect(fetchAllPages(httpClient, '/items')).resolves.toEqual([])
+  })
+
+  test('ignora una pagina adicional sin datos', async () => {
+    const httpClient = {
+      get: jest.fn()
+        .mockResolvedValueOnce({ data: { data: [{ id: 1 }], last_page: 2 } })
+        .mockResolvedValueOnce({ data: null })
+    }
+
+    await expect(fetchAllPages(httpClient, '/items')).resolves.toEqual([{ id: 1 }])
+  })
 })

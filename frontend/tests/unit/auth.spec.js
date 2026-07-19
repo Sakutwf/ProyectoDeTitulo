@@ -5,6 +5,9 @@ import {
   getUserRoleSlugs,
   hasAnyRole,
   hasRole,
+  isAdministratorExperience,
+  isVolunteerExperience,
+  isVolunteerOnly,
   requiresAccessSelection,
   resolveAccessMode
 } from '@/utils/auth'
@@ -36,5 +39,35 @@ describe('reglas de acceso', () => {
   test.each(['administrador', 'voluntario'])('conserva el modo valido %s', (mode) => {
     expect(resolveAccessMode(dualAccessUser, mode)).toBe(mode)
     expect(defaultRouteForUser(dualAccessUser, mode)).toEqual({ name: 'inicio' })
+  })
+
+  test('asigna automaticamente la experiencia de voluntario', () => {
+    const user = {
+      roles: [{ clave: 'voluntario' }],
+      voluntario: { id: 10 }
+    }
+
+    expect(resolveAccessMode(user)).toBe('voluntario')
+    expect(isVolunteerExperience(user)).toBe(true)
+    expect(isAdministratorExperience(user)).toBe(false)
+    expect(isVolunteerOnly(user)).toBe(true)
+    expect(defaultRouteForUser(user)).toEqual({ name: 'inicio' })
+  })
+
+  test('asigna la experiencia administrativa a quien gestiona la plataforma', () => {
+    const user = { roles: [{ clave: 'secretario-directiva' }] }
+
+    expect(resolveAccessMode(user)).toBe('administrador')
+    expect(isAdministratorExperience(user)).toBe(true)
+    expect(isVolunteerOnly(user)).toBe(false)
+  })
+
+  test('rechaza un modo invalido para una cuenta con acceso dual', () => {
+    expect(resolveAccessMode(dualAccessUser, 'modo-invalido')).toBeNull()
+  })
+
+  test('usa el modo indicado o el administrativo cuando no hay roles', () => {
+    expect(resolveAccessMode({}, 'lector')).toBe('lector')
+    expect(resolveAccessMode({})).toBe('administrador')
   })
 })

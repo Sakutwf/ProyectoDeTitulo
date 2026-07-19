@@ -4,12 +4,12 @@ Esta dockerización deja el sistema listo para:
 
 - desarrollo local con recarga de código en backend y rebuild vigilado del frontend,
 - despliegue tipo producción con Nginx sirviendo el frontend y reenviando `/api` al backend Laravel,
-- MariaDB 11 como base de datos del stack.
+- MySQL 8.4 LTS como base de datos del stack.
 
 ## Servicios
 
-- `db`: MariaDB 11.
-- `app`: Laravel sobre PHP 8.2 FPM.
+- `db`: MySQL 8.4 LTS.
+- `app`: Laravel sobre PHP 8.3 FPM.
 - `web`: Nginx sirviendo el frontend compilado y exponiendo `/api`, `/storage` y `/up` hacia Laravel.
 - `frontend-builder`: solo en desarrollo; recompila el frontend en modo watch.
 
@@ -25,8 +25,8 @@ Ajusta al menos estos valores en `.env.docker`:
 
 - `APP_URL`
 - `APP_KEY`
-- `MARIADB_ROOT_PASSWORD`
-- `MARIADB_PASSWORD`
+- `MYSQL_ROOT_PASSWORD`
+- `MYSQL_PASSWORD`
 - `WEB_PORT`
 
 ## 2. Generar `APP_KEY`
@@ -52,7 +52,7 @@ docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.de
 Accesos por defecto:
 
 - aplicación: `http://localhost:8080`
-- MariaDB expuesta al host: `localhost:3306`
+- MySQL expuesto al host: `localhost:3306`
 
 Notas de desarrollo:
 
@@ -103,10 +103,10 @@ Entrar al backend:
 docker compose --env-file .env.docker exec app sh
 ```
 
-Abrir MariaDB:
+Abrir MySQL:
 
 ```bash
-docker compose --env-file .env.docker exec db mariadb -ucruzroja -p
+docker compose --env-file .env.docker exec db mysql -ucruzroja -p
 ```
 
 ## 7. Observaciones importantes

@@ -67,7 +67,8 @@ class Voluntario extends Model
             'voluntario_id',
             'actividad_id'
         )
-            ->withPivot('horas_asistidas', 'registrado_por')
+            ->wherePivot('estado', Actividad::INSCRIPCION_APROBADA)
+            ->withPivot('horas_asistidas', 'estado', 'registrado_por', 'revisado_por', 'revisado_en')
             ->withTimestamps();
     }
 

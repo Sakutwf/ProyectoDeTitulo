@@ -59,10 +59,6 @@ export function isVolunteerOnly(user) {
 }
 
 export function defaultRouteForUser(user, accessMode = null) {
-  if (isVolunteerExperience(user, accessMode)) {
-    return { name: 'inicio' }
-  }
-
   if (requiresAccessSelection(user) && !resolveAccessMode(user, accessMode)) {
     return { name: 'access-selection' }
   }

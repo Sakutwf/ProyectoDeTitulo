@@ -2,9 +2,9 @@
 
 Estado actual del proyecto:
 
-- El backend Laravel soporta `mysql` y `mariadb`.
+- El backend Laravel usa el controlador mysql.
 - La configuración por defecto del repositorio sigue apuntando a `sqlite`.
-- Si quieres una base de datos SQL en el servidor Linux, la ruta más limpia para este proyecto es usar MariaDB en Docker.
+- Si quieres una base de datos SQL en el servidor Linux, la ruta más limpia para este proyecto es usar MySQL en Docker.
 
 ## 1. Instalar Docker en Ubuntu Server
 
@@ -40,26 +40,26 @@ newgrp docker
 docker run hello-world
 ```
 
-## 2. Levantar MariaDB con Docker Compose
+## 2. Levantar MySQL con Docker Compose
 
 Desde la raíz del proyecto:
 
 ```bash
-export MARIADB_ROOT_PASSWORD='cambia_root'
-export MARIADB_DATABASE='SistemaCruzRoja'
-export MARIADB_USER='cruzroja'
-export MARIADB_PASSWORD='cambia_usuario'
+export MYSQL_ROOT_PASSWORD='cambia_root'
+export MYSQL_DATABASE='SistemaCruzRoja'
+export MYSQL_USER='cruzroja'
+export MYSQL_PASSWORD='cambia_usuario'
 
 docker compose -f docker-compose.db.yml up -d
 docker compose -f docker-compose.db.yml ps
 ```
 
-## 3. Configurar Laravel para usar MariaDB
+## 3. Configurar Laravel para usar MySQL
 
-En el servidor Linux, copia `backend/.env.mariadb.example` como `backend/.env` y ajusta:
+En el servidor Linux, copia `backend/.env.mysql.example` como `backend/.env` y ajusta:
 
 ```env
-DB_CONNECTION=mariadb
+DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_DATABASE=SistemaCruzRoja
@@ -93,7 +93,7 @@ php artisan migrate:status
 Y opcionalmente:
 
 ```bash
-docker exec -it sistema-cruz-roja-db mariadb -ucruzroja -p
+docker exec -it sistema-cruz-roja-db mysql -ucruzroja -p
 ```
 
 Ese último comando te pedirá la contraseña del usuario `cruzroja`. Si cambias el usuario, ajusta también el valor después de `-u`.
@@ -107,6 +107,6 @@ En ese caso conviene:
 1. identificar la base actual real,
 2. exportar sus datos,
 3. mapearlos al esquema nuevo,
-4. importarlos en MariaDB.
+4. importarlos en MySQL.
 
-Si quieres, en el siguiente paso te preparo también el `docker-compose` completo del backend + frontend + MariaDB para el servidor Linux.
+El stack completo del backend, frontend y MySQL esta definido en docker-compose.yml.

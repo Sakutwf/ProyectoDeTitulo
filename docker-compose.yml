@@ -9,15 +9,17 @@ x-laravel-env: &laravel-env
   APP_KEY: ${APP_KEY}
   LOG_CHANNEL: ${LOG_CHANNEL:-stack}
   LOG_LEVEL: ${LOG_LEVEL:-warning}
-  DB_CONNECTION: ${DB_CONNECTION:-mariadb}
+  DB_CONNECTION: ${DB_CONNECTION:-mysql}
   DB_HOST: db
   DB_PORT: 3306
-  DB_DATABASE: ${MARIADB_DATABASE:-SistemaCruzRoja}
-  DB_USERNAME: ${MARIADB_USER:-cruzroja}
-  DB_PASSWORD: ${MARIADB_PASSWORD}
+  DB_DATABASE: ${MYSQL_DATABASE:-SistemaCruzRoja}
+  DB_USERNAME: ${MYSQL_USER:-cruzroja}
+  DB_PASSWORD: ${MYSQL_PASSWORD}
   DB_CHARSET: utf8mb4
   DB_COLLATION: utf8mb4_unicode_ci
   SESSION_DRIVER: ${SESSION_DRIVER:-database}
+  SESSION_SECURE_COOKIE: ${SESSION_SECURE_COOKIE:-false}
+  SESSION_SAME_SITE: ${SESSION_SAME_SITE:-lax}
   CACHE_STORE: ${CACHE_STORE:-database}
   QUEUE_CONNECTION: ${QUEUE_CONNECTION:-database}
   MAIL_MAILER: ${MAIL_MAILER:-log}
@@ -33,20 +35,20 @@ x-laravel-env: &laravel-env
 
 services:
   db:
-    image: mariadb:11
+    image: mysql:8.4
     restart: unless-stopped
     environment:
-      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
-      MARIADB_DATABASE: ${MARIADB_DATABASE:-SistemaCruzRoja}
-      MARIADB_USER: ${MARIADB_USER:-cruzroja}
-      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-SistemaCruzRoja}
+      MYSQL_USER: ${MYSQL_USER:-cruzroja}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
     volumes:
-      - mariadb_data:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -uroot -p$$MARIADB_ROOT_PASSWORD --silent"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -63,6 +65,12 @@ services:
         condition: service_healthy
     volumes:
       - backend_storage:/var/www/backend/storage
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@fsockopen('127.0.0.1', 9000) ? 0 : 1);"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   queue:
     build:
@@ -71,6 +79,7 @@ services:
     restart: unless-stopped
     command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--timeout=120"]
     environment: *laravel-env
+    init: true
     depends_on:
       db:
         condition: service_healthy
@@ -86,12 +95,18 @@ services:
     restart: unless-stopped
     depends_on:
       app:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "${WEB_PORT:-8080}:80"
     volumes:
       - backend_storage:/var/www/backend/storage:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/up"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 volumes:
-  mariadb_data:
+  mysql_data:
   backend_storage:
