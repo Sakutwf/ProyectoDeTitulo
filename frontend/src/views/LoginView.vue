@@ -9,24 +9,36 @@
       <label class="login-field">
         <span>ID de acceso</span>
         <input
-          v-model.trim="form.user"
+          v-model="form.user"
           type="text"
           autocomplete="username"
-          placeholder="Ingresa tu N° de registro"
+          placeholder="Ingresa tu RUT"
           required
+          @input="onIdentifierInput"
         >
-        <small class="login-help">Los voluntarios ingresan con su N° de registro.</small>
+        <small class="login-help">Ingresa tu RUT como ID de acceso. Los administradores sin perfil de voluntario pueden usar su nombre de usuario.</small>
       </label>
 
       <label class="login-field">
         <span>Contraseña</span>
-        <input
-          v-model="form.id"
-          type="password"
-          autocomplete="current-password"
-          placeholder="Ingresa tu contraseña"
-          required
-        >
+        <div class="password-field">
+          <input
+            v-model="form.id"
+            :type="showPassword ? 'text' : 'password'"
+            autocomplete="current-password"
+            placeholder="Ingresa tu contraseña"
+            required
+          >
+          <button
+            type="button"
+            class="password-toggle"
+            :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+            :title="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+            @click="showPassword = !showPassword"
+          >
+            <i :class="showPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
+          </button>
+        </div>
       </label>
 
       <button type="submit" class="login-submit" :disabled="isSubmitting">
@@ -54,10 +66,38 @@ export default {
         user: '',
         id: ''
       },
+      showPassword: false,
       isSubmitting: false
     }
   },
   methods: {
+    normalizeRut(value) {
+      return String(value || '')
+        .replace(/[^0-9kK]/g, '')
+        .toUpperCase()
+    },
+    formatRut(value) {
+      const cleaned = this.normalizeRut(value)
+      if (!cleaned) return ''
+
+      const body = cleaned.slice(0, -1)
+      const verifier = cleaned.slice(-1)
+      const formattedBody = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+
+      return body ? `${formattedBody}-${verifier}` : verifier
+    },
+    onIdentifierInput(event) {
+      const value = event.target.value
+
+      if (/^[0-9kK.\-]*$/.test(value)) {
+        const formatted = this.formatRut(value)
+        this.form.user = formatted
+        event.target.value = formatted
+        return
+      }
+
+      this.form.user = value.trimStart()
+    },
     async submitLogin() {
       this.isSubmitting = true
 
@@ -178,6 +218,35 @@ export default {
 .login-field input:focus {
   border-color: var(--cr-navy-dark);
   box-shadow: 0 0 0 3px var(--cr-navy-shadow);
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  padding-right: 3.5rem;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.65rem;
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--cr-navy-dark);
+  place-items: center;
+  transform: translateY(-50%);
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+  background: var(--cr-navy-shadow);
 }
 
 .login-help {

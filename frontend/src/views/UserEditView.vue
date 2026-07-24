@@ -160,13 +160,25 @@
 
               <div class="col-12">
                 <label for="edit-password" class="form-label">Nueva contraseña</label>
-                <input
-                  id="edit-password"
-                  v-model.trim="password"
-                  type="password"
-                  class="form-control"
-                  placeholder="Déjala vacía si no quieres cambiarla"
-                >
+                <div class="input-group">
+                  <input
+                    id="edit-password"
+                    v-model.trim="password"
+                    :type="showPassword ? 'text' : 'password'"
+                    class="form-control"
+                    autocomplete="new-password"
+                    placeholder="Déjala vacía si no quieres cambiarla"
+                  >
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                    :title="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                    @click="showPassword = !showPassword"
+                  >
+                    <i :class="showPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
+                  </button>
+                </div>
               </div>
             </div>
           </form>
@@ -250,6 +262,7 @@ export default {
       foto_perfil: null,
       permissionLevel: 'usuario',
       password: '',
+      showPassword: false,
       url: buildApiUrl('user'),
       rolesUrl: buildApiUrl('role'),
       filialesUrl: buildApiUrl('filiales'),
@@ -356,6 +369,7 @@ export default {
       this.username = user.username || ''
       this.selectedRoles = (user.roles || []).map((role) => role.id)
       this.permissionLevel = (user.roles || []).some((role) => role?.clave === 'administrador') ? 'administrador' : 'usuario'
+      this.showPassword = false
       this.registro_filial = voluntario?.registro_filial || ''
       this.filial_id = voluntario?.filial_id || ''
       this.rut = voluntario?.rut || ''
