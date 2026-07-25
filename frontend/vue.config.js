@@ -3,9 +3,16 @@ const { defineConfig } = require('@vue/cli-service')
 const apiTarget = process.env.VUE_APP_DEV_API_PROXY || 'http://127.0.0.1:8000'
 const devServerHost = process.env.VUE_APP_DEV_SERVER_HOST || '0.0.0.0'
 const devServerPort = Number(process.env.VUE_APP_DEV_SERVER_PORT || 8081)
+const buildId = Date.now().toString(36)
 
 module.exports = defineConfig({
   transpileDependencies: true,
+  configureWebpack: {
+    output: {
+      filename: `js/[name].${buildId}.js`,
+      chunkFilename: `js/[name].${buildId}.js`
+    }
+  },
   devServer: {
     host: devServerHost,
     port: devServerPort,

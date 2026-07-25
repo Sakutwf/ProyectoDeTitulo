@@ -152,6 +152,7 @@
 <script>
 import logoHorizontal from '@/assets/LogoHorizontal.svg'
 import logoVertical from '@/assets/LogoVertical.svg'
+import { confirm_logout } from '../funciones'
 
 export default {
     name: 'SidebarMenu',
@@ -241,6 +242,8 @@ export default {
             this.$router.push({ name: 'access-selection' })
         },
         async logout() {
+            if (!await confirm_logout()) return
+
             try {
                 await this.$store.dispatch('logout')
             } finally {
@@ -419,9 +422,9 @@ export default {
         box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
         border-top-left-radius: 0;
         border-top-right-radius: 0;
-        border-bottom-left-radius: 18px;
-        border-bottom-right-radius: 18px;
-        padding: 0.4rem 0.65rem 0.55rem;
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 12px;
+        padding: 0.25rem 0.4rem;
     }
 
     .sidebar--compact {
@@ -439,35 +442,24 @@ export default {
         flex-direction: row !important;
         flex-wrap: nowrap;
         align-items: stretch;
-        gap: 0.45rem;
-        padding: 0 0 0.35rem;
+        gap: 0.2rem;
+        padding: 0;
         width: 100%;
         overflow-x: auto;
         overflow-y: hidden;
         overscroll-behavior-x: contain;
         scroll-behavior: smooth;
         scroll-snap-type: x proximity;
-        scrollbar-width: thin;
-        scrollbar-color: rgba(255, 255, 255, 0.72) rgba(255, 255, 255, 0.16);
+        scrollbar-width: none;
         -webkit-overflow-scrolling: touch;
     }
 
     .sidebar .nav::-webkit-scrollbar {
-        height: 6px;
-    }
-
-    .sidebar .nav::-webkit-scrollbar-track {
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.16);
-    }
-
-    .sidebar .nav::-webkit-scrollbar-thumb {
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.72);
+        display: none;
     }
 
     .sidebar .nav-item {
-        flex: 0 0 clamp(5.6rem, 11vw, 7.4rem);
+        flex: 1 0 2.5rem;
         min-width: 0;
         margin-top: 0 !important;
         scroll-snap-align: start;
@@ -476,16 +468,15 @@ export default {
     .sidebar .nav-link {
         min-width: 0;
         width: 100%;
-        height: 4.6rem;
-        min-height: 4.6rem;
-        padding: 0.62rem 0.45rem;
+        height: 3rem;
+        min-height: 3rem;
+        padding: 0.35rem;
         border-left: none;
         border-top: 3px solid transparent;
-        border-radius: 14px;
+        border-radius: 10px;
         grid-template-columns: 1fr;
         justify-items: center;
         align-content: center;
-        row-gap: 0.35rem;
         text-align: center;
         white-space: normal;
     }
@@ -502,22 +493,22 @@ export default {
     }
 
     .nav-link__label {
-        width: auto;
-        font-size: 0.78rem;
-        line-height: 1.1;
-        white-space: normal;
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
         overflow: hidden;
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
     }
 
-    :global(.content-wrapper) {
+    .sidebar + * {
         width: 100%;
         min-width: 0;
         box-sizing: border-box;
-        padding-top: 7rem !important;
-        padding-bottom: 0;
+        margin-top: 3.75rem !important;
     }
 
     :global(.content-header) {

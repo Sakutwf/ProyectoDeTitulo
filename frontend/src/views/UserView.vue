@@ -47,6 +47,9 @@
                     <button @click="editUser(user.id)" class="btn btn-sm profile-action-button" title="Editar" aria-label="Editar">
                       <i class="fa-solid fa-edit"></i>
                     </button>
+                    <button v-if="$store.getters.hasAnyRole(['administrador'])" class="btn btn-sm profile-recovery-button" title="Recuperar contraseña" aria-label="Recuperar contraseña" @click="recoverPassword(user)">
+                      <i class="fa-solid fa-key"></i>
+                    </button>
                     <button class="btn btn-sm btn-outline-danger" title="Eliminar" aria-label="Eliminar" @click="eliminar(user.id, displayName(user))">
                       <i class="fa-solid fa-trash"></i>
                     </button>
@@ -182,6 +185,9 @@
                         <div class="d-flex justify-content-center actions-cell">
                           <button @click="editUser(user.id)" class="btn btn-sm profile-action-button" title="Editar">
                             <i class="fa-solid fa-edit"></i>
+                          </button>
+                          <button v-if="$store.getters.hasAnyRole(['administrador'])" class="btn btn-sm profile-recovery-button" title="Recuperar contraseña" @click="recoverPassword(user)">
+                            <i class="fa-solid fa-key"></i>
                           </button>
                           <button class="btn btn-sm btn-outline-danger" title="Eliminar" @click="eliminar(user.id, displayName(user))">
                             <i class="fa-solid fa-trash"></i>
@@ -327,6 +333,61 @@ export default {
     },
     viewHistory(userId) {
       this.$router.push({ name: 'HistorialView', params: { id: userId } })
+    },
+    recoveryEmail(user) {
+      return user?.correo_notificaciones || user?.voluntario?.correo_electronico || ''
+    },
+    maskedEmail(user) {
+      const email = this.recoveryEmail(user)
+      const [local, domain] = email.split('@')
+      if (!local || !domain) return email
+
+      return `${local.slice(0, 2)}${'*'.repeat(Math.max(2, local.length - 2))}@${domain}`
+    },
+    async recoverPassword(user) {
+      const email = this.recoveryEmail(user)
+      const result = await Swal.fire({
+        title: 'Recuperar contraseña',
+        text: email
+          ? `Puedes enviarlo a ${this.maskedEmail(user)} o generar un enlace para compartir.`
+          : 'El perfil no tiene correo. Puedes generar un enlace para compartir.',
+        icon: 'question',
+        showCancelButton: true,
+        showDenyButton: Boolean(email),
+        confirmButtonText: 'Generar enlace',
+        denyButtonText: 'Enviar al correo',
+        cancelButtonText: 'Cancelar'
+      })
+
+      if (result.isDismissed) return
+
+      try {
+        if (result.isDenied) {
+          await axios.post(buildApiUrl(`user/${user.id}/password-reset-link`))
+          show_alerta('Enlace enviado al correo registrado.', 'success')
+          return
+        }
+
+        const response = await axios.post(buildApiUrl(`user/${user.id}/password-reset-link/generate`))
+        const url = response.data.url
+        const copyResult = await Swal.fire({
+          title: 'Enlace temporal generado',
+          text: `Expira en ${response.data.expires_in_minutes} minutos. Entrégalo solo al voluntario después de verificar su identidad.`,
+          input: 'text',
+          inputValue: url,
+          inputAttributes: { readonly: true },
+          confirmButtonText: 'Copiar enlace',
+          showCancelButton: true,
+          cancelButtonText: 'Cerrar'
+        })
+
+        if (copyResult.isConfirmed) {
+          await navigator.clipboard.writeText(url)
+          show_alerta('Enlace copiado.', 'success')
+        }
+      } catch (error) {
+        show_alerta(error.response?.data?.message || 'No se pudo generar el enlace.', 'error')
+      }
     },
     async eliminar(id, nombre) {
       const result = await Swal.fire({
@@ -633,6 +694,18 @@ export default {
   border-color: var(--cr-blue);
   color: var(--cr-blue);
   border-radius: 12px;
+}
+
+.profile-recovery-button {
+  border-color: #198754;
+  color: #198754;
+}
+
+.profile-recovery-button:hover,
+.profile-recovery-button:focus {
+  border-color: #146c43;
+  background: #e9f7ef;
+  color: #146c43;
 }
 
 .profile-action-button:hover,

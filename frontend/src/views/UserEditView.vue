@@ -21,6 +21,7 @@
               <div class="col-md-12" v-if="!esVoluntario">
                 <label for="edit-admin-email" class="form-label">Correo para notificaciones administrativas</label>
                 <input id="edit-admin-email" v-model.trim="correo_notificaciones" type="email" class="form-control" required>
+                <div class="form-text">Este correo se utilizará para notificaciones y para recuperar la contraseña.</div>
               </div>
 
               <template v-if="esVoluntario">
@@ -60,7 +61,8 @@
 
                 <div class="col-md-6">
                   <label for="edit-correo-electronico" class="form-label">Correo electrónico</label>
-                  <input id="edit-correo-electronico" v-model.trim="correo_electronico" type="email" class="form-control">
+                  <input id="edit-correo-electronico" v-model.trim="correo_electronico" type="email" class="form-control" required>
+                  <div class="form-text">Este correo se utilizará para recuperar la contraseña. Verifica que pertenezca al voluntario y esté vigente.</div>
                 </div>
 
                 <div class="col-md-6">
@@ -464,6 +466,10 @@ export default {
       }
 
       if (this.esVoluntario) {
+        if (!/^[^\s@]+@[^\s@]+\\.[^\s@]+$/.test(this.correo_electronico)) {
+          show_alerta('Debes ingresar un correo de recuperación válido.', 'warning', 'edit-correo-electronico')
+          return false
+        }
         if (!this.registro_filial.trim()) {
           show_alerta('Debes ingresar el número de registro.', 'warning', 'edit-registro-filial')
           return false

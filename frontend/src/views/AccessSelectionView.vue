@@ -1,6 +1,10 @@
 <template>
   <div class="access-page">
     <section class="access-card">
+      <button type="button" class="access-logout" :disabled="isLoggingOut" @click="logout">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        {{ isLoggingOut ? 'Cerrando...' : 'Cerrar sesión' }}
+      </button>
       <router-link to="/portada" aria-label="Ir a Inicio y novedades"><img src="@/assets/LogoHorizontal.svg" alt="Cruz Roja" class="access-logo"></router-link>
 
       <div class="access-copy">
@@ -33,16 +37,30 @@
 </template>
 
 <script>
+
 import { defaultRouteForUser } from '../utils/auth'
+import { confirm_logout } from '../funciones'
 
 export default {
   name: 'AccessSelectionView',
+  data() {
+    return {
+      isLoggingOut: false
+    }
+  },
   computed: {
     currentUser() {
       return this.$store.getters.authUser
     }
   },
   methods: {
+    async logout() {
+      if (!await confirm_logout()) return
+
+      this.isLoggingOut = true
+      await this.$store.dispatch('logout')
+      this.$router.replace({ name: 'login' })
+    },
     selectAccess(accessMode) {
       this.$store.dispatch('chooseAccessMode', accessMode)
 
@@ -71,6 +89,7 @@ export default {
 }
 
 .access-card {
+  position: relative;
   width: min(980px, 100%);
   padding: 3rem;
   border-radius: 32px;
@@ -78,6 +97,33 @@ export default {
   border: 1px solid var(--cr-navy-shadow);
   box-shadow: 0 28px 72px rgba(15, 47, 95, 0.12);
   text-align: center;
+}
+
+.access-logout {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--cr-red);
+  border-radius: 999px;
+  background: var(--cr-red);
+  color: var(--cr-white);
+  font-weight: 800;
+}
+
+.access-logout:hover,
+.access-logout:focus-visible {
+  border-color: #c81919;
+  background: #c81919;
+  color: var(--cr-white);
+}
+
+.access-logout:disabled {
+  opacity: 0.65;
+  cursor: wait;
 }
 
 .access-logo {
@@ -170,6 +216,11 @@ export default {
 }
 
 @media (max-width: 767.98px) {
+  .access-logout {
+    position: static;
+    margin: 0 auto 1rem 0;
+  }
+
   .access-card {
     padding: 2rem 1.4rem;
     border-radius: 24px;

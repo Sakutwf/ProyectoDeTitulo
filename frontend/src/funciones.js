@@ -16,3 +16,18 @@ export function show_alerta(mensaje, icono, foco=''){
         buttonsStyling: false,
     });
 }
+
+export async function confirm_logout(){
+    const result = await Swal.fire({
+        title: '¿Cerrar sesión?',
+        text: 'Tendrás que volver a ingresar tus credenciales para acceder al sistema.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, cerrar sesión',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#d72732',
+        reverseButtons: true,
+    });
+
+    return result.isConfirmed;
+}

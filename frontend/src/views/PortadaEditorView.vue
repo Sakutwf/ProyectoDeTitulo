@@ -261,6 +261,7 @@
 
 <script>
 import axios from 'axios'
+import Swal from 'sweetalert2'
 import SidebarMenu from '../components/SidebarMenu.vue'
 import logoHorizontal from '@/assets/LogoHorizontal.svg'
 import { buildApiUrl } from '../config/api'
@@ -514,8 +515,10 @@ export default {
       this.saving = true
       try {
         await axios.put(buildApiUrl('portada/configuracion'), { textos: this.texts, carrusel: this.slides.map(s => { const selected = s.imagenes.map((id, index) => ({ id, x: s.posiciones_x[index] ?? 50, y: s.posiciones_y[index] ?? 50, zoom: s.zooms[index] ?? 100 })).filter(i => i.id); return { titulo: s.titulo, titulo_color: s.titulo_color || '#ffffff', bajada: s.bajada, bajada_color: s.bajada_color || '#ffffff', publicada: s.publicada !== false, imagenes: selected.map(i => i.id), posiciones_x: selected.map(i => i.x), posiciones_y: selected.map(i => i.y), zooms: selected.map(i => i.zoom) } }), novedades: this.news.map(n => ({ actividad_id: n.actividad_id, archivo_portada_id: n.archivo_portada_id, posicion_x: n.posicion_x ?? 50, posicion_y: n.posicion_y ?? 50, zoom: n.zoom ?? 100, titulo: n.titulo, resumen: n.resumen, contenido: n.contenido || null, personas_ayudadas: n.personas_ayudadas === '' ? null : n.personas_ayudadas, ancho: 'completo', publicada: n.publicada !== false, campos_visibles: n.campos_visibles })) })
-        window.alert('La portada fue actualizada correctamente.')
-      } catch (error) { window.alert(error.response?.data?.message || 'No fue posible guardar la portada.') } finally { this.saving = false }
+        await Swal.fire('Cambios guardados', 'La portada fue actualizada correctamente.', 'success')
+      } catch (error) {
+        await Swal.fire('No se guardaron los cambios', error.response?.data?.message || 'No fue posible guardar la portada.', 'error')
+      } finally { this.saving = false }
     }
   }
 }

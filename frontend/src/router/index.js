@@ -28,6 +28,11 @@ const routes = [
     meta: { guestOnly: true }
   },
   {
+    path: '/recuperar-contrasena',
+    name: 'password-recovery',
+    component: () => import('../views/PasswordRecoveryView.vue')
+  },
+  {
     path: '/',
     name: 'home',
     redirect: () => store.getters.isAuthenticated ? { name: 'inicio' } : { name: 'portada-publica' }

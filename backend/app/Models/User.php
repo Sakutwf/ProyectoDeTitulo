@@ -75,6 +75,11 @@ class User extends Authenticatable
         return $this->username;
     }
 
+    public function getEmailForPasswordReset(): string
+    {
+        return $this->username;
+    }
+
     public function getEmailAttribute(): ?string
     {
         if (! empty($this->attributes['correo_notificaciones'])) {

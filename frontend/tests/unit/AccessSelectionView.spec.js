@@ -33,6 +33,15 @@ describe('AccessSelectionView', () => {
     expect(replace).toHaveBeenCalledWith({ name: 'inicio' })
   })
 
+  test('cierra la sesión y vuelve al login', async () => {
+    const { wrapper, dispatch, replace } = mountView()
+
+    await wrapper.get('button.access-logout').trigger('click')
+
+    expect(dispatch).toHaveBeenCalledWith('logout')
+    expect(replace).toHaveBeenCalledWith({ name: 'login' })
+  })
+
   test('respeta la ruta solicitada antes de seleccionar el acceso', async () => {
     const { wrapper, dispatch, replace } = mountView({ redirect: '/historial/9' })
 

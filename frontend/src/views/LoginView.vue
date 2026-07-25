@@ -9,6 +9,7 @@
       <label class="login-field">
         <span>ID de acceso</span>
         <input
+          id="login-user"
           v-model="form.user"
           type="text"
           autocomplete="username"
@@ -16,7 +17,6 @@
           required
           @input="onIdentifierInput"
         >
-        <small class="login-help">Ingresa tu RUT como ID de acceso. Los administradores sin perfil de voluntario pueden usar su nombre de usuario.</small>
       </label>
 
       <label class="login-field">
@@ -45,9 +45,9 @@
         {{ isSubmitting ? 'Ingresando...' : 'Iniciar sesión' }}
       </button>
 
-      <a href="#" class="login-recovery-link" @click.prevent>
+      <router-link :to="{ name: 'password-recovery' }" class="login-recovery-link">
         Recuperar Contraseña
-      </a>
+      </router-link>
     </form>
   </div>
 </template>
@@ -98,7 +98,32 @@ export default {
 
       this.form.user = value.trimStart()
     },
+    isValidRut(value) {
+      const cleaned = this.normalizeRut(value)
+      if (!/^\d{6,8}[0-9K]$/.test(cleaned)) return false
+
+      const body = cleaned.slice(0, -1)
+      const verifier = cleaned.slice(-1)
+      let sum = 0
+      let multiplier = 2
+
+      for (let index = body.length - 1; index >= 0; index -= 1) {
+        sum += Number(body[index]) * multiplier
+        multiplier = multiplier === 7 ? 2 : multiplier + 1
+      }
+
+      const result = 11 - (sum % 11)
+      const expected = result === 11 ? '0' : result === 10 ? 'K' : String(result)
+
+      return verifier === expected
+    },
     async submitLogin() {
+      const identifier = this.form.user.trim()
+      if (/^[0-9kK.\-]+$/.test(identifier) && !this.isValidRut(identifier)) {
+        show_alerta('El RUT ingresado no es válido.', 'warning', 'login-user')
+        return
+      }
+
       this.isSubmitting = true
 
       try {
@@ -120,7 +145,9 @@ export default {
 
         this.$router.replace(defaultRouteForUser(response.data.user))
       } catch (error) {
-        const message = error.response?.data?.errors?.user?.[0] || 'No se pudo iniciar sesión.'
+        const message = error.response?.status === 422
+          ? 'El RUT/usuario o la contraseña son incorrectos.'
+          : 'No se pudo iniciar sesión.'
         show_alerta(message, 'error')
       } finally {
         this.isSubmitting = false
@@ -249,11 +276,6 @@ export default {
   background: var(--cr-navy-shadow);
 }
 
-.login-help {
-  color: #5d6d84;
-  font-size: 0.82rem;
-}
-
 .login-submit {
   margin-top: 0.4rem;
   min-height: 58px;
@@ -286,12 +308,19 @@ export default {
 
 @media (max-width: 575.98px) {
   .login-page {
-    padding-top: 1.5rem;
+    padding: 0.5rem;
+  }
+
+  .login-back-link {
+    position: static;
+    justify-self: start;
+    margin-bottom: 0.5rem;
   }
 
   .login-card {
-    min-height: auto;
-    padding: 2.5rem 1.4rem;
+    min-height: calc(100vh - 1rem);
+    align-content: start;
+    padding: 1rem 1.4rem 2rem;
     border-radius: 24px;
   }
 }

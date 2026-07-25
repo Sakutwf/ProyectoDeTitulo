@@ -367,20 +367,29 @@
                     <p class="narrative-note">En el siguiente cuadro adjunte las fotos en formato JPG y al lado agregue la descripción. 3 fotografías mínimo.</p>
 
                     <div v-if="form.contenido.fotos.length" class="photo-report-grid">
-                      <article v-for="(photo, index) in form.contenido.fotos" :key="photo.id" class="photo-report-card">
-                        <img :src="photo.imagen_url" :alt="photo.titulo || `Fotografía ${index + 1}`" class="photo-report-card__image">
+                      <article v-for="(photo, index) in visibleNarrativePhotos" :key="photo.id" class="photo-report-card">
+                        <img :src="photo.imagen_url" :alt="photo.titulo || `Fotografía ${narrativePhotoStartIndex + index + 1}`" class="photo-report-card__image">
                         <div class="photo-report-card__body">
-                          <strong>{{ photo.titulo || `Fotografía ${index + 1}` }}</strong>
+                          <strong>{{ photo.titulo || `Fotografía ${narrativePhotoStartIndex + index + 1}` }}</strong>
                           <small>{{ photo.origen === 'galeria_actividad' ? 'Galería de la actividad' : 'Subida desde dispositivo' }}</small>
                           <label class="form-label">Descripción</label>
                           <textarea v-model.trim="photo.descripcion_informe" class="form-control" rows="3"></textarea>
                         </div>
-                        <button type="button" class="photo-report-card__remove" @click="removeNarrativePhoto(index)">
+                        <button type="button" class="photo-report-card__remove" @click="removeNarrativePhoto(narrativePhotoStartIndex + index)">
                           <i class="fa-solid fa-trash me-2"></i>Quitar
                         </button>
                       </article>
                     </div>
-                    <div v-else class="empty-inline">Aún no has agregado fotografías al informe.</div>
+                    <nav v-if="showNarrativePhotoNavigation" class="photo-report-navigation" aria-label="Navegación de fotografías del informe">
+                      <button type="button" class="photo-report-navigation__button" :disabled="narrativePhotoPage === 1" aria-label="Ver fotografías anteriores" @click="goToPreviousNarrativePhotos">
+                        <i class="fa-solid fa-chevron-left"></i>
+                      </button>
+                      <span>{{ narrativePhotoPage }} de {{ narrativePhotoPageCount }}</span>
+                      <button type="button" class="photo-report-navigation__button" :disabled="narrativePhotoPage === narrativePhotoPageCount" aria-label="Ver fotografías siguientes" @click="goToNextNarrativePhotos">
+                        <i class="fa-solid fa-chevron-right"></i>
+                      </button>
+                    </nav>
+                    <div v-if="!form.contenido.fotos.length" class="empty-inline">Aún no has agregado fotografías al informe.</div>
                   </section>
                 </div>
               </template>
@@ -791,6 +800,7 @@ const climatePhotoInputRef = ref(null)
 const selectedClimateRowId = ref('')
 const showClimateGalleryModal = ref(false)
 const pendingNarrativePhotoFiles = ref([])
+const narrativePhotoPage = ref(1)
 const uploadingNarrativePhotos = ref(false)
 const uploadingClimatePhoto = ref(false)
 const pastingClimatePhoto = ref(false)
@@ -815,6 +825,12 @@ const currentSections = computed(() => selectedTypeMeta.value?.sections || [])
 const contexto = computed(() => form.datos_contexto)
 const isNarrativeType = computed(() => selectedType.value === 'informe_narrativo')
 const isContextAnalysisType = computed(() => selectedType.value === 'analisis_contexto')
+const narrativePhotoPageSize = 3
+const narrativePhotos = computed(() => Array.isArray(form.contenido?.fotos) ? form.contenido.fotos : [])
+const narrativePhotoPageCount = computed(() => Math.max(1, Math.ceil(narrativePhotos.value.length / narrativePhotoPageSize)))
+const narrativePhotoStartIndex = computed(() => (narrativePhotoPage.value - 1) * narrativePhotoPageSize)
+const visibleNarrativePhotos = computed(() => narrativePhotos.value.slice(narrativePhotoStartIndex.value, narrativePhotoStartIndex.value + narrativePhotoPageSize))
+const showNarrativePhotoNavigation = computed(() => narrativePhotos.value.length > narrativePhotoPageSize)
 const selectedActividad = computed(() => actividades.value.find((actividad) => String(actividad.id) === selectedActividadId.value) || null)
 const filteredActividades = computed(() => {
   if (showAllActividades.value) {
@@ -1866,6 +1882,14 @@ function removeNarrativeParticipant(index) {
   narrative.participantes_asistencia.splice(index, 1)
 }
 
+function goToPreviousNarrativePhotos() {
+  narrativePhotoPage.value = Math.max(1, narrativePhotoPage.value - 1)
+}
+
+function goToNextNarrativePhotos() {
+  narrativePhotoPage.value = Math.min(narrativePhotoPageCount.value, narrativePhotoPage.value + 1)
+}
+
 function isGalleryPhotoSelected(item) {
   const photos = Array.isArray(form.contenido?.fotos) ? form.contenido.fotos : []
 
@@ -1889,11 +1913,13 @@ function addGalleryPhotoToNarrative(item) {
     fecha: item.fecha || '',
     origen: 'galeria_actividad'
   })
+  narrativePhotoPage.value = Math.ceil(narrative.fotos.length / narrativePhotoPageSize)
 }
 
 function removeNarrativePhoto(index) {
   const narrative = ensureNarrativeContent()
   narrative.fotos.splice(index, 1)
+  narrativePhotoPage.value = Math.min(narrativePhotoPage.value, Math.max(1, Math.ceil(narrative.fotos.length / narrativePhotoPageSize)))
 }
 
 function openDevicePhotoPicker() {
@@ -2063,6 +2089,7 @@ function closeForm() {
   showClimateGalleryModal.value = false
   selectedClimateRowId.value = ''
   pendingNarrativePhotoFiles.value = []
+  narrativePhotoPage.value = 1
   form.titulo = ''
   form.estado = 'borrador'
   form.fecha_documento = todayAsInput()
@@ -2847,8 +2874,45 @@ onBeforeUnmount(() => {
 .photo-report-grid,
 .photo-gallery-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1rem;
+}
+
+.photo-report-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.photo-gallery-grid {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.photo-report-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  margin-top: 1rem;
+  color: var(--cr-navy-medium);
+  font-weight: 700;
+}
+
+.photo-report-navigation__button {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid var(--cr-navy);
+  border-radius: 999px;
+  background: var(--cr-navy);
+  color: var(--cr-white);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.photo-report-navigation__button:disabled {
+  border-color: var(--cr-gray-300);
+  background: var(--cr-gray-300);
+  color: var(--cr-gray-500);
+  cursor: default;
 }
 
 .photo-report-card,
@@ -2950,6 +3014,10 @@ onBeforeUnmount(() => {
   .context-card--wide {
     grid-column: span 1;
   }
+
+  .photo-report-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 767.98px) {
@@ -2969,6 +3037,10 @@ onBeforeUnmount(() => {
 
   .photo-modal {
     padding: 0.75rem;
+  }
+
+  .photo-report-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .photo-modal__panel {

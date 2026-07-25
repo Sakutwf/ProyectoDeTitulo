@@ -151,7 +151,7 @@
                       <td data-label="#">{{ (meta.from || 1) + index }}</td>
                       <td data-label="Nombre">
                         <div class="fw-semibold">{{ actividad.nombre || '-' }}</div>
-                        <small class="text-muted">{{ actividad.objetivo || 'Sin objetivo registrado' }}</small>
+                        <small class="text-muted activity-objective-clamp">{{ actividad.objetivo || 'Sin objetivo registrado' }}</small>
                       </td>
                       <td data-label="Tipo"><span class="activity-type-badge activity-type-badge--table">{{ actividad.tipo || '-' }}</span></td>
                       <td data-label="Fechas">
@@ -766,6 +766,15 @@ onBeforeUnmount(() => {
   word-break: normal;
   hyphens: none;
   line-height: 1.35;
+}
+
+.activity-objective-clamp {
+  display: -webkit-box;
+  max-width: 24rem;
+  max-height: 2.7em;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .card {

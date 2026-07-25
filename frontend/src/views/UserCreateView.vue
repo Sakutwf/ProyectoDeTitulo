@@ -85,6 +85,7 @@
                 <div class="col-12">
                   <label for="create-admin-email" class="form-label">Correo para notificaciones administrativas</label>
                   <input id="create-admin-email" v-model.trim="correo_notificaciones" type="email" class="form-control" required placeholder="administracion@ejemplo.cl">
+                  <div class="form-text">Este correo se utilizará para notificaciones y para recuperar la contraseña.</div>
                 </div>
               </template>
 
@@ -134,7 +135,8 @@
 
                 <div class="col-md-6">
                   <label for="create-correo-electronico" class="form-label">Correo electrónico</label>
-                  <input id="create-correo-electronico" v-model.trim="correo_electronico" type="email" class="form-control" placeholder="correo@ejemplo.com">
+                  <input id="create-correo-electronico" v-model.trim="correo_electronico" type="email" class="form-control" required placeholder="correo@ejemplo.com">
+                  <div class="form-text">Este correo se utilizará para recuperar la contraseña. Verifica que pertenezca al voluntario y esté vigente.</div>
                 </div>
 
                 <div class="col-md-6">
@@ -548,6 +550,10 @@ export default {
       }
 
       if (this.esVoluntario) {
+        if (!/^[^\s@]+@[^\s@]+\\.[^\s@]+$/.test(this.correo_electronico)) {
+          show_alerta('Debes ingresar un correo de recuperación válido.', 'warning', 'create-correo-electronico')
+          return false
+        }
         if (!this.registro_filial.trim()) {
           show_alerta('Debes ingresar el número de registro.', 'warning', 'create-registro-filial')
           return false

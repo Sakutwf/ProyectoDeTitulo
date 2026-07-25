@@ -39,7 +39,7 @@
 
                   <button
                     type="button"
-                    class="btn btn-outline-primary activity-toggle"
+                    class="btn activity-toggle"
                     :disabled="galleryLoadingActivityId === actividad.id"
                     @click="toggleGalleryPanel(actividad)"
                   >
@@ -380,17 +380,31 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   padding: 0.35rem 0.7rem;
+  border: 1px solid var(--cr-red);
   border-radius: 999px;
-  background: var(--cr-red);
-  color: var(--cr-white);
+  background: transparent;
+  color: var(--cr-red);
   font-size: 0.8rem;
   font-weight: 700;
 }
 
 .activity-toggle {
+  width: fit-content;
+  align-self: flex-start;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--cr-navy-deep);
   border-radius: 14px;
+  background: var(--cr-navy-deep);
+  color: var(--cr-white);
   font-weight: 700;
   white-space: nowrap;
+}
+
+.activity-toggle:hover,
+.activity-toggle:focus-visible {
+  border-color: var(--cr-navy);
+  background: var(--cr-navy);
+  color: var(--cr-white);
 }
 
 .gallery-panel {
@@ -501,7 +515,7 @@ onMounted(async () => {
   }
 
   .activity-toggle {
-    width: 100%;
+    width: fit-content;
   }
 }
 </style>

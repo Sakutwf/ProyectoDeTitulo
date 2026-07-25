@@ -2799,6 +2799,9 @@ function matchesSearch(value) {
 }
 
 @media (max-width: 767.98px) {
+  .content {
+    padding: 0.75rem;
+  }
   .hero-stage {
     display: grid;
     grid-template-columns: 1fr;
@@ -2827,9 +2830,9 @@ function matchesSearch(value) {
 
   .hero-layout {
     order: 1;
-    grid-template-columns: minmax(5.9rem, 6.3rem) minmax(0, 1fr);
+    grid-template-columns: minmax(5.5rem, 6rem) minmax(0, 1fr);
     grid-template-areas: "rail panel";
-    gap: 0.7rem;
+    gap: 0.45rem;
     align-items: center;
   }
 
@@ -2847,18 +2850,18 @@ function matchesSearch(value) {
 
   .hero-rail {
     display: grid;
-    grid-template-columns: 34px minmax(0, 1fr);
+    grid-template-columns: 30px minmax(0, 1fr);
     grid-template-areas:
       "back year"
       "photo photo";
     gap: 0.5rem;
     align-items: start;
-    align-self: center;
+    align-self: stretch;
   }
 
   .back-button,
   .year-card {
-    min-height: 32px;
+    min-height: 30px;
     border-radius: 10px;
   }
 
@@ -2876,7 +2879,7 @@ function matchesSearch(value) {
 
   .photo-card {
     grid-column: 1 / -1;
-    width: min(100%, 6.2rem);
+    width: 100%;
     max-width: none;
     justify-self: center;
     align-self: center;
@@ -2892,20 +2895,21 @@ function matchesSearch(value) {
   }
 
   .photo-action {
-    min-height: 31px;
-    font-size: 0.75rem;
+    min-height: 27px;
+    font-size: 0.64rem;
     font-weight: 800;
   }
 
   .hero-panel {
-    min-height: 208px;
+    min-height: 172px;
+    padding: 0.65rem 0.7rem;
   }
 
   .hero-top {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 6.1rem;
-    align-items: start;
-    gap: 0.55rem;
+    grid-template-columns: minmax(0, 1fr) 5.1rem;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   .hero-copy {
@@ -2927,72 +2931,57 @@ function matchesSearch(value) {
   }
 
   .hero-panel h2 {
-    font-size: clamp(0.98rem, 4.8vw, 1.52rem);
-    line-height: 0.98;
-    margin-bottom: 0.28rem;
+    font-size: clamp(1.05rem, 4.7vw, 1.35rem);
+    line-height: 1;
+    margin-bottom: 0.3rem;
   }
 
   .hero-stats {
-    gap: 0.18rem;
+    grid-template-columns: 1fr;
+    gap: 0.38rem;
+    margin-top: 0.45rem;
   }
 
   .hero-stat {
-    gap: 0.08rem;
+    gap: 0.04rem;
     padding-block: 0;
   }
 
   .hero-stat span {
-    font-size: 0.64rem;
+    font-size: 0.58rem;
     line-height: 1.1;
     margin-bottom: 0.02rem;
   }
 
   .hero-stat strong {
-    font-size: 0.84rem;
+    font-size: 0.76rem;
     line-height: 1.1;
   }
 
   .hero-side {
-  width: 7.2rem;
-  min-width: 7.2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-self: end;
-  gap: 0.6rem;
-}
-.hero-brand-actions {
-  display: grid;
-  justify-items: stretch;
-  gap: 0.55rem;
-  width: 100%;
-  box-sizing: border-box;
-}
+    width: 5.1rem;
+    min-width: 5.1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-self: end;
+    gap: 0.3rem;
+  }
 
-.hero-actions-row {
-  display: none;
-}
+  .hero-brand {
+    width: 100%;
+    min-width: 0;
+    height: 4rem;
+    border-radius: 12px;
+  }
 
-.hero-brand-actions .hero-brand-action {
-  width: 100%;
-  max-width: 100%;
-  justify-self: end;
-  border-radius: 12px;
-  min-height: 34px;
-  padding: 0.4rem 0.5rem;
-  font-size: 0.76rem;
-  line-height: 1.15;
-  white-space: normal;
-}
-
-
-.hero-brand img {
-    width: 62px;
+  .hero-brand img {
+    width: 42px;
   }
 
   .hero-brand-actions {
     display: grid;
-    justify-items: center;
+    justify-items: stretch;
     gap: 0.28rem;
     width: 100%;
     max-width: 100%;
@@ -3001,11 +2990,12 @@ function matchesSearch(value) {
   .hero-brand-actions .hero-brand-action {
     width: 100%;
     max-width: 100%;
-    min-height: 28px;
-    padding: 0.34rem 0.3rem;
-    font-size: 0.56rem;
+    min-height: 25px;
+    padding: 0.25rem 0.2rem;
+    font-size: 0.54rem;
     font-weight: 800;
     line-height: 1.08;
+    white-space: nowrap;
   }
 
   .hero-actions-row {

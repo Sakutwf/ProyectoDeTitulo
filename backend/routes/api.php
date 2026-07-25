@@ -15,6 +15,8 @@ use App\Http\Controllers\PortadaController;
 use App\Http\Controllers\SolicitudHojaVidaController;
 
 Route::post('login', [AuthController::class, 'login']);
+Route::post('password/forgot', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,15');
+Route::post('password/reset', [AuthController::class, 'resetPassword'])->middleware('throttle:10,15');
 Route::get('portada', [PortadaController::class, 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -25,6 +27,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('me', fn (Request $request) => $request->user()->loadMissing('roles.permissions', 'voluntario'));
 
     Route::get('user/search', [UserController::class, 'search']);
+    Route::post('user/{user}/password-reset-link', [AuthController::class, 'sendUserResetLink']);
+    Route::post('user/{user}/password-reset-link/generate', [AuthController::class, 'generateUserResetLink']);
     Route::post('user/{user}/foto-perfil', [UserController::class, 'updateVolunteerPhoto']);
     Route::apiResource('user', UserController::class);
     Route::get('role', [RoleController::class, 'index']);

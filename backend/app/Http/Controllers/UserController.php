@@ -433,7 +433,7 @@ class UserController extends Controller
             'estado_civil' => ['nullable', 'string', 'max:100'],
             'ocupacion' => ['nullable', 'string', 'max:150'],
             'grupo_sanguineo' => ['nullable', 'string', 'max:20'],
-            'correo_electronico' => ['nullable', 'email', 'max:150'],
+            'correo_electronico' => ['required', 'email', 'max:150'],
             'celular' => ['nullable', 'string', 'max:30'],
             'domicilio' => ['nullable', 'string', 'max:255'],
             'enfermedades' => ['nullable', 'string'],
