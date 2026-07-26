@@ -63,7 +63,7 @@ class SolicitudHojaVidaController extends Controller
     private function reviewer(Request $request)
     {
         $actor = $request->user()?->loadMissing('roles', 'voluntario');
-        abort_unless($actor?->roles->contains(fn ($role) => in_array($role->clave, ['administrador', 'secretario-directiva'], true)), 403);
+        abort_unless($actor?->roles->contains(fn ($role) => in_array($role->clave, ['administrador', 'moderador'], true)), 403);
         return $actor;
     }
 

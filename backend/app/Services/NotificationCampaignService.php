@@ -208,7 +208,7 @@ class NotificationCampaignService
     {
         return User::query()
             ->with(['roles', 'voluntario'])
-            ->whereHas('roles', fn ($query) => $query->whereIn('clave', ['administrador', 'secretario-directiva']))
+            ->whereHas('roles', fn ($query) => $query->whereIn('clave', ['administrador', 'moderador']))
             ->get()
             ->filter(function (User $user) use ($filialId) {
                 if (! filter_var($user->email, FILTER_VALIDATE_EMAIL)) {

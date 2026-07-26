@@ -89,6 +89,7 @@ class HojaVidaAnualController extends Controller
 
             $this->syncRelations($record, $validated, $request);
             $this->syncVolunteerProfile($voluntario, $validated, $request);
+            $voluntario->user?->syncRoleFromProfile();
 
             return $record->fresh()->load(self::RELATIONS);
         });
@@ -123,6 +124,7 @@ class HojaVidaAnualController extends Controller
                     $this->buildMainPayload($validated, $hojaVidaAnual->voluntario_id, $hojaVidaAnual)
                 );
                 $this->syncVolunteerProfile($hojaVidaAnual->voluntario, $validated, $request);
+                $hojaVidaAnual->voluntario->user?->syncRoleFromProfile();
 
                 return [$hojaVidaAnual->fresh()->load(self::RELATIONS), $pendingRequests];
             });
@@ -138,6 +140,7 @@ class HojaVidaAnualController extends Controller
 
             $this->syncRelations($hojaVidaAnual, $validated, $request, $isVolunteerSelfService);
             $this->syncVolunteerProfile($hojaVidaAnual->voluntario, $validated, $request);
+            $hojaVidaAnual->voluntario->user?->syncRoleFromProfile();
 
             return $hojaVidaAnual->fresh()->load(self::RELATIONS);
         });
@@ -148,7 +151,9 @@ class HojaVidaAnualController extends Controller
     public function destroy(Request $request, HojaVidaAnual $hojaVidaAnual)
     {
         abort_unless($this->canManageLifeSheets($request), 403, 'No tienes permisos para eliminar hojas de vida.');
+        $user = $hojaVidaAnual->voluntario?->user;
         $hojaVidaAnual->delete();
+        $user?->syncRoleFromProfile();
 
         return response()->json(null, 204);
     }
@@ -710,7 +715,7 @@ class HojaVidaAnualController extends Controller
             return false;
         }
 
-        if ($user->hasRole('administrador') || $user->hasRole('secretario-directiva')) {
+        if ($user->canManagePlatform()) {
             return false;
         }
 
@@ -720,7 +725,7 @@ class HojaVidaAnualController extends Controller
     private function canManageLifeSheets(Request $request): bool
     {
         $user = $request->user()?->loadMissing('roles');
-        return (bool) $user?->roles->contains(fn ($role) => in_array($role->clave, ['administrador', 'secretario-directiva'], true));
+        return (bool) $user?->canManagePlatform();
     }
 
     private function authorizeSheetAccess(Request $request, int $volunteerId): void

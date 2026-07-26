@@ -75,7 +75,7 @@ export default {
     todayLabel() { return new Intl.DateTimeFormat('es-CL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date()) },
     experienceMessage() { return this.isAdministrator ? 'Aquí tienes un resumen y las herramientas para gestionar la filial.' : 'Aquí tienes tu información y los accesos para continuar tu labor voluntaria.' },
     roleNames() {
-      const labels = { administrador: 'Administrador', voluntario: 'Voluntario', 'secretario-directiva': 'Secretaría de directiva' }
+      const labels = { administrador: 'Administrador', voluntario: 'Voluntario', moderador: 'Moderador' }
       return (this.user.roles || []).map(role => labels[role.clave] || role.nombre || role.clave)
     },
     profileRoute() { return `/historial/${this.user.id}` },

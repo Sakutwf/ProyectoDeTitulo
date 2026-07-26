@@ -7,7 +7,7 @@ jest.mock('@/funciones', () => ({
 }))
 
 const currentUser = {
-  roles: [{ clave: 'administrador' }, { clave: 'voluntario' }],
+  roles: [{ clave: 'moderador' }],
   voluntario: { id: 42 }
 }
 

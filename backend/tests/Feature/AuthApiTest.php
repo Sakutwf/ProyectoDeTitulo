@@ -56,6 +56,9 @@ class AuthApiTest extends TestCase
             'celular' => '912345678',
         ])->assertCreated();
 
+        $createdVolunteer = User::query()->where('username', '99.000.001-1')->firstOrFail();
+        $this->assertSame(['voluntario'], $createdVolunteer->roles()->pluck('clave')->all());
+
         $this->postJson('/api/login', [
             'user' => '99.000.001-1',
             'id' => 'cruzRojaCco26',

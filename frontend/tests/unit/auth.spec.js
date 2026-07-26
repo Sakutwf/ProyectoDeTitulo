@@ -13,15 +13,15 @@ import {
 } from '@/utils/auth'
 
 const dualAccessUser = {
-  roles: [{ clave: 'administrador' }, { clave: 'voluntario' }],
+  roles: [{ clave: 'moderador' }],
   voluntario: { id: 42 }
 }
 
 describe('reglas de acceso', () => {
   test('extrae y consulta los roles del usuario', () => {
-    expect(getUserRoleSlugs(dualAccessUser)).toEqual(['administrador', 'voluntario'])
-    expect(hasRole(dualAccessUser, 'administrador')).toBe(true)
-    expect(hasAnyRole(dualAccessUser, ['tesorero', 'voluntario'])).toBe(true)
+    expect(getUserRoleSlugs(dualAccessUser)).toEqual(['moderador'])
+    expect(hasRole(dualAccessUser, 'moderador')).toBe(true)
+    expect(hasAnyRole(dualAccessUser, ['tesorero', 'moderador'])).toBe(true)
     expect(hasRole(null, 'administrador')).toBe(false)
   })
 
@@ -55,7 +55,7 @@ describe('reglas de acceso', () => {
   })
 
   test('asigna la experiencia administrativa a quien gestiona la plataforma', () => {
-    const user = { roles: [{ clave: 'secretario-directiva' }] }
+    const user = { roles: [{ clave: 'administrador' }] }
 
     expect(resolveAccessMode(user)).toBe('administrador')
     expect(isAdministratorExperience(user)).toBe(true)

@@ -185,7 +185,7 @@ export default {
             return this.$store.getters.isAdministratorExperience
         },
         isAdministrator() {
-            return this.canManagePlatform && this.$store.getters.hasRole('administrador')
+            return this.canManagePlatform
         },
         canSwitchAccess() {
             return this.$store.getters.requiresAccessSelection
@@ -197,7 +197,8 @@ export default {
             return this.currentUser?.id ? `/historial/${this.currentUser.id}` : '/inicio'
         },
         roleLabel() {
-            return this.canManagePlatform ? 'Administrador' : 'Perfil de voluntario'
+            if (!this.canManagePlatform) return 'Perfil de voluntario'
+            return this.$store.getters.hasRole('moderador') ? 'Moderador' : 'Administrador'
         },
         activeLink() {
             const path = this.$route.path

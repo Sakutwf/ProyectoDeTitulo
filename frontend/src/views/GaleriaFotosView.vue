@@ -282,7 +282,7 @@ import { optimizeImage } from '../utils/imageOptimization'
 
 const store = useStore()
 const currentUser = computed(() => store.getters.authUser)
-const isAdministrator = computed(() => store.getters.hasRole('administrador'))
+const isAdministrator = computed(() => store.getters.canManagePlatform)
 const albums = ref([])
 const activities = ref([])
 const meta = ref({ current_page: 1, last_page: 1 })

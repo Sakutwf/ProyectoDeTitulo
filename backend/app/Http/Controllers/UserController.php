@@ -53,6 +53,7 @@ class UserController extends Controller
 
     public function index(Request $request)
     {
+        $this->requireAnyRole($request, ['administrador', 'moderador']);
         $query = User::with(self::USER_RELATIONS);
 
         if ($request->filled('search')) {
@@ -82,6 +83,7 @@ class UserController extends Controller
 
     public function search(Request $request)
     {
+        $this->requireAnyRole($request, ['administrador', 'moderador']);
         $request->validate([
             'q' => ['nullable', 'string'],
             'rut' => ['nullable', 'string'],
@@ -112,12 +114,14 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        $this->requireAnyRole($request, ['administrador', 'moderador']);
         $data = $this->validateUser($request);
 
         $user = DB::transaction(function () use ($request, $data) {
             $user = User::create($data);
             $this->syncRoles($user, $request);
             $this->syncVoluntario($user, $request);
+            $user->syncRoleFromProfile();
 
             return $this->prepareUserResponse($user->load(self::USER_RELATIONS), true);
         });
@@ -125,8 +129,16 @@ class UserController extends Controller
         return response()->json($user, 201);
     }
 
-    public function show(User $user)
+    public function show(Request $request, User $user)
     {
+        $actor = $request->user()?->loadMissing('roles');
+        abort_unless(
+            (int) $actor?->id === (int) $user->id
+                || $actor?->roles->contains(fn ($role) => in_array($role->clave, ['administrador', 'moderador'], true)),
+            403,
+            'No tienes permisos para consultar este usuario.'
+        );
+
         return response()->json(
             $this->prepareUserResponse($user->load(self::USER_RELATIONS), true),
             200
@@ -135,12 +147,14 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        $this->requireAnyRole($request, ['administrador', 'moderador']);
         $data = $this->validateUser($request, $user->id);
 
         $user = DB::transaction(function () use ($request, $user, $data) {
             $user->update($data);
             $this->syncRoles($user, $request);
             $this->syncVoluntario($user, $request);
+            $user->syncRoleFromProfile();
 
             return $this->prepareUserResponse($user->load(self::USER_RELATIONS), true);
         });
@@ -150,6 +164,14 @@ class UserController extends Controller
 
     public function updateVolunteerPhoto(Request $request, User $user)
     {
+        $actor = $request->user()?->loadMissing('roles');
+        abort_unless(
+            (int) $actor?->id === (int) $user->id
+                || $actor?->roles->contains(fn ($role) => in_array($role->clave, ['administrador', 'moderador'], true)),
+            403,
+            'No tienes permisos para cambiar esta fotografía.'
+        );
+
         $request->validate([
             'foto_perfil' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
         ]);
@@ -170,8 +192,9 @@ class UserController extends Controller
         );
     }
 
-    public function destroy(User $user)
+    public function destroy(Request $request, User $user)
     {
+        $this->requireAnyRole($request, ['administrador', 'moderador']);
         $user->delete();
 
         return response()->json(null, 204);
@@ -181,6 +204,9 @@ class UserController extends Controller
     {
         $passwordRules = ['nullable', 'string', 'min:6'];
         $contrasenaRules = ['nullable', 'string', 'min:6'];
+        $roleRules = $userId === null
+            ? ['required', 'array', 'size:1']
+            : ['sometimes', 'array', 'size:1'];
 
         $validated = $request->validate([
             'username' => ['nullable', 'string', 'max:150', Rule::unique('users', 'username')->ignore($userId)],
@@ -188,7 +214,7 @@ class UserController extends Controller
             'must_change_password' => ['sometimes', 'boolean'],
             'password' => $passwordRules,
             'contrasena' => $contrasenaRules,
-            'roles' => ['sometimes', 'array'],
+            'roles' => $roleRules,
             'roles.*' => ['integer', Rule::exists('roles', 'id')],
         ]);
 
@@ -220,10 +246,28 @@ class UserController extends Controller
 
     private function syncRoles(User $user, Request $request): void
     {
-        if ($request->exists('roles')) {
-            $user->roles()->sync($request->input('roles', []));
-            $user->load('roles.permissions');
+        if (! $request->exists('roles')) {
+            return;
         }
+
+        $requestedRole = Role::query()->find($request->input('roles.0'));
+        abort_unless(
+            $requestedRole && in_array($requestedRole->clave, [
+                User::ROLE_ADMINISTRATOR,
+                User::ROLE_VOLUNTEER,
+                User::ROLE_MODERATOR,
+            ], true),
+            422,
+            'El rol seleccionado no es válido.'
+        );
+
+        $targetRoleKey = $requestedRole->clave === User::ROLE_ADMINISTRATOR
+            ? User::ROLE_ADMINISTRATOR
+            : User::ROLE_VOLUNTEER;
+        $targetRoleId = Role::query()->where('clave', $targetRoleKey)->value('id');
+
+        $user->roles()->sync([$targetRoleId]);
+        $user->unsetRelation('roles');
     }
 
     private function syncVoluntario(User $user, Request $request): void
@@ -366,18 +410,18 @@ class UserController extends Controller
 
             return Role::query()
                 ->whereIn('id', $roleIds)
-                ->where('clave', 'voluntario')
+                ->whereIn('clave', [User::ROLE_VOLUNTEER, User::ROLE_MODERATOR])
                 ->exists();
         }
 
         $user->loadMissing('roles');
 
-        return $user->roles->contains(fn (Role $role) => $role->clave === 'voluntario');
+        return $user->roles->contains(fn (Role $role) => in_array($role->clave, [User::ROLE_VOLUNTEER, User::ROLE_MODERATOR], true));
     }
 
     private function prepareUserResponse(User $user, bool $includeArchivedVolunteerProfile = false): User
     {
-        if (! $includeArchivedVolunteerProfile && ! $user->hasRole('voluntario')) {
+        if (! $includeArchivedVolunteerProfile && ! ($user->hasRole(User::ROLE_VOLUNTEER) || $user->hasRole(User::ROLE_MODERATOR))) {
             $user->setRelation('voluntario', null);
         }
 

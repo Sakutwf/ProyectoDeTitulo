@@ -44,7 +44,11 @@ class AuthController extends Controller
             ]);
         }
 
-        $isAdmin = $user->hasRole('administrador');
+        $user->syncRoleFromProfile();
+        $user->load(self::USER_RELATIONS);
+
+        $isAdmin = $user->hasRole(User::ROLE_ADMINISTRATOR);
+        $canManage = $user->canManagePlatform();
         $isVolunteer = $user->voluntario !== null;
         $user->tokens()->where('name', 'frontend')->delete();
         $token = $user->createToken('frontend')->plainTextToken;
@@ -54,9 +58,9 @@ class AuthController extends Controller
             'token' => $token,
             'roles' => $user->roles->pluck('clave')->values(),
             'is_admin' => $isAdmin,
-            'can_access_admin' => $isAdmin || $user->hasRole('secretario-directiva'),
+            'can_access_admin' => $canManage,
             'can_access_volunteer' => $isVolunteer,
-            'requires_access_selection' => $isAdmin && $isVolunteer,
+            'requires_access_selection' => $user->hasRole(User::ROLE_MODERATOR) && $isVolunteer,
             'must_change_password' => (bool) $user->must_change_password,
         ], 200);
     }
@@ -120,7 +124,7 @@ class AuthController extends Controller
 
     public function sendUserResetLink(Request $request, User $user)
     {
-        abort_unless($request->user()?->hasRole('administrador'), 403);
+        abort_unless($request->user()?->canManagePlatform(), 403);
 
         if (blank($user->email)) {
             return response()->json([
@@ -153,7 +157,7 @@ class AuthController extends Controller
 
     public function generateUserResetLink(Request $request, User $user)
     {
-        abort_unless($request->user()?->hasRole('administrador'), 403);
+        abort_unless($request->user()?->canManagePlatform(), 403);
 
         $token = Password::broker()->createToken($user);
         $query = http_build_query([

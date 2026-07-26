@@ -256,7 +256,7 @@ class PortadaController extends Controller
     private function ensureAdministrator(Request $request): void
     {
         $user = $request->user()?->loadMissing('roles');
-        abort_unless($user?->hasRole('administrador'), 403, 'Solo un administrador puede configurar la portada.');
+        abort_unless($user?->canManagePlatform(), 403, 'No tienes permisos para configurar la portada.');
     }
 
     private function defaultTexts(): array

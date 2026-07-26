@@ -60,8 +60,8 @@ class UserSeeder extends Seeder
 
         $this->syncUserRoles($adminUserId, ['administrador']);
         $this->syncUserRoles($marianaUserId, ['voluntario']);
-        $this->syncUserRoles($andresUserId, ['voluntario', 'secretario']);
-        $this->syncUserRoles($javieraUserId, ['finanzas']);
+        $this->syncUserRoles($andresUserId, ['voluntario']);
+        $this->syncUserRoles($javieraUserId, ['voluntario']);
 
         $marianaVoluntarioId = $this->upsertVoluntario(
             $marianaUserId,
@@ -176,6 +176,8 @@ class UserSeeder extends Seeder
 
     private function syncUserRoles(int $userId, array $roleClaves): void
     {
+        DB::table('role_user')->where('user_id', $userId)->delete();
+
         $roleIds = DB::table('roles')
             ->whereIn('clave', $roleClaves)
             ->pluck('id');

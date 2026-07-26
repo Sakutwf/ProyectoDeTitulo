@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Actividad;
 use App\Models\Album;
 use App\Models\Archivo;
 use App\Models\GaleriaActividad;
@@ -16,10 +17,16 @@ class AlbumController extends Controller
 
     public function index(Request $request)
     {
+        $actor = $this->manager($request);
         $query = Album::with(['actividad:id,nombre,fecha_inicio,fecha_termino', 'creador:id,username'])
             ->withCount('fotos')
             ->latest('updated_at')
             ->latest('id');
+
+        $filialId = (int) ($actor->voluntario?->filial_id ?? 0);
+        if ($filialId > 0) {
+            $query->whereHas('actividad', fn ($activityQuery) => $activityQuery->where('filial_id', $filialId));
+        }
 
         if ($request->filled('search')) {
             $search = $request->string('search')->toString();
@@ -41,27 +48,34 @@ class AlbumController extends Controller
             'creado_por' => ['nullable', 'integer'],
         ]);
 
-        $data['creado_por'] = $request->user()?->id
-            ?? User::query()->whereKey($data['creado_por'] ?? null)->value('id');
+        $actor = $this->manager($request);
+        $this->ensureManagerFilial($actor, Actividad::findOrFail($data['actividad_id']));
+        $data['creado_por'] = $actor->id;
 
         $album = Album::create($data);
 
         return response()->json($album->load(['actividad', 'creador'])->loadCount('fotos'), 201);
     }
 
-    public function show(Album $album)
+    public function show(Album $album, Request $request)
     {
+        $this->ensureCanViewAlbum($request, $album);
         return response()->json($this->loadAlbum($album), 200);
     }
 
     public function update(Request $request, Album $album)
     {
+        $actor = $this->manager($request);
+        $this->ensureManagerFilial($actor, $album->actividad);
         $data = $request->validate([
             'nombre' => ['sometimes', 'required', 'string', 'max:180'],
             'descripcion' => ['nullable', 'string'],
             'actividad_id' => ['sometimes', 'required', 'integer', 'exists:actividades,id'],
         ]);
 
+        if (isset($data['actividad_id'])) {
+            $this->ensureManagerFilial($actor, Actividad::findOrFail($data['actividad_id']));
+        }
         $album->update($data);
 
         return response()->json($this->loadAlbum($album), 200);
@@ -69,9 +83,7 @@ class AlbumController extends Controller
 
     public function destroy(Request $request, Album $album)
     {
-        if (! $this->canDeleteAlbum($request, $album)) {
-            return response()->json(['message' => 'No tienes permisos para eliminar este album.'], 403);
-        }
+        $this->ensureCanManageAlbum($request, $album);
 
         foreach ($album->fotos()->get() as $foto) {
             $this->deletePhotoFile($foto);
@@ -84,6 +96,7 @@ class AlbumController extends Controller
 
     public function uploadPhoto(Request $request, Album $album)
     {
+        $this->ensureCanManageAlbum($request, $album);
         $data = $request->validate([
             'archivo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'nombre' => ['nullable', 'string', 'max:180'],
@@ -127,6 +140,7 @@ class AlbumController extends Controller
     public function updatePhoto(Request $request, Album $album, Archivo $archivo)
     {
         $this->ensurePhotoBelongsToAlbum($album, $archivo);
+        $this->ensureCanManageAlbum($request, $album);
 
         $data = $request->validate([
             'nombre' => ['nullable', 'string', 'max:180'],
@@ -150,12 +164,7 @@ class AlbumController extends Controller
     {
         $this->ensurePhotoBelongsToAlbum($album, $archivo);
 
-        $actor = $request->user()?->loadMissing('roles');
-        abort_unless(
-            $actor?->roles->contains(fn ($role) => in_array($role->clave, ['administrador', 'voluntario'], true)),
-            403,
-            'No tienes permisos para descargar fotografias de este album.'
-        );
+        $this->ensureCanViewAlbum($request, $album);
 
         abort_unless($archivo->ruta && Storage::disk('public')->exists($archivo->ruta), 404);
 
@@ -174,10 +183,7 @@ class AlbumController extends Controller
     {
         $this->ensurePhotoBelongsToAlbum($album, $archivo);
 
-        if (! $this->canDeletePhoto($request, $archivo)) {
-            return response()->json(['message' => 'No tienes permisos para eliminar esta foto.'], 403);
-        }
-
+        $this->ensureCanManageAlbum($request, $album);
         $this->deletePhotoFile($archivo);
 
         return response()->json(null, 204);
@@ -218,41 +224,53 @@ class AlbumController extends Controller
         $archivo->delete();
     }
 
-    private function canDeletePhoto(Request $request, Archivo $archivo): bool
+    private function ensureCanManageAlbum(Request $request, Album $album): void
     {
-        $actor = $this->resolveActor($request);
-
-        if (! $actor) {
-            return false;
-        }
-
-        return $this->isAdministrator($actor) || (int) $archivo->subido_por === (int) $actor->id;
+        $actor = $this->manager($request);
+        $this->ensureManagerFilial($actor, $album->actividad);
     }
 
-    private function canDeleteAlbum(Request $request, Album $album): bool
+    private function ensureCanViewAlbum(Request $request, Album $album): void
     {
         $actor = $this->resolveActor($request);
+        abort_unless($actor, 403);
 
-        if (! $actor) {
-            return false;
+        if ($this->isManager($actor)) {
+            $this->ensureManagerFilial($actor, $album->actividad);
+            return;
         }
 
-        return $this->isAdministrator($actor) || (int) $album->creado_por === (int) $actor->id;
+        $volunteerId = (int) ($actor->voluntario?->id ?? 0);
+        abort_unless(
+            $volunteerId > 0
+                && $album->actividad->voluntarios()->where('voluntarios.id', $volunteerId)->exists(),
+            403,
+            'No tienes permisos para acceder a este álbum.'
+        );
+    }
+
+    private function manager(Request $request): User
+    {
+        $actor = $this->resolveActor($request);
+        abort_unless($actor && $this->isManager($actor), 403, 'No tienes permisos para administrar álbumes.');
+        return $actor;
+    }
+
+    private function ensureManagerFilial(User $actor, Actividad $activity): void
+    {
+        $filialId = (int) ($actor->voluntario?->filial_id ?? 0);
+        if ($filialId > 0) {
+            abort_unless($filialId === (int) $activity->filial_id, 403, 'No puedes administrar álbumes de otra filial.');
+        }
     }
 
     private function resolveActor(Request $request): ?User
     {
-        if ($request->user()) {
-            return $request->user()->loadMissing('roles');
-        }
-
-        $actorId = $request->integer('actor_id') ?: $request->integer('subido_por') ?: $request->integer('creado_por');
-
-        return $actorId ? User::with('roles')->find($actorId) : null;
+        return $request->user()?->loadMissing('roles', 'voluntario');
     }
 
-    private function isAdministrator(User $user): bool
+    private function isManager(User $user): bool
     {
-        return $user->roles->contains(fn ($role) => $role->clave === 'administrador');
+        return $user->roles->contains(fn ($role) => in_array($role->clave, ['administrador', 'moderador'], true));
     }
 }

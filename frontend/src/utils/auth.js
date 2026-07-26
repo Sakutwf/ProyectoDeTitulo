@@ -17,15 +17,15 @@ export function hasAnyRole(user, roles) {
 }
 
 export function canManagePlatform(user) {
-  return hasAnyRole(user, ['administrador', 'secretario-directiva'])
+  return hasAnyRole(user, ['administrador', 'moderador'])
 }
 
 export function canAccessVolunteerProfile(user) {
-  return hasRole(user, 'voluntario') && Boolean(user?.voluntario?.id || user?.voluntario)
+  return hasAnyRole(user, ['voluntario', 'moderador']) && Boolean(user?.voluntario?.id || user?.voluntario)
 }
 
 export function requiresAccessSelection(user) {
-  return hasRole(user, 'administrador') && canAccessVolunteerProfile(user)
+  return hasRole(user, 'moderador') && canAccessVolunteerProfile(user)
 }
 
 export function resolveAccessMode(user, accessMode = null) {

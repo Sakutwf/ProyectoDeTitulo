@@ -77,6 +77,7 @@ class ActividadController extends Controller
 
     public function store(Request $request)
     {
+        $this->requireAnyRole($request, ['administrador', 'moderador']);
         $data = $this->validateActividad($request);
         $this->ensureVolunteerHoursWithinActivityTotal(
             $data['horas_totales'] ?? null,
@@ -129,6 +130,7 @@ class ActividadController extends Controller
 
     public function update($id, Request $request)
     {
+        $this->requireAnyRole($request, ['administrador', 'moderador']);
         $actividad = Actividad::findOrFail($id);
         $data = $this->validateActividad($request, true);
         $this->ensureVolunteerHoursWithinActivityTotal(
@@ -143,8 +145,9 @@ class ActividadController extends Controller
         return response()->json($this->loadActivityForActor($actividad, $request), 200);
     }
 
-    public function destroy($id)
+    public function destroy($id, Request $request)
     {
+        $this->requireAnyRole($request, ['administrador', 'moderador']);
         $actividad = Actividad::findOrFail($id);
         $actividad->delete();
 
@@ -280,6 +283,7 @@ class ActividadController extends Controller
 
     public function guardarClimas($id, Request $request)
     {
+        $this->requireAnyRole($request, ['administrador', 'moderador']);
         $actividad = Actividad::findOrFail($id);
         $this->validateClimasPayload($request);
         $this->syncClimas($actividad, $request);
@@ -296,13 +300,14 @@ class ActividadController extends Controller
         );
     }
 
-    public function galeria($id)
+    public function galeria($id, Request $request)
     {
         $actividad = Actividad::with([
             'galeria.archivo',
             'galeria.subidoPor.voluntario',
             'albumes.fotos.subidoPor.voluntario',
         ])->findOrFail($id);
+        $this->ensureCanViewActivityGallery($request->user(), $actividad);
 
         $galeria = $actividad->galeria
             ->filter(fn ($item) => $item->archivo?->categoria !== 'clima_documento')
@@ -346,6 +351,7 @@ class ActividadController extends Controller
     public function subirImagenGaleria($id, Request $request)
     {
         $actividad = Actividad::findOrFail($id);
+        $this->ensureCanViewActivityGallery($request->user(), $actividad);
 
         $data = $request->validate([
             'archivo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
@@ -371,7 +377,7 @@ class ActividadController extends Controller
             'mime_type' => $optimized['mime_type'],
             'tamano' => $optimized['size'],
             'descripcion' => $data['descripcion'] ?? null,
-            'subido_por' => $data['subido_por'] ?? $request->user()?->id,
+            'subido_por' => $request->user()?->id,
         ]);
 
         $registro = $actividad->galeria()->create([
@@ -379,7 +385,7 @@ class ActividadController extends Controller
             'titulo' => $data['titulo'] ?? null,
             'descripcion' => $data['descripcion'] ?? null,
             'fecha' => $data['fecha'] ?? now()->toDateString(),
-            'subido_por' => $data['subido_por'] ?? $request->user()?->id,
+            'subido_por' => $request->user()?->id,
         ]);
 
         return response()->json(
@@ -388,9 +394,10 @@ class ActividadController extends Controller
         );
     }
 
-    public function eliminarImagenTemporalClima($id, Archivo $archivo)
+    public function eliminarImagenTemporalClima($id, Archivo $archivo, Request $request)
     {
-        Actividad::findOrFail($id);
+        $actividad = Actividad::findOrFail($id);
+        $this->ensureCanManageActivity($request->user(), $actividad);
 
         abort_unless(
             $archivo->entidad === 'actividad'
@@ -424,6 +431,22 @@ class ActividadController extends Controller
         $request->validate([
             'voluntario_id' => ['nullable', 'integer', 'exists:voluntarios,id'],
         ]);
+
+        $actor = $request->user()?->loadMissing('roles', 'voluntario');
+        if ($this->canReviewBoletas($actor)) {
+            $this->ensureCanManageActivity($actor, $actividad);
+        } else {
+            $volunteerId = (int) ($actor?->voluntario?->id ?? 0);
+            $requestedVolunteerId = (int) ($request->input('voluntario_id') ?? $volunteerId);
+            abort_unless(
+                $volunteerId > 0
+                    && $requestedVolunteerId === $volunteerId
+                    && $actividad->voluntarios()->where('voluntarios.id', $volunteerId)->exists(),
+                403,
+                'Solo puedes consultar tus propias boletas.'
+            );
+            $request->merge(['voluntario_id' => $volunteerId]);
+        }
 
         $query = $actividad->boletasViatico()->with(['archivo', 'voluntario.user', 'revisadoPor.voluntario', 'actividad:id,nombre']);
 
@@ -529,6 +552,17 @@ class ActividadController extends Controller
             'monto' => ['required', 'numeric', 'min:0'],
             'fecha_compra' => ['nullable', 'date'],
         ]);
+
+        $actor = $request->user()?->loadMissing('roles', 'voluntario');
+        if ($this->canReviewBoletas($actor)) {
+            $this->ensureCanManageActivity($actor, $actividad);
+        } else {
+            abort_unless(
+                (int) ($actor?->voluntario?->id ?? 0) === (int) $data['voluntario_id'],
+                403,
+                'Solo puedes registrar tus propias boletas.'
+            );
+        }
 
         $voluntario = Voluntario::findOrFail($data['voluntario_id']);
 
@@ -693,7 +727,7 @@ class ActividadController extends Controller
 
         $actor->loadMissing('roles');
 
-        return $actor->roles->contains(fn ($role) => in_array($role->clave, ['administrador', 'secretario-directiva'], true));
+        return $actor->roles->contains(fn ($role) => in_array($role->clave, ['administrador', 'moderador'], true));
     }
 
     private function canReviewBoletaFromActorFilial($actor, BoletaViatico $boletaViatico): bool
@@ -923,6 +957,23 @@ class ActividadController extends Controller
         }
 
         return $actividad;
+    }
+
+    private function ensureCanViewActivityGallery($actor, Actividad $actividad): void
+    {
+        $actor?->loadMissing('roles', 'voluntario');
+
+        if ($this->canReviewBoletas($actor)) {
+            $this->ensureCanManageActivity($actor, $actividad);
+            return;
+        }
+
+        $volunteerId = (int) ($actor?->voluntario?->id ?? 0);
+        abort_unless(
+            $volunteerId > 0 && $actividad->voluntarios()->where('voluntarios.id', $volunteerId)->exists(),
+            403,
+            'Solo puedes acceder a galerías de actividades en las que estás inscrito.'
+        );
     }
 
     private function ensureCanManageActivity($actor, Actividad $actividad): void

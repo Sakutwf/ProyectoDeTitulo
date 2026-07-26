@@ -40,10 +40,10 @@ class ActividadInscripcionApiTest extends TestCase
         $this->assertCount(0, $actividad->fresh()->voluntarios);
     }
 
-    public function test_administrator_volunteer_self_enrollment_stays_pending_and_is_visible(): void
+    public function test_moderator_self_enrollment_stays_pending_and_is_visible(): void
     {
         [$actividad, $administrator, $volunteerUser, $voluntario] = $this->createContext();
-        $volunteerUser->roles()->attach(Role::query()->where('clave', 'administrador')->firstOrFail());
+        $volunteerUser->roles()->sync([Role::query()->where('clave', 'moderador')->value('id')]);
         Sanctum::actingAs($volunteerUser);
 
         $this->postJson('/api/actividad/'.$actividad->id.'/voluntarios', [
@@ -124,8 +124,8 @@ class ActividadInscripcionApiTest extends TestCase
             'direccion' => 'Estado 206',
             'comuna' => 'Curico',
         ]);
-        $adminRole = Role::query()->create(['nombre' => 'Administrador', 'clave' => 'administrador']);
-        $volunteerRole = Role::query()->create(['nombre' => 'Voluntario', 'clave' => 'voluntario']);
+        $adminRole = Role::query()->where('clave', 'administrador')->firstOrFail();
+        $volunteerRole = Role::query()->where('clave', 'voluntario')->firstOrFail();
 
         $administrator = User::factory()->create();
         $administrator->roles()->attach($adminRole);

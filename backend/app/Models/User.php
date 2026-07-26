@@ -8,6 +8,11 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
+    public const ROLE_ADMINISTRATOR = 'administrador';
+
+    public const ROLE_VOLUNTEER = 'voluntario';
+
+    public const ROLE_MODERATOR = 'moderador';
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -101,6 +106,42 @@ class User extends Authenticatable
     public function hasRole(string $roleSlug): bool
     {
         return $this->roles->contains(fn (Role $role) => $role->clave === $roleSlug);
+    }
+
+    public function canManagePlatform(): bool
+    {
+        return $this->roles->contains(
+            fn (Role $role) => in_array($role->clave, [
+                self::ROLE_ADMINISTRATOR,
+                self::ROLE_MODERATOR,
+            ], true)
+        );
+    }
+
+    public function syncRoleFromProfile(): void
+    {
+        $this->load('voluntario');
+
+        if (! $this->voluntario) {
+            $roleKey = self::ROLE_ADMINISTRATOR;
+        } else {
+            $hasCurrentCargo = $this->voluntario->hojaVidaAnual()
+                ->where('anio', (int) now()->year)
+                ->whereNotNull('cargo_clave')
+                ->where('cargo_clave', '<>', '')
+                ->exists();
+
+            $roleKey = $hasCurrentCargo
+                ? self::ROLE_MODERATOR
+                : self::ROLE_VOLUNTEER;
+        }
+
+        $roleId = Role::query()->where('clave', $roleKey)->value('id');
+
+        if ($roleId) {
+            $this->roles()->sync([$roleId]);
+            $this->unsetRelation('roles');
+        }
     }
 
 }

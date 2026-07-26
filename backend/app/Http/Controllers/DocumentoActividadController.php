@@ -27,8 +27,9 @@ class DocumentoActividadController extends Controller
         'generador',
     ];
 
-    public function index(Actividad $actividad)
+    public function index(Actividad $actividad, Request $request)
     {
+        $this->requireAnyRole($request, ['administrador', 'moderador']);
         return response()->json(
             $actividad->documentos()
                 ->with(['generador'])
@@ -41,6 +42,7 @@ class DocumentoActividadController extends Controller
 
     public function prefill(Actividad $actividad, Request $request)
     {
+        $this->requireAnyRole($request, ['administrador', 'moderador']);
         $type = $this->normalizeDocumentType($request->query('tipo_documento'));
 
         return response()->json([
@@ -53,6 +55,7 @@ class DocumentoActividadController extends Controller
 
     public function store(Actividad $actividad, Request $request)
     {
+        $this->requireAnyRole($request, ['administrador', 'moderador']);
         $validated = $this->validateDocumentRequest($request, $actividad);
 
         $documento = DB::transaction(function () use ($actividad, $request, $validated) {
@@ -78,13 +81,15 @@ class DocumentoActividadController extends Controller
         return response()->json($documento->load(self::RELATIONS), 201);
     }
 
-    public function show(DocumentoActividad $documentoActividad)
+    public function show(DocumentoActividad $documentoActividad, Request $request)
     {
+        $this->requireAnyRole($request, ['administrador', 'moderador']);
         return response()->json($documentoActividad->load(self::RELATIONS), 200);
     }
 
     public function update(Request $request, DocumentoActividad $documentoActividad)
     {
+        $this->requireAnyRole($request, ['administrador', 'moderador']);
         $validated = $this->validateDocumentRequest($request, $documentoActividad->actividad, true);
 
         $documentoActividad = DB::transaction(function () use ($documentoActividad, $request, $validated) {
@@ -109,8 +114,9 @@ class DocumentoActividadController extends Controller
         return response()->json($documentoActividad, 200);
     }
 
-    public function destroy(DocumentoActividad $documentoActividad)
+    public function destroy(DocumentoActividad $documentoActividad, Request $request)
     {
+        $this->requireAnyRole($request, ['administrador', 'moderador']);
         $documentoActividad->delete();
 
         return response()->json(null, 204);

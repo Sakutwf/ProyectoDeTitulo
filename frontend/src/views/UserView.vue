@@ -47,7 +47,7 @@
                     <button @click="editUser(user.id)" class="btn btn-sm profile-action-button" title="Editar" aria-label="Editar">
                       <i class="fa-solid fa-edit"></i>
                     </button>
-                    <button v-if="$store.getters.hasAnyRole(['administrador'])" class="btn btn-sm profile-recovery-button" title="Recuperar contraseña" aria-label="Recuperar contraseña" @click="recoverPassword(user)">
+                    <button v-if="$store.getters.canManagePlatform" class="btn btn-sm profile-recovery-button" title="Recuperar contraseña" aria-label="Recuperar contraseña" @click="recoverPassword(user)">
                       <i class="fa-solid fa-key"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger" title="Eliminar" aria-label="Eliminar" @click="eliminar(user.id, displayName(user))">
@@ -186,7 +186,7 @@
                           <button @click="editUser(user.id)" class="btn btn-sm profile-action-button" title="Editar">
                             <i class="fa-solid fa-edit"></i>
                           </button>
-                          <button v-if="$store.getters.hasAnyRole(['administrador'])" class="btn btn-sm profile-recovery-button" title="Recuperar contraseña" @click="recoverPassword(user)">
+                          <button v-if="$store.getters.canManagePlatform" class="btn btn-sm profile-recovery-button" title="Recuperar contraseña" @click="recoverPassword(user)">
                             <i class="fa-solid fa-key"></i>
                           </button>
                           <button class="btn btn-sm btn-outline-danger" title="Eliminar" @click="eliminar(user.id, displayName(user))">

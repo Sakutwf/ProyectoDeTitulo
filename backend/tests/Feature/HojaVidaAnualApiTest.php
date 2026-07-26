@@ -236,10 +236,7 @@ class HojaVidaAnualApiTest extends TestCase
     private function createVolunteer(): Voluntario
     {
         $administrator = User::factory()->create();
-        $administratorRole = Role::query()->create([
-            'nombre' => 'Administrador',
-            'clave' => 'administrador',
-        ]);
+        $administratorRole = Role::query()->where('clave', 'administrador')->firstOrFail();
         $administrator->roles()->attach($administratorRole);
         Sanctum::actingAs($administrator);
 

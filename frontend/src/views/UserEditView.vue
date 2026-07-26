@@ -151,13 +151,7 @@
                   >
                 </div>
 
-                <div class="col-md-6">
-                  <label for="edit-permission-level" class="form-label">Rol</label>
-                  <select id="edit-permission-level" v-model="permissionLevel" class="form-select">
-                    <option value="usuario">Usuario</option>
-                    <option value="administrador">Administrador</option>
-                  </select>
-                </div>
+
               </template>
 
               <div class="col-12">
@@ -262,7 +256,7 @@ export default {
       contacto_emergencia_nombre: '',
       contacto_emergencia_numero: '',
       foto_perfil: null,
-      permissionLevel: 'usuario',
+      hasVolunteerProfile: false,
       password: '',
       showPassword: false,
       url: buildApiUrl('user'),
@@ -274,30 +268,8 @@ export default {
     }
   },
   computed: {
-    availableRoleOptions() {
-      const preferredOrder = {
-        administrador: 0,
-        voluntario: 1,
-        'secretario-directiva': 2,
-        'encargada-finanzas': 3
-      }
-
-      return [...this.rolesOptions].sort((a, b) => {
-        const orderA = preferredOrder[a.clave] ?? 99
-        const orderB = preferredOrder[b.clave] ?? 99
-
-        if (orderA !== orderB) {
-          return orderA - orderB
-        }
-
-        return a.nombre.localeCompare(b.nombre)
-      })
-    },
-    selectedRoleDetails() {
-      return this.rolesOptions.filter((role) => this.selectedRoles.includes(role.id))
-    },
     esVoluntario() {
-      return this.selectedRoleDetails.some((role) => role.clave === 'voluntario')
+      return this.hasVolunteerProfile
     }
   },
   watch: {
@@ -330,16 +302,6 @@ export default {
     hide() {
       this.modalInstance.hide()
     },
-    roleDescription(role) {
-      const descriptions = {
-        administrador: 'Acceso administrativo del sistema',
-        voluntario: 'Perfil con ficha completa de voluntario',
-        'secretario-directiva': 'Gestión de voluntarios, actividades y actas',
-        'encargada-finanzas': 'Acceso a reportes y gestión financiera'
-      }
-
-      return descriptions[role.clave] || role.clave
-    },
     async onPhotoSelected(event) {
       const file = event.target.files?.[0] || null
       if (!file) return
@@ -369,8 +331,9 @@ export default {
       const voluntario = user.voluntario || null
 
       this.username = user.username || ''
-      this.selectedRoles = (user.roles || []).map((role) => role.id)
-      this.permissionLevel = (user.roles || []).some((role) => role?.clave === 'administrador') ? 'administrador' : 'usuario'
+      this.hasVolunteerProfile = Boolean(voluntario)
+      const editableRoleKey = this.hasVolunteerProfile ? 'voluntario' : 'administrador'
+      this.selectedRoles = [this.getRoleIdByKey(editableRoleKey)].filter(Boolean)
       this.showPassword = false
       this.registro_filial = voluntario?.registro_filial || ''
       this.filial_id = voluntario?.filial_id || ''
@@ -404,11 +367,12 @@ export default {
         formData.append('correo_notificaciones', this.correo_notificaciones.trim())
       }
 
-      const roleIds = this.esVoluntario
-        ? [this.getRoleIdByKey('voluntario'), this.permissionLevel === 'administrador' ? this.getRoleIdByKey('administrador') : null]
-        : [...this.selectedRoles]
+      const roleKey = this.esVoluntario ? 'voluntario' : 'administrador'
+      const roleId = this.getRoleIdByKey(roleKey)
 
-      ;[...new Set(roleIds.filter(Boolean))].forEach((roleId) => formData.append('roles[]', roleId))
+      if (roleId) {
+        formData.append('roles[]', roleId)
+      }
 
       if (this.esVoluntario) {
         formData.append('registro_filial', this.registro_filial.trim())

@@ -27,21 +27,9 @@ class RoleSeeder extends Seeder
                 ],
             ],
             [
-                'nombre' => 'Secretario Directiva',
-                'clave' => 'secretario-directiva',
-                'permissions' => [
-                    Permission::where('clave', 'gestionar_voluntarios')->value('id'),
-                    Permission::where('clave', 'ver_historial_voluntarios')->value('id'),
-                    Permission::where('clave', 'gestionar_actividades')->value('id'),
-                    Permission::where('clave', 'gestionar_actas_analisis')->value('id'),
-                ],
-            ],
-            [
-                'nombre' => 'Encargada Finanzas',
-                'clave' => 'encargada-finanzas',
-                'permissions' => [
-                    Permission::where('clave', 'ver_reportes_boletas')->value('id'),
-                ],
+                'nombre' => 'Moderador',
+                'clave' => 'moderador',
+                'permissions' => Permission::pluck('id')->all(),
             ],
         ];
 
@@ -56,5 +44,9 @@ class RoleSeeder extends Seeder
 
             $role->permissions()->sync($permissions);
         }
+
+        Role::query()
+            ->whereNotIn('clave', ['administrador', 'voluntario', 'moderador'])
+            ->delete();
     }
 }

@@ -58,79 +58,79 @@ const routes = [
     path: '/voluntarios',
     name: 'voluntarios',
     component: () => import('../views/UserView.vue'),
-    meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
+    meta: { requiresAuth: true, roles: ['administrador', 'moderador'], experience: 'admin' }
   },
   {
     path: '/actividades',
     name: 'actividades',
     component: () => import('../views/ActividadView.vue'),
-    meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
+    meta: { requiresAuth: true, roles: ['administrador', 'moderador'], experience: 'admin' }
   },
   {
     path: '/documentos',
     name: 'documentos',
     component: () => import('../views/DocumentosView.vue'),
-    meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
+    meta: { requiresAuth: true, roles: ['administrador', 'moderador'], experience: 'admin' }
   },
   {
     path: '/boletas',
     name: 'boletas-gestion',
     component: () => import('../views/BoletasGestionView.vue'),
-    meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
+    meta: { requiresAuth: true, roles: ['administrador', 'moderador'], experience: 'admin' }
   },
   {
     path: '/galeria-fotos',
     name: 'galeria-fotos',
     component: () => import('../views/GaleriaFotosView.vue'),
-    meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
+    meta: { requiresAuth: true, roles: ['administrador', 'moderador'], experience: 'admin' }
   },
   {
     path: '/solicitudes-hoja-vida',
     name: 'solicitudes-hoja-vida',
     component: () => import('../views/SolicitudesHojaVidaView.vue'),
-    meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
+    meta: { requiresAuth: true, roles: ['administrador', 'moderador'], experience: 'admin' }
   },
   {
     path: '/administrar-portada',
     name: 'administrar-portada',
     component: () => import('../views/PortadaEditorView.vue'),
-    meta: { requiresAuth: true, roles: ['administrador'], experience: 'admin' }
+    meta: { requiresAuth: true, roles: ['administrador', 'moderador'], experience: 'admin' }
   },
   {
     path: '/mis-actividades',
     name: 'volunteer-activities',
     component: () => import('../views/VolunteerActivitiesView.vue'),
-    meta: { requiresAuth: true, roles: ['voluntario'], experience: 'volunteer' }
+    meta: { requiresAuth: true, roles: ['voluntario', 'moderador'], experience: 'volunteer' }
   },
   {
     path: '/mi-galeria',
     name: 'volunteer-gallery',
     component: () => import('../views/VolunteerGalleryView.vue'),
-    meta: { requiresAuth: true, roles: ['voluntario'], experience: 'volunteer' }
+    meta: { requiresAuth: true, roles: ['voluntario', 'moderador'], experience: 'volunteer' }
   },
   {
     path: '/mis-boletas',
     name: 'volunteer-boletas',
     component: () => import('../views/VolunteerBoletasView.vue'),
-    meta: { requiresAuth: true, roles: ['voluntario'], experience: 'volunteer' }
+    meta: { requiresAuth: true, roles: ['voluntario', 'moderador'], experience: 'volunteer' }
   },
   {
     path: '/historial/:id',
     name: 'HistorialView',
     component: () => import('../views/HistorialView.vue'),
-    meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva', 'voluntario'] }
+    meta: { requiresAuth: true, roles: ['administrador', 'moderador', 'voluntario'] }
   },
   {
     path: '/historial/:id/pdf',
     name: 'HistorialPdfView',
     component: () => import('../views/HistorialPdfView.vue'),
-    meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva', 'voluntario'] }
+    meta: { requiresAuth: true, roles: ['administrador', 'moderador', 'voluntario'] }
   },
   {
     path: '/documentos-actividad/:id/pdf',
     name: 'DocumentoActividadPdfView',
     component: () => import('../views/DocumentoActividadPdfView.vue'),
-    meta: { requiresAuth: true, roles: ['administrador', 'secretario-directiva'], experience: 'admin' }
+    meta: { requiresAuth: true, roles: ['administrador', 'moderador'], experience: 'admin' }
   }
 ]
 
