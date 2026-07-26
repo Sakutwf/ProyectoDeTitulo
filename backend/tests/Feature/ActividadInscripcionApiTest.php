@@ -20,12 +20,16 @@ class ActividadInscripcionApiTest extends TestCase
         [$actividad, $administrator, $volunteerUser, $voluntario] = $this->createContext();
         Sanctum::actingAs($volunteerUser);
 
-        $this->postJson("/api/actividad/{$actividad->id}/voluntarios", [
+        $response = $this->postJson("/api/actividad/{$actividad->id}/voluntarios", [
             'voluntario_id' => $voluntario->id,
             ])
             ->assertOk()
-            ->assertJsonPath('inscripciones.0.pivot.estado', Actividad::INSCRIPCION_PENDIENTE)
-            ->assertJsonPath('inscripciones.0.pivot.horas_asistidas', 0);
+            ->assertJsonPath('inscripciones.0.pivot.estado', Actividad::INSCRIPCION_PENDIENTE);
+
+        $this->assertSame(
+            0.0,
+            (float) $response->json('inscripciones.0.pivot.horas_asistidas')
+        );
 
         $this->assertDatabaseHas('actividad_voluntario', [
             'actividad_id' => $actividad->id,

@@ -5,9 +5,12 @@
 
 /frontend/dist/
 /frontend/dist-build-*/
+/frontend/coverage/
 /frontend/*.log
 /frontend/*.out.log
 /frontend/*.err.log
+/backend/core.*
+/output/
 
 **/.DS_Store
 **/Thumbs.db

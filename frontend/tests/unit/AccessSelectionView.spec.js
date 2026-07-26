@@ -1,5 +1,10 @@
-import { shallowMount } from '@vue/test-utils'
+import { flushPromises, shallowMount } from '@vue/test-utils'
 import AccessSelectionView from '@/views/AccessSelectionView.vue'
+import { confirm_logout } from '@/funciones'
+
+jest.mock('@/funciones', () => ({
+  confirm_logout: jest.fn()
+}))
 
 const currentUser = {
   roles: [{ clave: 'administrador' }, { clave: 'voluntario' }],
@@ -24,6 +29,10 @@ function mountView(query = {}) {
 }
 
 describe('AccessSelectionView', () => {
+  beforeEach(() => {
+    confirm_logout.mockResolvedValue(true)
+  })
+
   test('guarda la experiencia elegida y entra al inicio', async () => {
     const { wrapper, dispatch, replace } = mountView()
 
@@ -37,9 +46,21 @@ describe('AccessSelectionView', () => {
     const { wrapper, dispatch, replace } = mountView()
 
     await wrapper.get('button.access-logout').trigger('click')
+    await flushPromises()
 
     expect(dispatch).toHaveBeenCalledWith('logout')
     expect(replace).toHaveBeenCalledWith({ name: 'login' })
+  })
+
+  test('mantiene la sesión cuando se cancela el cierre', async () => {
+    confirm_logout.mockResolvedValueOnce(false)
+    const { wrapper, dispatch, replace } = mountView()
+
+    await wrapper.get('button.access-logout').trigger('click')
+    await flushPromises()
+
+    expect(dispatch).not.toHaveBeenCalled()
+    expect(replace).not.toHaveBeenCalled()
   })
 
   test('respeta la ruta solicitada antes de seleccionar el acceso', async () => {

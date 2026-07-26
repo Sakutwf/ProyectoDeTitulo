@@ -20,6 +20,7 @@ class UserSeeder extends Seeder
         DB::table('filiales')->updateOrInsert(
             ['cut' => '07301'],
             [
+                'id' => 1,
                 'nombre' => 'Curicó',
                 'comite_regional' => 'Maule',
                 'direccion' => 'Estado N°206',
